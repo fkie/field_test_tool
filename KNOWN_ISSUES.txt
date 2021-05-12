@@ -1,0 +1,7 @@
+Known issues:
+1. API crashes with multiple simultaneaous requests to access the DB.
+2. API does not proof for every expected argument to be valid.
+3. The map viewers don't update poses of open segments during a live experiment, they get removed and re-drawn.
+4. The map viewers don't update poses of closed segments during a live experiment. Therefore, the last point might not be added to the map due to posting and getting timing.
+5. If the first segment on a live experiment doesn't have position data, the leaflet map will not show map tiles until an ITO segment with start position data is selected from the table.
+6. If a mandatory select field is empty (e.g. the vehicle field in the shift edit window) the script will fail to update any changes. This can happen if the database entry was not inserted by the web script.

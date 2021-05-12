@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.6" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>FTT webapp</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link rel="stylesheet" href="assets/styles/generic.css" />
+    <link rel="stylesheet" href="assets/styles/index.css" />
+    <link rel="stylesheet" href="assets/styles/modal.css" />
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+      crossorigin=""
+    ></script>
+    <script>
+      window.L ||
+        document.write(
+          '<script src="node_modules/leaflet/dist/leaflet.js" defer>\x3C/script>'
+        );
+    </script>
+    <script src="assets/scripts/index.js" defer type="module"></script>
+  </head>
+  <body>
+    <header id="nav-bar">
+      <div class="nav-left">
+        <a href="./config.html" target="_blank">
+          <i class="material-icons">settings</i>
+        </a>
+      </div>
+      <div class="nav-center">
+        <h1>Field Test Tool</h1>
+      </div>
+      <div class="nav-right">
+        <p id="user-name">Select User</p>
+        <i id="user-icon" class="material-icons">account_circle</i>
+      </div>
+    </header>
+    <div class="main-content">
+      <section id="trail-selection">
+        <div class="selectors">
+          <form>
+            <label for="test-event-id">Test Event</label>
+            <select id="test-event-id" name="test-event_id"></select>
+            <button type="button" id="new-test-event-btn" class="styled-button">
+              New
+            </button>
+            <button type="button" id="end-test-event-btn" class="styled-button">
+              End
+            </button>
+            <button
+              type="button"
+              id="edit-test-event-btn"
+              class="styled-button"
+            >
+              Edit
+            </button>
+          </form>
+          <form>
+            <label for="shift-id">Shift</label>
+            <select id="shift-id" name="shift_id"></select>
+            <button type="button" id="new-shift-btn" class="styled-button">
+              New
+            </button>
+            <button type="button" id="end-shift-btn" class="styled-button">
+              End
+            </button>
+            <button type="button" id="edit-shift-btn" class="styled-button">
+              Edit
+            </button>
+          </form>
+          <form>
+            <label for="leg-id">Leg</label>
+            <select id="leg-id" name="leg_id"></select>
+            <button type="button" id="new-leg-btn" class="styled-button">
+              New
+            </button>
+            <button type="button" id="end-leg-btn" class="styled-button">
+              End
+            </button>
+            <button type="button" id="edit-leg-btn" class="styled-button">
+              Edit
+            </button>
+          </form>
+        </div>
+        <div class="actioners">
+          <button
+            type="button"
+            id="get-segments-btn"
+            class="styled-button"
+            disabled
+          >
+            Get Segments
+          </button>
+        </div>
+      </section>
+      <section id="segment-detail">
+        <form id="reasons-form">
+          <button type="button" id="unexpected-btn" class="styled-button">
+            Unexpected
+          </button>
+          <button type="button" id="planner-btn" class="styled-button">
+            Planner
+          </button>
+          <button type="button" id="safety-btn" class="styled-button">
+            Safety
+          </button>
+          <button type="button" id="transit-btn" class="styled-button">
+            Manual transit
+          </button>
+        </form>
+        <div>
+          <input
+            type="checkbox"
+            id="auto-refresh"
+            name="auto-refresh"
+            value="auto-refresh"
+          />
+          <label for="auto-refresh">Auto Refresh</label>
+        </div>
+        <table id="segment-table" class="styled-table">
+          <thead id="segment-table-head">
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Reason</th>
+              <th>State</th>
+            </tr>
+          </thead>
+          <tbody id="segment-table-body"></tbody>
+        </table>
+        <div class="bottom-button-stripe">
+          <div>
+            <button type="button" id="new-segment-btn" class="styled-button">
+              New
+            </button>
+            <button type="button" id="end-segment-btn" class="styled-button">
+              End
+            </button>
+            <button type="button" id="edit-segment-btn" class="styled-button">
+              Edit
+            </button>
+          </div>
+          <button type="button" id="refresh-btn" class="styled-button">
+            Refresh
+          </button>
+        </div>
+      </section>
+    </div>
+    <div id="mapid" class="map"></div>
+
+    <template id="modal-template">
+      <div class="backdrop"></div>
+      <div class="modal">
+        <div class="modal__end">
+          <button type="button" id="modal-close-btn" class="styled-button">
+            Done
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <template id="select-user-template">
+      <header class="modal__title">
+        <h2>Select User:</h2>
+      </header>
+      <section>
+        <div>
+          <label for="user">User</label>
+          <select id="user" name="user"></select>
+        </div>
+      </section>
+    </template>
+
+    <template id="edit-segment-template">
+      <header class="modal__title">
+        <h2><span>Segment </span><span></span></h2>
+        <p><span class="fixed-width">Start Time: </span><span></span></p>
+        <p><span class="fixed-width">End Time: </span><span></span></p>
+      </header>
+      <section>
+        <form autocomplete="off">
+          <div class="form-row">
+            <div class="form-col-25">
+              <label for="ito-reason">ITO Reason</label>
+              <select id="ito-reason" name="ito-reason"></select>
+            </div>
+            <div class="form-col-25">
+              <label for="obstacle">Obstacle</label>
+              <input type="text" id="obstacle" name="obstacle" />
+            </div>
+            <div class="form-col-25">
+              <label for="lighting">Lighting</label>
+              <input type="text" id="lighting" name="lighting" />
+            </div>
+            <div class="form-col-25">
+              <label for="slope">Slope</label>
+              <input type="text" id="slope" name="slope" />
+            </div>
+          </div>
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+          </div>
+        </form>
+      </section>
+      <section>
+        <div class="btn-tabs"></div>
+        <form>
+          <div class="form-row">
+            <textarea id="note-text" name="note"></textarea>
+          </div>
+          <div class="btn-bar">
+            <button
+              type="submit"
+              id="save-note-btn"
+              class="styled-button"
+              disabled
+            >
+              Save Changes
+            </button>
+            <button
+              type="button"
+              id="remove-note-btn"
+              class="styled-button"
+              disabled
+            >
+              Remove Note
+            </button>
+          </div>
+        </form>
+      </section>
+      <section>
+        <div class="btn-tabs">
+          <button type="button" id="current-images-tab" class="selected-tab">
+            Current Images
+          </button>
+          <button type="button" id="upload-image-tab">Upload New Image</button>
+        </div>
+        <div class="current-images"></div>
+        <form class="upload-image">
+          <label for="new-image">Select a file:</label>
+          <input
+            type="file"
+            accept="image/*"
+            id="new-image"
+            name="new-image"
+          /><br />
+          <input
+            type="submit"
+            id="submit-image-btn"
+            class="styled-button"
+            disabled
+          />
+        </form>
+      </section>
+    </template>
+
+    <template id="edit-test-event-template">
+      <header class="modal__title">
+        <h2><span>Test Event </span><span></span></h2>
+        <p><span class="fixed-width">Start Time: </span><span></span></p>
+        <p><span class="fixed-width">End Time: </span><span></span></p>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="location">Location</label>
+              <input type="text" id="location" name="location" />
+            </div>
+            <div class="form-col-33">
+              <label for="version">Version</label>
+              <input type="text" id="version" name="version" />
+            </div>
+            <div class="form-col-33">
+              <label for="time-zone">Time Zone</label>
+              <select id="time-zone" name="time-zone"></select>
+            </div>
+          </div>
+          <hr />
+          <div class="form-row">
+            <label for="note">Note</label>
+            <textarea id="test-event-note" name="note"></textarea>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="edit-shift-template">
+      <header class="modal__title">
+        <h2><span>Shift </span><span></span></h2>
+        <p><span class="fixed-width">Start Time: </span><span></span></p>
+        <p><span class="fixed-width">End Time: </span><span></span></p>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="performer">Performer</label>
+              <select id="performer" name="performer"></select>
+            </div>
+            <div class="form-col-33">
+              <label for="test-director">Test Director</label>
+              <select id="test-director" name="test-director"></select>
+            </div>
+            <div class="form-col-33">
+              <label for="test-admin">Test Admin.</label>
+              <select id="test-admin" name="test-admin"></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="robot-operator">Robot Operator</label>
+              <select id="robot-operator" name="robot-operator"></select>
+            </div>
+            <div class="form-col-33">
+              <label for="safety-officer">Safety Officer</label>
+              <select id="safety-officer" name="safety-officer"></select>
+            </div>
+          </div>
+          <hr />
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="test-intent">Test Intent</label>
+              <input type="text" id="test-intent" name="test-intent" />
+            </div>
+            <div class="form-col-33">
+              <label for="workspace">Workspace</label>
+              <input type="text" id="workspace" name="workspace" />
+            </div>
+            <div class="form-col-33">
+              <label for="vehicle">Vehicle</label>
+              <select id="vehicle" name="vehicle"></select>
+            </div>
+          </div>
+          <hr />
+          <div class="form-row">
+            <label for="note">Note</label>
+            <textarea id="shift-note" name="note"></textarea>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="edit-leg-template">
+      <header class="modal__title">
+        <h2><span>Leg </span><span></span></h2>
+        <p><span class="fixed-width">Start Time: </span><span></span></p>
+        <p><span class="fixed-width">End Time: </span><span></span></p>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-50">
+              <label for="weather">Weather</label>
+              <select id="weather" name="weather"></select>
+            </div>
+            <div class="form-col-50">
+              <label for="default-pose-source">Default Pose Source</label>
+              <select
+                id="default-pose-source"
+                name="default-pose-source"
+              ></select>
+            </div>
+          </div>
+          <hr />
+          <div class="form-row">
+            <label for="note">Note</label>
+            <textarea id="leg-note" name="note"></textarea>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+  </body>
+</html>

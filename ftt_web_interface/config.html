@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.5" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>FTT config</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link rel="stylesheet" href="assets/styles/generic.css" />
+    <link rel="stylesheet" href="assets/styles/config.css" />
+    <script src="assets/scripts/config.js" defer type="module"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Field Test Tool Configuration</h1>
+    </header>
+    <div class="config-content">
+      <section>
+        <div id="performer" class="section__title">
+          <h2>Performers</h2>
+          <i class="material-icons">add</i>
+        </div>
+        <div>
+          <table id="performer-table" class="styled-table">
+            <thead id="performer-table-head">
+              <tr>
+                <th>ID</th>
+                <th>Institution</th>
+              </tr>
+            </thead>
+            <tbody id="performer-table-body">
+              <tr style="grid-template-columns: none">
+                <td><i class="add-button material-icons">add_circle</i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div id="personnel" class="section__title">
+          <h2>Personnel</h2>
+          <i class="material-icons">add</i>
+        </div>
+        <div>
+          <table id="personnel-table" class="styled-table">
+            <thead id="personnel-table-head">
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Institution</th>
+              </tr>
+            </thead>
+            <tbody id="personnel-table-body">
+              <tr style="grid-template-columns: none">
+                <td><i class="add-button material-icons">add_circle</i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div id="pose-source" class="section__title">
+          <h2>Pose Sources</h2>
+          <i class="material-icons">add</i>
+        </div>
+        <div>
+          <table id="pose-source-table" class="styled-table">
+            <thead id="pose-source-table-head">
+              <tr>
+                <th>ID</th>
+                <th>Key</th>
+                <th>Short Description</th>
+                <th>Long Description</th>
+              </tr>
+            </thead>
+            <tbody id="pose-source-table-body">
+              <tr style="grid-template-columns: none">
+                <td><i class="add-button material-icons">add_circle</i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div id="vehicle" class="section__title">
+          <h2>Vehicles</h2>
+          <i class="material-icons">add</i>
+        </div>
+        <div>
+          <table id="vehicle-table" class="styled-table">
+            <thead id="vehicle-table-head">
+              <tr>
+                <th>ID</th>
+                <th>Key</th>
+                <th>Short Description</th>
+                <th>Long Description</th>
+                <th>Institution</th>
+                <th>Configuration</th>
+              </tr>
+            </thead>
+            <tbody id="vehicle-table-body">
+              <tr style="grid-template-columns: none">
+                <td><i class="add-button material-icons">add_circle</i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

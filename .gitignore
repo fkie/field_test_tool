@@ -1,0 +1,3 @@
+ftt_report_generator/build
+ftt_web_interface/node_modules
+ftt_web_interface/assets/scripts/*.html

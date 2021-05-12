@@ -1,0 +1,113 @@
+{#	Varibale which are Cointained in this Template
+	--	latexTestCampaignName
+	--	version
+  --  recipientName
+  --  recipientAddress1
+  --  recipientAddress2
+  --  creatorName
+  --  creatorAddress1
+  --  creatorAddress2
+  --  topLogoPath
+  --  bottomLogoPath
+#}
+\documentclass[10pt]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{wasysym}
+\usepackage{tikz}
+\usepackage{epstopdf}
+\usetikzlibrary{snakes}
+\usepackage{lipsum}
+\usepackage{colortbl} % Farben in Tabellen
+\usepackage{microtype}
+\usepackage{graphicx}
+
+% Remove the boxes around the hyperlinks
+\hypersetup{
+    colorlinks=false,
+    pdfborder={0 0 0},
+}
+
+% Function to downscale images larger than a max width parameter
+\makeatletter
+\def\maxwidth#1{\ifdim\Gin@nat@width>#1 #1\else\Gin@nat@width\fi}
+\makeatother
+
+% \listfiles 
+\setcounter{tocdepth}{2}
+
+\vbadness=15000 % 1200
+
+\begin{document}
+
+\begin{center}
+\large
+\includegraphics[width=\maxwidth{6cm},height=4cm,keepaspectratio]{\VAR{ topLogoPath }} \\
+\vspace{1cm}
+
+\textsc{\Large{Automated Performance Analysis Report}} \\
+\vspace{0.5cm}
+\textsc{\Large{-- \VAR{ latexTestCampaignName } --}}\\
+\vspace{0.5cm}
+(Version \VAR{ version }) \\
+
+\vspace{2cm}
+
+Prepared for: \\
+  \vspace{0.3cm}
+  \VAR{ recipientName }\\
+  \VAR{ recipientAddress1 }\\
+  \VAR{ recipientAddress2 }\\
+
+\vspace{1cm}
+Prepared by: \\
+  \vspace{0.3cm}
+  \VAR{ creatorName }\\
+  \VAR{ creatorAddress1 }\\
+  \VAR{ creatorAddress2 }\\
+\vspace{1cm}
+\today \\
+\vspace{1cm}
+\includegraphics[width=\maxwidth{6cm},height=4cm,keepaspectratio]{\VAR{ bottomLogoPath }}
+\end{center}
+\thispagestyle{empty}
+
+\newpage
+
+\quad
+
+\vfill
+
+\section*{Acknowledgements}
+
+\noindent Icons 
+\includegraphics[height=0.4cm]{../src/logos/sun79}\texttt{(sun79)},
+\includegraphics[height=0.4cm]{../src/logos/fog8}\texttt{(fog8)},
+\includegraphics[height=0.4cm]{../src/logos/cloudy19}\texttt{(cloudy19)} and 
+\includegraphics[height=0.4cm]{../src/logos/rain27}\texttt{(rain27)} and 
+made by Rami McMin \\
+from \url{http://www.flaticon.com} \\
+
+\noindent Icons 
+\includegraphics[height=0.4cm]{../src/logos/snowing}\texttt{(snowing)} and 
+\includegraphics[height=0.4cm]{../src/logos/two183}\texttt{(two183)}
+made by \url{http://www.freepik.com} \\
+from \url{www.flaticon.com}  \\
+
+\noindent \textcopyright OpenStreetMap contributors. \url{https://www.openstreetmap.org/copyright}. \\
+Base map and data from OpenStreetMap and OpenStreetMap Foundation.  \\
+
+\newpage
+
+% \maketitle
+\tableofcontents
+
+\newpage

@@ -1,0 +1,119 @@
+header {
+  min-width: 34rem;
+  justify-content: center;
+}
+
+header h1 {
+  font-size: 2rem;
+  color: white;
+  margin: 0;
+}
+
+.config-content > section {
+  margin: 1rem;
+  display: table;
+  float: left;
+}
+
+.section__title {
+  margin: 0;
+  padding: 0.5rem;
+  border-bottom: 1px solid #009879;
+  background: #008b70;
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  min-width: 30rem;
+  cursor: pointer;
+}
+
+.section__title h2 {
+  font-size: 1.5rem;
+  margin: 0;
+  text-align: center;
+}
+
+.section__title i {
+  float: right;
+}
+
+section > div:last-child {
+  display: none;
+}
+
+#performer-table tr {
+  grid-template-columns: 10rem 15rem 5rem;
+}
+
+#personnel-table tr {
+  grid-template-columns: 5rem 10rem 10rem 5rem;
+}
+
+#pose-source-table tr {
+  grid-template-columns: 3rem 3rem 9.5rem 9.5rem 5rem;
+}
+
+#vehicle-table {
+  width: 46rem;
+}
+
+#vehicle-table tr {
+  grid-template-columns: 3rem 3rem 10rem 10rem 7rem 8rem 5rem;
+}
+
+.styled-table {
+  margin: 0.3rem 0 0 0;
+}
+
+.styled-table tbody tr:last-of-type td {
+  padding: 6px;
+}
+
+.styled-table tbody tr i{
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.styled-table tbody tr i:hover{
+  color: none;
+  opacity: 1;
+}
+
+.add-button {
+  color: #107964;
+  font-size: 1.2rem;
+  border-radius: 0.5rem;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.styled-table tbody tr:last-of-type td:hover .add-button {
+  opacity: 1;
+}
+
+.new-entry-input {
+  text-align: center;
+  border: none;
+  background: none;
+}
+
+.new-entry-input:focus {
+  outline: none;
+  background: #00987a33;
+}
+
+.icon-container {
+  display : flex;
+  border: none;
+  background: none;
+  justify-content : space-evenly;
+}
+
+.icon-container:focus {
+  outline: 1px dashed green;
+}
+
+.icon-container:focus i{
+  opacity: 1;
+}

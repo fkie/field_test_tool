@@ -1,0 +1,18 @@
+<launch>
+  <arg name="GPS_POSITION_TOPIC"      default="/robot_position"/>
+  <arg name="ROBOT_MODE_TOPIC"        default="/robot_mode"/>
+  <arg name="IMAGE_RAW_TOPIC"         default="/image_raw"/>
+  <arg name="IMAGE_COMPRESSED_TOPIC"  default="/image_compressed"/>
+  <arg name="SEND_POSE_TIMEOUT"       default="5.0"/>
+  <arg name="SERVER_ADDRESS"          default="localhost:5000"/>
+
+  <node pkg="ros2db" type="ros2api.py" name="ros2api" output="screen">
+    <remap from="robot_position"   to="$(arg GPS_POSITION_TOPIC)"/>
+    <remap from="robot_mode"       to="$(arg ROBOT_MODE_TOPIC)"/>
+    <remap from="image_raw"        to="$(arg IMAGE_RAW_TOPIC)"/>
+    <remap from="image_compressed" to="$(arg IMAGE_COMPRESSED_TOPIC)"/>
+
+    <param name="send_pose_timeout" type="double" value="$(arg SEND_POSE_TIMEOUT)"/>
+    <param name="server_address" type="string" value="$(arg SERVER_ADDRESS)"/>
+  </node>
+</launch>

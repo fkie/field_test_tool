@@ -1,0 +1,23 @@
+{
+  "name": "ftt_webapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "build:dev": "webpack-dev-server",
+    "build:prod": "webpack --config webpack.config.prod.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^7.17.0",
+    "html-webpack-plugin": "^4.5.1",
+    "leaflet": "^1.7.1",
+    "material-design-icons": "^3.0.1",
+    "webpack": "4.46.0",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.11.2"
+  }
+}

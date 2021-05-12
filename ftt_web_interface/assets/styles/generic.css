@@ -1,0 +1,97 @@
+@import '../../node_modules/material-design-icons/iconfont/material-icons.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: "Times New Roman", Times, serif;
+}
+
+body > header {
+  background: #009879;
+  width: 100%;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.26);
+}
+
+section {
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  background: white;
+}
+
+.styled-table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9em;
+  font-family: sans-serif;
+  width: 30rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+.styled-table thead tr {
+  background-color: #009879;
+  color: #ffffff;
+}
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+}
+.styled-table tbody tr {
+  border-bottom: thin solid #dddddd;
+}
+.styled-table tbody {
+  display: block;
+  max-height: 20rem;
+  overflow: auto;
+}
+.styled-table tr {
+  display: grid;
+  grid-template-columns: 4rem 5rem 10rem 10rem;
+}
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:last-of-type {
+  border-bottom: 2px solid #009879;
+}
+
+.bottom-button-stripe {
+  display: flex;
+  justify-content: space-between;
+}
+
+.styled-button {
+  color: white;
+  background: #009879;
+  border: 1px #016652 solid;
+  padding: 5px 10px;
+  border-radius: 2px;
+  font-weight: bold;
+  font-size: 9pt;
+  outline: none;
+  box-shadow: inset 0 1px 0 #49c5ac;
+}
+
+.styled-button:hover {
+  border: 1px #0d5f4f solid;
+  box-shadow: 0 1px 1px #eaeaea, inset 0 1px 0 #279680;
+  background: #107964;
+}
+
+.styled-button:active {
+  box-shadow: inset 0 2px 5px #086452;
+}
+
+.styled-button:disabled,
+.styled-button[disabled] {
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #666666;
+  box-shadow: none;
+}
