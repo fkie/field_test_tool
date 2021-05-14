@@ -10,6 +10,7 @@ project(ftt_ros_interface)
 find_package(catkin REQUIRED COMPONENTS
   industrial_msgs
   message_generation
+  nav_msgs
   rospy
   sensor_msgs
   std_msgs
@@ -107,7 +108,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ftt_ros_interface
-  CATKIN_DEPENDS industrial_msgs rospy sensor_msgs std_msgs
+  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 

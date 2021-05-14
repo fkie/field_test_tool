@@ -43,14 +43,7 @@ export class VehicleInterface {
     const data = await this.serverInterface.sendGetRequest("vehicle");
     return data.map(
       (entry) =>
-        new Vehicle(
-          entry[0],
-          entry[1] && entry[1].trim(),
-          entry[2] && entry[2].trim(),
-          entry[3],
-          entry[4] && entry[4].trim(),
-          entry[5]
-        )
+        new Vehicle(entry[0], entry[1], entry[2], entry[3], entry[4], entry[5])
     );
   }
 

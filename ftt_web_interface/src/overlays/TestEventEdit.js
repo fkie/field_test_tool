@@ -90,7 +90,14 @@ export class TestEventEdit {
     const note = document.getElementById("test-event-note").value;
     //Send put request.
     try {
-      await this.testEventInterface.put(this.testEvent.id, "edit", location, version, timeZone, note);
+      await this.testEventInterface.put(
+        this.testEvent.id,
+        "edit",
+        location,
+        version,
+        timeZone,
+        note
+      );
       this.element.querySelector("form button").disabled = true;
     } catch (error) {
       alert(error.message);

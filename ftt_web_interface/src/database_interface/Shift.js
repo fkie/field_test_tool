@@ -80,8 +80,8 @@ export class ShiftInterface {
           entry[6],
           entry[7],
           entry[8],
-          entry[9] && entry[9].trim(),
-          entry[10] && entry[10].trim(),
+          entry[9],
+          entry[10],
           entry[11],
           entry[12],
           entry[13]

@@ -22,6 +22,7 @@
       src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
       integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
       crossorigin=""
+      defer
     ></script>
     <script>
       window.L ||
@@ -29,6 +30,15 @@
           '<script src="node_modules/leaflet/dist/leaflet.js" defer>\x3C/script>'
         );
     </script>
+    <script src="https://code.createjs.com/1.0.0/easeljs.min.js" defer></script>
+    <script>
+      window.createjs ||
+        document.write(
+          '<script src="node_modules/easeljs/lib/easeljs.min.js" defer>\x3C/script>'
+        );
+    </script>
+    <script src="src/lib/RoslibVector3.js" defer></script>
+    <script src="src/lib/Ros2DVisualization.js" defer></script>
     <script src="assets/scripts/index.js" defer type="module"></script>
   </head>
   <body>
@@ -139,7 +149,7 @@
           </thead>
           <tbody id="segment-table-body"></tbody>
         </table>
-        <div class="bottom-button-stripe">
+        <div class="space-between-stripe">
           <div>
             <button type="button" id="new-segment-btn" class="styled-button">
               New
@@ -157,7 +167,51 @@
         </div>
       </section>
     </div>
-    <div id="mapid" class="map"></div>
+    <section id="map-viewer">
+      <div class="space-evenly-stripe">
+        <div>
+          <label class="switch">
+            <input type="checkbox" id="gps-map-box" />
+            <span class="slider round"></span>
+          </label>
+          <label>GPS Map</label>
+        </div>
+        <div>
+          <label class="switch">
+            <input type="checkbox" id="local-map-box" />
+            <span class="slider round"></span>
+          </label>
+          <label>Local Map</label>
+        </div>
+      </div>
+      <div id="gps-map" class="map"></div>
+      <div id="local-map" class="map leaflet-touch" tabindex="0">
+        <!-- HTML code borrowed from leaflet zoom controls -->
+        <div class="leaflet-control-container">
+          <div class="leaflet-top leaflet-left">
+            <div class="leaflet-control-zoom leaflet-bar leaflet-control">
+              <a
+                id="local-map-zoom-in-btn"
+                class="leaflet-control-zoom-in"
+                href="#"
+                title="Zoom in"
+                role="button"
+                aria-label="Zoom in"
+                >+</a
+              ><a
+                id="local-map-zoom-out-btn"
+                class="leaflet-control-zoom-out"
+                href="#"
+                title="Zoom out"
+                role="button"
+                aria-label="Zoom out"
+                >−</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <template id="modal-template">
       <div class="backdrop"></div>

@@ -41,7 +41,7 @@ You can find the corresponding endpoints at the bottom of the code.
 def print_and_return(print_string):
     # Global function. 
     # Prints the time and string argument then returns the argument.
-    print "["+datetime.now().strftime("%H:%M:%S")+"]",print_string
+    print("["+datetime.now().strftime("%H:%M:%S")+"]",print_string)
     return print_string
 
 def info_msg(msg):
@@ -125,7 +125,7 @@ class ApiCommon:
             for param_name in param_names:
                 data[param_name] = json_data[param_name]
             return data
-        except KeyError, e:
+        except KeyError as e:
             msg = "[ERROR]: (KeyError). Missing Key: '"+e[0]+"' In JSON data. DB query aborted."
             raise ApiError(msg, status_code=400)
         pass
@@ -215,7 +215,7 @@ class ApiCommon:
     @staticmethod
     def check_id(entry_id):
         # Method to check if the argument is a number.
-        if not (isinstance(entry_id, (int, long)) or entry_id.isnumeric()):
+        if not (isinstance(entry_id, int) or entry_id.isnumeric()):
             msg = "[ERROR]: (KeyValueError). Provided id is not a valid number. DB query aborted."
             raise ApiError(msg, status_code=400)
         pass
@@ -246,6 +246,7 @@ class ApiCommon:
             """
             INSERT INTO {} ({})
             VALUES ({})
+            RETURNING id
             """
             ).format(
                 sql.Identifier(table_name),
@@ -253,24 +254,31 @@ class ApiCommon:
                 sql.SQL(', ').join(sql.Placeholder() * len(names))
             )
         DBInterface.execute(sql_stmt, values)
-        return info_msg("Created %s entry." % table_name)
+        entry_id = DBInterface.fetchone()[0]
+        return info_msg("Created %s %s entry." % (table_name, entry_id))
 
     @staticmethod
-    def insert_table_data_with_position(table_name, param_dict, position_param_name, lat, lng):
+    def insert_table_data_with_position(table_name, param_dict, position_param_dict):
         # Extension of the insert_table_data method to insert postgis specific position data.
         names = param_dict.keys()
-        values = param_dict.values() + [lng, lat]
+        position_names = position_param_dict.keys()
+        values = param_dict.values()
+        position_values = []
+        for value in position_param_dict.values():
+            position_values.append(value["pos_x"])
+            position_values.append(value["pos_y"])
+            position_values.append(value["srid"])
         sql_stmt = sql.SQL(
             """
             INSERT INTO {} ({})
-            VALUES ({}, ST_GeomFromText('POINT(%s %s)', 4326))
-            """
+            VALUES ({}, %s)
+            """ % ", ".join(["ST_GeomFromText('POINT(%s %s)', %s)"] * len(position_names))
             ).format(
                 sql.Identifier(table_name),
-                sql.SQL(', ').join(map(sql.Identifier, names + [position_param_name])),
+                sql.SQL(', ').join(map(sql.Identifier, names + position_names)),
                 sql.SQL(', ').join(sql.Placeholder() * len(names))
             )
-        DBInterface.execute(sql_stmt, values)
+        DBInterface.execute(sql_stmt, values + position_values)
         return info_msg("Created %s entry." % table_name)
 
     @staticmethod
@@ -291,6 +299,30 @@ class ApiCommon:
             )
         # Combine values from table columns and query conditions.
         sql_values = param_dict.values() + conditions.values()
+        # Execute query.
+        DBInterface.execute(sql_stmt, sql_values)
+        return info_msg("Updated %s table." % table_name)
+
+    @staticmethod
+    def update_table_data_with_position(table_name, param_dict, conditions, position_param_name, pos_x, pos_y, srid = 0):
+        # Extension of the update_table_data method to update postgis specific position data.
+        names = param_dict.keys()
+        values = param_dict.values() + [pos_x, pos_y, srid]
+        # Form query.
+        sql_stmt = sql.SQL(
+            """
+            UPDATE {}
+            SET {}, {} = ST_GeomFromText('POINT(%s %s)', %s)
+            WHERE {}
+            """
+            ).format(
+                sql.Identifier(table_name),
+                sql.SQL(', ').join((sql.SQL(' = ').join([s, sql.Placeholder()]) for s in map(sql.Identifier, names))),
+                sql.Identifier(position_param_name),
+                sql.SQL(' AND ').join(ApiCommon.get_sql_conditions(conditions))
+            )
+        # Combine values from table columns and query conditions.
+        sql_values = values + conditions.values()
         # Execute query.
         DBInterface.execute(sql_stmt, sql_values)
         return info_msg("Updated %s table." % table_name)
@@ -682,7 +714,7 @@ class Segment(Resource):
         # Return the list of segment data for the specified leg.
         # This SQL query is very specific and thus not derived from a generalization.
         sql_stmt = """
-            SELECT segment.id, leg_id, parent_id, starttime_secs, endtime_secs, ito_reason_id, ito_reason.short_description, segment_type_id, segment_type.short_description, obstacle, lighting, slope, ST_Y(start_position), ST_X(start_position)
+            SELECT segment.id, leg_id, parent_id, starttime_secs, endtime_secs, ito_reason_id, ito_reason.short_description, segment_type_id, segment_type.short_description, obstacle, lighting, slope, ST_X(start_position), ST_Y(start_position), ST_X(local_start_position), ST_Y(local_start_position), orig_starttime_secs
             FROM segment
             FULL JOIN segment_type ON segment.segment_type_id = segment_type.id
             FULL JOIN ito_reason ON segment.ito_reason_id = ito_reason.id
@@ -693,17 +725,22 @@ class Segment(Resource):
         return DBInterface.fetchall()
     
     @staticmethod
-    def store_segment(leg_id, parent_id, ito_reason_id, segment_type_id, starttime_secs, start_lat = None, start_lng = None):
+    def store_segment(leg_id, parent_id, ito_reason_id, segment_type_id, starttime_secs, orig_starttime_secs, start_lng = None, start_lat = None, local_x = None, local_y = None):
         # Method to create a segment table data entry either with or without position data.
         param_dict = {
             "leg_id": leg_id, 
             "parent_id": parent_id, 
             "ito_reason_id": ito_reason_id, 
             "segment_type_id": segment_type_id, 
-            "starttime_secs": starttime_secs
+            "starttime_secs": starttime_secs,
+            "orig_starttime_secs": orig_starttime_secs
             }
-        if start_lat is not None and start_lng is not None:
-            ApiCommon.insert_table_data_with_position("segment", param_dict, "start_position", start_lat, start_lng)
+        if start_lat and start_lng and local_x and local_y:
+            ApiCommon.insert_table_data_with_position("segment", param_dict, {"start_position": {"pos_x": start_lng, "pos_y": start_lat, "srid": 4326}, "local_start_position": {"pos_x": local_x, "pos_y": local_y, "srid": 0}})
+        elif start_lat and start_lng:
+            ApiCommon.insert_table_data_with_position("segment", param_dict, {"start_position": {"pos_x": start_lng, "pos_y": start_lat, "srid": 4326}})
+        elif local_x and local_y:
+            ApiCommon.insert_table_data_with_position("segment", param_dict, {"local_start_position": {"pos_x": local_x, "pos_y": local_y, "srid": 0}})
         else:
             ApiCommon.insert_table_data("segment", param_dict)
         msg = info_msg("Created %s %s segment entry." % ("ITO" if segment_type_id == SEGMENT_TYPE_ITO else "AUTO", "child" if parent_id else "parent"))
@@ -722,13 +759,16 @@ class Segment(Resource):
     def post(self):
         # This method creates new entries in the segment table.
         # Get parameter values.
-        param_names = ["leg_id","segment_type_id", "ito_reason_id", "lat", "lng"]
+        param_names = ["leg_id","segment_type_id", "ito_reason_id", "lng", "lat", "local_x", "local_y", "orig_starttime_secs"]
         data = ApiCommon.get_all_params_from_json(param_names)
         leg_id = data[param_names[0]]
         segment_type_id = data[param_names[1]]
         ito_reason_id = data[param_names[2]]
-        start_lat = data[param_names[3]]
-        start_lng = data[param_names[4]]
+        start_lng = data[param_names[3]]
+        start_lat = data[param_names[4]]
+        local_x = data[param_names[5]]
+        local_y = data[param_names[6]]
+        orig_starttime_secs = data[param_names[7]]
         starttime_secs = int(time.time())
         # Allow selection of leg_id by string.
         if leg_id == "Current Leg":
@@ -747,20 +787,20 @@ class Segment(Resource):
             # Close open segments.
             Segment.close()
             # Create a new master segment.
-            msg = Segment.store_segment(leg_id, None, None, segment_type_id, starttime_secs, start_lat, start_lng)
+            msg = Segment.store_segment(leg_id, None, None, segment_type_id, starttime_secs, orig_starttime_secs, start_lng, start_lat, local_x, local_y)
             # Get the new master segment id.
             new_master_segment_id = Segment.get_current_master_segment(leg_id)[0]
             if (segment_type_id == SEGMENT_TYPE_ITO):
                 # Immediately create a child segment for any ITO master segment.
-                Segment.store_segment(leg_id, new_master_segment_id, ito_reason_id, segment_type_id, starttime_secs, start_lat, start_lng)
+                Segment.store_segment(leg_id, new_master_segment_id, ito_reason_id, segment_type_id, starttime_secs, orig_starttime_secs, start_lng, start_lat, local_x, local_y)
             return msg
         # Trying to create an ITO segment with another ITO open will result in the creation of a new child.
         elif master_segment_type_id == SEGMENT_TYPE_ITO:
-            return Segment.store_segment(leg_id, master_segment_id, ito_reason_id, segment_type_id, starttime_secs, start_lat, start_lng)
+            return Segment.store_segment(leg_id, master_segment_id, ito_reason_id, segment_type_id, starttime_secs, orig_starttime_secs, start_lng, start_lat, local_x, local_y)
         # Trying to create an AUTO segment with another AUTO open will produce an error.
         else:
             msg = error_msg("UnsupportedError","Unable to create an AUTO segment with another already open. DB query aborted.")
-            raise ApiError(print_string, status_code=400)
+            raise ApiError(msg, status_code=400)
         pass
 
     def put(self):
@@ -828,7 +868,7 @@ class Pose(Resource):
     def post(self):
         # This method creates a new entry in the pose table.
         # Get parameter values.
-        param_names = ["segment_id", "lat", "lng", "pose_source_id"]
+        param_names = ["segment_id", "lat", "lng", "pose_source_id", "orig_secs"]
         data = ApiCommon.get_all_params_from_json(param_names)
         data["secs"] = int(time.time())
         # Allow selection of segment_id by string.
@@ -839,7 +879,7 @@ class Pose(Resource):
         lat = data.pop("lat")
         lng = data.pop("lng")
         # Create table entry.
-        return print_and_return(ApiCommon.insert_table_data_with_position("pose", data, "position", lat, lng))
+        return print_and_return(ApiCommon.insert_table_data_with_position("pose", data, {"position": {"pos_x": lng, "pos_y": lat, "srid": 4326}}))
 
 
 class Image(Resource):
@@ -849,7 +889,7 @@ class Image(Resource):
         # Return the list of image data for the specified segment.
         # This SQL query is very specific and thus not derived from a generalization.
         sql_stmt = """
-            SELECT id, segment_id, secs, image_filename, encode(image_data,'base64')
+            SELECT id, segment_id, secs, image_filename, encode(image_data,'base64'), description, orig_secs
             FROM image
             WHERE segment_id = %s
             ORDER BY id
@@ -872,7 +912,7 @@ class Image(Resource):
     def post(self):
         # This method creates a new entry in the image table.
         # Get parameter values.
-        param_names = ["segment_id", "image_filename", "image_data", "description"]
+        param_names = ["segment_id", "image_filename", "image_data", "description", "orig_secs"]
         data = ApiCommon.get_all_params_from_json(param_names)
         data["secs"] = int(time.time())
         # Allow selection of segment_id by string.
@@ -1092,6 +1132,129 @@ class SegmentType(Resource):
         # This method gets the relevant data from the segment_type table.
         return ApiCommon.get_table_data("segment_type", ["id", "short_description"], None, True)
 
+class MapImage(Resource):
+
+    @staticmethod
+    def get_map_image(shift_id):
+        # Return the map image data for the specified shift.
+        # This SQL query is very specific and thus not derived from a generalization.
+        sql_stmt = """
+            SELECT id, shift_id, secs, frame_id, width, height, resolution, ST_X(origin), ST_Y(origin), encode(image_data,'base64'), orig_secs
+            FROM map_image
+            WHERE shift_id = %s
+            """
+        DBInterface.execute(sql_stmt,(shift_id,))
+        return DBInterface.fetchone()
+
+    def get(self):
+        # This method gets the map image of a specified shift.
+        # Find shift_id in url or json data.
+        param_name = "shift_id"
+        shift_id = ApiCommon.get_all_params_from_url_or_json([param_name])[param_name]
+        # Check that the id is a number.
+        ApiCommon.check_id(shift_id)
+        # Return the map image of the specified shift.
+        return MapImage.get_map_image(shift_id)
+
+    def post(self):
+        # This method creates a new entry in the map table.
+        # Get parameter values.
+        param_names = ["shift_id", "frame_id", "width", "height", "resolution", "origin_x", "origin_y", "image_data", "orig_secs"]
+        data = ApiCommon.get_all_params_from_json(param_names)
+        data["secs"] = int(time.time())
+        # Allow selection of shift_id by string.
+        if data[param_names[0]] == "Current Shift":
+                data[param_names[0]] = ApiCommon.get_open_log_ids("shift", 1)
+        # Check that the id is a number.
+        ApiCommon.check_id(data[param_names[0]])
+        # Get position data.
+        origin_x = data.pop("origin_x")
+        origin_y = data.pop("origin_y")
+        # Create table entry.
+        return print_and_return(ApiCommon.insert_table_data_with_position("map_image", data, {"origin": {"pos_x": origin_x, "pos_y": origin_y, "srid": 0}}))
+
+    def put(self):
+        # This method updates an entry in the map table.
+        # Get shift_id from JSON data.
+        param_names = ["shift_id", "orig_secs"]
+        data = ApiCommon.get_all_params_from_json(param_names)
+        shift_id = data[param_names[0]]
+        orig_secs = data[param_names[1]]
+        # Allow selection of shift_id by string.
+        if shift_id == "Current Shift":
+            shift_id = ApiCommon.get_open_log_ids("shift", 1)
+        # Check that the id is a number.
+        ApiCommon.check_id(shift_id)
+        # Check for update of origin position data.
+        origin_x = None
+        origin_y = None
+        try:
+            param_names = ["origin_x", "origin_y"]
+            data = ApiCommon.get_all_params_from_json(param_names)
+            # Get position data.
+            origin_x = data.pop("origin_x")
+            origin_y = data.pop("origin_y")
+        except ApiError:
+            pass
+        # Check for any properties to edit.
+        param_names = ["frame_id", "width", "height", "resolution", "image_data"]
+        data = ApiCommon.get_any_params_from_json(param_names)
+        # Add time data.
+        data["secs"] = int(time.time())
+        data["orig_secs"] = orig_secs
+        # Update table entry with or without origin position.
+        if origin_x and origin_y:
+            return print_and_return(ApiCommon.update_table_data_with_position("map_image", data, {"shift_id": shift_id}, "origin", origin_x, origin_y))
+        else:
+            return print_and_return(ApiCommon.update_table_data("map_image", data, {"shift_id": shift_id}))
+        pass
+
+class LocalPose(Resource):
+
+    @staticmethod
+    def get_segment_poses(segment_id):
+        # Return the local pose data for a specified segment.
+        # This SQL query is very specific and thus not derived from a generalization.
+        sql_stmt = """
+            SELECT local_pose.id, segment_id, secs, frame_id, ST_X(position), ST_Y(position), segment_type.short_description, orig_secs
+            FROM local_pose
+            FULL JOIN segment ON local_pose.segment_id = segment.id
+            FULL JOIN segment_type ON segment.segment_type_id = segment_type.id
+            WHERE segment_id = %s
+            ORDER BY id
+            """
+        DBInterface.execute(sql_stmt,(segment_id,))
+        return DBInterface.fetchall()
+
+    def get(self):
+        # This method gets all the local position data of a specified segment.
+        # Find segment_id in url or json data.
+        param_name = "segment_id"
+        segment_id = ApiCommon.get_all_params_from_url_or_json([param_name])[param_name]
+        # Check that the id is a number.
+        ApiCommon.check_id(segment_id)
+        # Check that the segment_id refers to a master segment.
+        Segment.check_master_segment(segment_id)
+        # Return the local position data for the specified segment.
+        return LocalPose.get_segment_poses(segment_id)
+
+    def post(self):
+        # This method creates a new entry in the local pose table.
+        # Get parameter values.
+        param_names = ["segment_id", "frame_id", "x", "y", "orig_secs"]
+        data = ApiCommon.get_all_params_from_json(param_names)
+        data["secs"] = int(time.time())
+        # Allow selection of segment_id by string.
+        if data[param_names[0]] == "Current Segment":
+                data[param_names[0]] = Segment.get_current_master_segment()[0]
+        # Check that the id is a number.
+        ApiCommon.check_id(data[param_names[0]])
+        # Get position data.
+        pos_x = data.pop("x")
+        pos_y = data.pop("y")
+        # Create table entry.
+        return print_and_return(ApiCommon.insert_table_data_with_position("local_pose", data, {"position": {"pos_x": pos_x, "pos_y": pos_y, "srid": 0}}))
+
 
 api.add_resource(ItoReason, '/ito_reason', endpoint='ito_reason')
 
@@ -1123,6 +1286,10 @@ api.add_resource(SegmentType, '/segment_type', endpoint='segment_type')
 
 api.add_resource(Pose, '/pose', endpoint='pose')
 
+api.add_resource(MapImage, '/map_image', endpoint='map_image')
+
+api.add_resource(LocalPose, '/local_pose', endpoint='local_pose')
+
 @app.errorhandler(ApiError)
 def handle_api_error(error):
     response = jsonify(error.to_dict())
@@ -1139,6 +1306,6 @@ def config():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-    print "Closing database connection."
+    print("Closing database connection.")
     DBInterface.close()
     pass

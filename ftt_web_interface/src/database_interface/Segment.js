@@ -19,8 +19,11 @@ export class Segment {
     obstacle,
     lighting,
     slope,
+    lng,
     lat,
-    lng
+    local_x,
+    local_y,
+    origStartTime
   ) {
     this.id = id;
     this.legId = legId;
@@ -34,8 +37,11 @@ export class Segment {
     this.obstacle = obstacle;
     this.lighting = lighting;
     this.slope = slope;
-    this.lat = lat;
     this.lng = lng;
+    this.lat = lat;
+    this.local_x = local_x;
+    this.local_y = local_y;
+    this.origStartTime = origStartTime;
   }
 }
 
@@ -57,8 +63,11 @@ export class SegmentInterface {
       "obstacle",
       "lighting",
       "slope",
-      "lat",
       "lng",
+      "lat",
+      "local_x",
+      "local_y",
+      "orig_starttime_secs",
     ];
   }
 
@@ -80,23 +89,29 @@ export class SegmentInterface {
           entry[6],
           entry[7],
           entry[8],
-          entry[9] && entry[9].trim(),
-          entry[10] && entry[10].trim(),
-          entry[11] && entry[11].trim(),
+          entry[9],
+          entry[10],
+          entry[11],
           entry[12],
-          entry[13]
+          entry[13],
+          entry[14],
+          entry[15],
+          entry[16]
         )
     );
   }
 
-  async post(legId, itoReasonId, segmentTypeId, lat, lng) {
+  async post(legId, itoReasonId, segmentTypeId, lng, lat, local_x, local_y) {
     //Create entry in server table.
     const data = {
       [this.paramNames[1]]: legId,
       [this.paramNames[5]]: itoReasonId,
       [this.paramNames[7]]: segmentTypeId,
-      [this.paramNames[12]]: lat,
-      [this.paramNames[13]]: lng,
+      [this.paramNames[12]]: lng,
+      [this.paramNames[13]]: lat,
+      [this.paramNames[14]]: local_x,
+      [this.paramNames[15]]: local_y,
+      [this.paramNames[16]]: new Date().getTime() / 1000,
     };
     await this.serverInterface.sendPostRequest("segment", data);
   }

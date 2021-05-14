@@ -42,13 +42,6 @@
   margin: 1rem;
 }
 
-.map {
-  display: none;
-  max-width: 50rem;
-  height: 40rem;
-  margin: 1rem;
-}
-
 #trail-selection {
   display: flex;
   width: 32rem;
@@ -124,9 +117,31 @@
   box-shadow: inset 2px 2px 10px #86acff;
 }
 
+#map-viewer {
+  display: none;
+  overflow: hidden;
+  max-width: 50rem;
+  margin: 1rem;
+}
+
+.map {
+  display: none;
+  position: relative;
+  height: 35rem;
+  margin: 1rem;
+  /* overflow: hidden; */
+}
+
+.local-map-control {
+  position: relative;
+  z-index: 800;
+}
+
 @media screen and (max-width: 70rem) {
-  .map {
+  #map-viewer {
     width: 32rem;
-    height: 25rem;
+  }
+  .map {
+    height: 20rem;
   }
 }

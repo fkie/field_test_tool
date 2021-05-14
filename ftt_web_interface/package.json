@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "easeljs": "^1.0.2",
     "eslint": "^7.17.0",
     "html-webpack-plugin": "^4.5.1",
     "leaflet": "^1.7.1",

@@ -5,6 +5,7 @@
  */
 
 import { LeafletMap } from "../utility/LeafletMap.js";
+import { LocalMap } from "../utility/LocalMap.js";
 import { DOMGeneric } from "../utility/DOMGeneric.js";
 import { Modal } from "../utility/Modal.js";
 import { SegmentInterface } from "../database_interface/Segment.js";
@@ -40,8 +41,11 @@ export class SegmentDetail {
     this.segmentEndBtn = document.getElementById("end-segment-btn");
     this.segmentEditBtn = document.getElementById("edit-segment-btn");
     this.refreshBtn = document.getElementById("refresh-btn");
+    this.gpsMapBox = document.getElementById("gps-map-box");
+    this.localMapBox = document.getElementById("local-map-box");
     //Initialize variables.
     this.mapInterface = new LeafletMap(serverInterface);
+    this.localMapInterface = new LocalMap(serverInterface);
     this.segmentInterface = new SegmentInterface(serverInterface);
     this.itoReasonInterface = new ItoReasonInterface(serverInterface);
     this.noteInterface = new NoteInterface(serverInterface);
@@ -53,7 +57,13 @@ export class SegmentDetail {
     this.selectedRowId = null;
     this.selectedRowParentId = null;
     //Add event listeners.
-    this.getSegmentsBtn.addEventListener("click", this.updateSegments.bind(this));
+    this.getSegmentsBtn.addEventListener("click", () => {
+      //Display segment and map sections.
+      document.getElementById("segment-detail").style.display = "block";
+      document.getElementById("map-viewer").style.display = "block";
+      //Update segments table.
+      this.updateSegments();
+    });
     this.segmentTable.addEventListener(
       "click",
       this.segmentTableClickHandler.bind(this)
@@ -91,10 +101,18 @@ export class SegmentDetail {
       "change",
       this.autoRefreshBoxHandler.bind(this)
     );
+    this.gpsMapBox.addEventListener(
+      "click",
+      this.toggleGpsMapHandler.bind(this)
+    );
+    this.localMapBox.addEventListener(
+      "click",
+      this.toggleLocalMapHandler.bind(this)
+    );
   }
 
   async updateSegments() {
-    //Update segment data table.
+    //Update segment data table and map display.
     try {
       //Get segment data from DB.
       this.segmentList = await this.segmentInterface.get(
@@ -114,35 +132,69 @@ export class SegmentDetail {
             this.selectedRowParentId = null;
             this.mapInterface.removeActiveMarker();
             this.mapInterface.removeActivePoses();
+            this.localMapInterface.removeActiveMarker();
+            this.localMapInterface.removeActivePoses();
           }
           //Delete row.
           row.remove();
         }
       }
-      //Remove old data from map.
       const mapLayers = this.mapInterface.mapPointsLayers;
-      for (let idx = mapLayers.length - 1; idx >= 0; idx--) {
-        const match = this.segmentList.find(
-          (entry) => entry.id == mapLayers[idx].segmentId
-        );
-        if (!match) {
-          this.mapInterface.leafletMap.removeLayer(mapLayers[idx].mapPosesPtr);
-          mapLayers.splice(idx, 1);
+      const localMapLayers = this.localMapInterface.mapPointsLayers;
+      //If GPS map is active:
+      if (this.gpsMapBox.checked) {
+        //Remove old data from map.
+        for (let idx = mapLayers.length - 1; idx >= 0; idx--) {
+          const match = this.segmentList.find(
+            (entry) => entry.id == mapLayers[idx].segmentId
+          );
+          if (!match) {
+            this.mapInterface.leafletMap.removeLayer(
+              mapLayers[idx].mapPosesPtr
+            );
+            mapLayers.splice(idx, 1);
+          }
+        }
+        //Reset display if map is empty.
+        if (mapLayers.length == 0) {
+          const firstLocEntry = this.segmentList.find(
+            (entry) => entry.lat && entry.lng
+          );
+          if (firstLocEntry) {
+            console.log(
+              "Setting map display in " +
+                firstLocEntry.lat +
+                ", " +
+                firstLocEntry.lng
+            );
+            this.mapInterface.leafletMap.setView(
+              [firstLocEntry.lat, firstLocEntry.lng],
+              17
+            );
+          }
         }
       }
-      //Reset display if map is empty.
-      if (mapLayers.length == 0) {
-        const firstLocEntry = this.segmentList.find(
-          (entry) => entry.lat && entry.lng
-        );
-        if (firstLocEntry) {
-          console.log(
-            "Setting map display in " +
-              firstLocEntry.lat +
-              ", " +
-              firstLocEntry.lng
+      //If local map is active:
+      if (this.localMapBox.checked) {
+        //Remove old data from map.
+        for (let idx = localMapLayers.length - 1; idx >= 0; idx--) {
+          const match = this.segmentList.find(
+            (entry) => entry.id == localMapLayers[idx].segmentId
           );
-          this.mapInterface.leafletMap.setView([firstLocEntry.lat, firstLocEntry.lng], 17);
+          if (!match) {
+            this.localMapInterface.removePoses(localMapLayers[idx].segmentId);
+          }
+        }
+        //Reset display if map is empty.
+        if (localMapLayers.length == 0) {
+          this.localMapInterface.resetViewer();
+        }
+        // Update local map:
+        const shiftSelectValue = document.getElementById("shift-id").value;
+        if (shiftSelectValue) {
+          await this.localMapInterface.getAndDrawMap(shiftSelectValue);
+        } else {
+          alert("No shift selected!");
         }
       }
       //Add or edit data from table and map:
@@ -174,23 +226,39 @@ export class SegmentDetail {
             ]);
           }
         }
-        //Update map poses:
-        if (!entry.parentId) {
-          const matchedMapLayer = mapLayers.find(
-            (layer) => layer.segmentId == entry.id
-          );
-          if (!matchedMapLayer || entry.endTime == null) {
-            //Create new or update points layer.
-            await this.mapInterface.getAndDrawMapPoses(entry.id);
-            if (entry.id == this.selectedRowParentId) {
-              this.mapInterface.addActivePoses(entry.id);
+        //If GPS map is active:
+        if (this.gpsMapBox.checked) {
+          //Update map poses:
+          if (!entry.parentId) {
+            const matchedMapLayer = mapLayers.find(
+              (layer) => layer.segmentId == entry.id
+            );
+            if (!matchedMapLayer || entry.endTime == null) {
+              //Create new or update points layer.
+              await this.mapInterface.getAndDrawMapPoses(entry.id);
+              if (entry.id == this.selectedRowParentId) {
+                this.mapInterface.addActivePoses(entry.id);
+              }
+            }
+          }
+        }
+        //If local map is active:
+        if (this.localMapBox.checked) {
+          //Update map poses:
+          if (!entry.parentId) {
+            const matchedMapLayer = localMapLayers.find(
+              (layer) => layer.segmentId == entry.id
+            );
+            if (!matchedMapLayer || entry.endTime == null) {
+              //Create new or update points layer.
+              await this.localMapInterface.getAndDrawMapPoses(entry.id);
+              if (entry.id == this.selectedRowParentId) {
+                this.localMapInterface.addActivePoses(entry.id);
+              }
             }
           }
         }
       }
-      //Display segment section and map.
-      document.getElementById("segment-detail").style.display = "block";
-      this.mapInterface.mapElement.style.display = "block";
     } catch (error) {
       alert(error.message);
     }
@@ -221,6 +289,8 @@ export class SegmentDetail {
       this.selectedRow.classList.remove("active-row");
       this.mapInterface.removeActiveMarker();
       this.mapInterface.removeActivePoses();
+      this.localMapInterface.removeActiveMarker();
+      this.localMapInterface.removeActivePoses();
       if (this.selectedRow == closestRow) {
         //Reset selection variables for a selected row being deselected.
         this.selectedRow = null;
@@ -252,8 +322,27 @@ export class SegmentDetail {
         );
       }
     }
+    //Mark local start location of the selected segment/parent segment.
+    if (selectedEntry.local_x && selectedEntry.local_y) {
+      this.localMapInterface.addActiveMarker(
+        selectedEntry.local_x,
+        selectedEntry.local_y
+      );
+    } else {
+      const selectedEntryParent = this.segmentList.find(
+        (entry) => entry.id == selectedEntry.parentId
+      );
+      if (selectedEntryParent.local_x && selectedEntryParent.local_y) {
+        this.localMapInterface.addActiveMarker(
+          selectedEntryParent.local_x,
+          selectedEntryParent.local_y
+        );
+      }
+    }
     //Highlight map poses of the selected parent segment.
     this.mapInterface.addActivePoses(this.selectedRowParentId);
+    //Highlight local map poses of the selected parent segment.
+    this.localMapInterface.addActivePoses(this.selectedRowParentId);
   }
 
   async quickReasonEditBtnHandler(itoReasonId) {
@@ -279,6 +368,8 @@ export class SegmentDetail {
         this.legSelectHook.value,
         ITO_REASON_UNASSIGNED,
         SEGMENT_TYPE_ITO,
+        null,
+        null,
         null,
         null
       );
@@ -338,6 +429,38 @@ export class SegmentDetail {
       segmentModal.show();
     } catch (error) {
       alert(error.messaje);
+    }
+  }
+
+  toggleGpsMapHandler(event) {
+    if (event.target.checked) {
+      this.mapInterface.mapElement.style.display = "block";
+      this.mapInterface.leafletMap.invalidateSize(true);
+      this.updateSegments();
+    } else {
+      //Hide map container.
+      this.mapInterface.mapElement.style.display = "none";
+      //Delete map poses.
+      const mapLayers = this.mapInterface.mapPointsLayers;
+      for (let idx = mapLayers.length - 1; idx >= 0; idx--) {
+        this.mapInterface.leafletMap.removeLayer(mapLayers[idx].mapPosesPtr);
+        mapLayers.splice(idx, 1);
+      }
+    }
+  }
+
+  toggleLocalMapHandler(event) {
+    if (event.target.checked) {
+      this.localMapInterface.mapElement.style.display = "block";
+      this.updateSegments();
+    } else {
+      //Hide local map container.
+      this.localMapInterface.mapElement.style.display = "none";
+      //Delete local map poses.
+      const localMapLayers = this.localMapInterface.mapPointsLayers;
+      for (let idx = localMapLayers.length - 1; idx >= 0; idx--) {
+        this.localMapInterface.removePoses(localMapLayers[idx].segmentId);
+      }
     }
   }
 }

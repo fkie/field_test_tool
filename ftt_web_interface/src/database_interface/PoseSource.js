@@ -26,13 +26,7 @@ export class PoseSourceInterface {
     //Get table data from server.
     const data = await this.serverInterface.sendGetRequest("pose_source");
     return data.map(
-      (entry) =>
-        new PoseSource(
-          entry[0],
-          entry[1] && entry[1].trim(),
-          entry[2] && entry[2].trim(),
-          entry[3]
-        )
+      (entry) => new PoseSource(entry[0], entry[1], entry[2], entry[3])
     );
   }
 

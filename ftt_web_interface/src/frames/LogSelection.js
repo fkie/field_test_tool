@@ -20,13 +20,19 @@ import { LegEdit } from "../overlays/LegEdit.js";
 
 class Log {
   //Helper base class to contain log related data and functions.
-  constructor(name, dataInterface, parentSelect = null, childClass = null, checkSelectionCallback) {
+  constructor(
+    name,
+    dataInterface,
+    parentSelect = null,
+    childClass = null,
+    checkSelectionCallback
+  ) {
     //Set arguments as properties.
     this.name = name;
     this.dataInterface = dataInterface;
     this.parentSelect = parentSelect;
     this.childClass = childClass;
-    this.checkSelectionCallback = checkSelectionCallback
+    this.checkSelectionCallback = checkSelectionCallback;
     //Get DOM element hooks.
     this.select = document.getElementById(`${name}-id`);
     this.newBtn = document.getElementById(`new-${name}-btn`);
@@ -207,7 +213,12 @@ class TestEventLog extends Log {
 
 class ShiftLog extends Log {
   //Specific shift class to deal with log interactions.
-  constructor(serverInterface, childClass, checkSelectionCallback, currentUser) {
+  constructor(
+    serverInterface,
+    childClass,
+    checkSelectionCallback,
+    currentUser
+  ) {
     //Parent constructor.
     super(
       "shift",
@@ -389,8 +400,8 @@ export class LogSelection {
 
   checkSelectedLogs() {
     //Hide the segment details and map
-    document.querySelector("#segment-detail").style.display = "none";
-    document.getElementById("mapid").style.display = "none";
+    document.getElementById("segment-detail").style.display = "none";
+    document.getElementById("map-viewer").style.display = "none";
     //Only enable the get segments button if all log ids have been selected.
     const getSegmentsBtn = document.getElementById("get-segments-btn");
     if (
@@ -406,6 +417,16 @@ export class LogSelection {
     const autoRefreshBox = document.getElementById("auto-refresh");
     if (autoRefreshBox.checked) {
       autoRefreshBox.click();
+    }
+    //Guarantee the gps map disabled.
+    const gpsBox = document.getElementById("gps-map-box");
+    if (gpsBox.checked) {
+      gpsBox.click();
+    }
+    //Guarantee the gps map disabled.
+    const localBox = document.getElementById("local-map-box");
+    if (localBox.checked) {
+      localBox.click();
     }
   }
 }

@@ -23,8 +23,6 @@ export class WeatherInterface {
   async get() {
     //Get table data from server.
     const data = await this.serverInterface.sendGetRequest("weather");
-    return data.map(
-      (entry) => new Weather(entry[0], entry[1] && entry[1].trim())
-    );
+    return data.map((entry) => new Weather(entry[0], entry[1]));
   }
 }

@@ -6,7 +6,6 @@
 
 //DOMGeneric class for wrapping common interactions with the DOM.
 export class DOMGeneric {
-
   static clearChildren(elementRef) {
     //Remove all html content from the referenced element.
     elementRef.innerHTML = "";
@@ -18,7 +17,7 @@ export class DOMGeneric {
     opt.value = value;
     opt.innerText = value;
     if (elementClass) {
-      opt.classList.add(elementClass)
+      opt.classList.add(elementClass);
     }
     selectRef.appendChild(opt);
   }

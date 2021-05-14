@@ -42,9 +42,9 @@ export class TestEventInterface {
           entry[0],
           entry[1],
           entry[2],
-          entry[3] && entry[3].trim(),
-          entry[4] && entry[4].trim(),
-          entry[5] && entry[5].trim(),
+          entry[3],
+          entry[4],
+          entry[5],
           entry[6]
         )
     );

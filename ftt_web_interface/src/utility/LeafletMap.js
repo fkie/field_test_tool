@@ -10,10 +10,10 @@
 // https://github.com/Leaflet/Leaflet/blob/master/LICENSE
 
 // © OpenStreetMap contributors:
-// https://www.openstreetmap.org/copyright. 
-// Base map and data from OpenStreetMap and OpenStreetMap Foundation. 
+// https://www.openstreetmap.org/copyright.
+// Base map and data from OpenStreetMap and OpenStreetMap Foundation.
 
-import { PoseInterface } from "../database_interface/Pose.js"
+import { PoseInterface } from "../database_interface/Pose.js";
 
 //LeafletMap class to wrap map related variables and functions.
 export class LeafletMap {
@@ -24,13 +24,16 @@ export class LeafletMap {
     this.mapPointsLayers = [];
     this.activeMarker = null;
     this.activePoses = null;
-    this.leafletMap = L.map("mapid");
+    this.leafletMap = L.map("gps-map");
     L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      minZoom: 0,
+      maxZoom: 19,
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.leafletMap);
     //Reach to DOM elements.
-    this.mapElement = document.getElementById("mapid");
+    this.mapElementContainer = document.getElementById("map-viewer");
+    this.mapElement = document.getElementById("gps-map");
   }
 
   removePoses(segmentId) {
@@ -40,7 +43,7 @@ export class LeafletMap {
     );
     if (layerIndex > -1) {
       const layerPosesPtr = this.mapPointsLayers[layerIndex].mapPosesPtr;
-      //Remove the held variable if the found poses were active (selected). 
+      //Remove the held variable if the found poses were active (selected).
       if (layerPosesPtr == this.activePoses) {
         this.activePoses = null;
       }
@@ -58,7 +61,7 @@ export class LeafletMap {
       this.removePoses(segmentId);
       if (geoJsonData.features) {
         //Show map and force tile fetch.
-        this.mapElement.style.display = "block";
+        this.mapElementContainer.style.display = "block";
         this.leafletMap.invalidateSize(true);
         //Set poses map display options.
         let markerOptions = {
@@ -79,7 +82,9 @@ export class LeafletMap {
           },
           onEachFeature: function (feature, layer) {
             if (feature.properties && feature.properties.segmentId) {
-              layer.bindPopup("<span>Segment "+feature.properties.segmentId+"</span>");
+              layer.bindPopup(
+                "<span>Segment " + feature.properties.segmentId + "</span>"
+              );
             }
           },
         }).addTo(this.leafletMap);

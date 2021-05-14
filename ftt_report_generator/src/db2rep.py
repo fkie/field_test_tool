@@ -15,6 +15,7 @@ import base64
 import time
 import datetime
 import psycopg2
+import psycopg2.sql
 import psycopg2.extras
 import requests
 import parse
@@ -22,6 +23,7 @@ import pyproj
 import math
 from subprocess import call
 from PIL import Image, ImageDraw
+from StringIO import StringIO
 
 builddir = "../build"
 imagedir = "images"
@@ -51,58 +53,6 @@ class PgAdapter:
         self.conn = psycopg2.connect(conn_string)
         self.cursor = self.conn.cursor()
         self.dictcursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        self.dictcursor1 = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        self.dictcursor2 = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-
-class FttAdapter(PgAdapter):
-    def clean_up_db(self):
-        try:
-            # Find legs without associated position data and delete the corresponding segments.
-            delete_stmt = "DELETE \
-                        FROM segment \
-                        WHERE leg_id NOT IN ( \
-                            SELECT leg.id \
-                            FROM leg \
-                            INNER JOIN segment ON segment.leg_id = leg.id \
-                            INNER JOIN pose ON pose.segment_id = segment.id \
-                        )"
-            self.cursor.execute(delete_stmt)
-            # Find legs without segments and delete them.
-            delete_stmt = "DELETE \
-                        FROM leg \
-                        WHERE id NOT IN ( \
-                            SELECT leg.id \
-                            FROM leg \
-                            INNER JOIN segment ON segment.leg_id = leg.id \
-                        )"
-            self.cursor.execute(delete_stmt)
-            # Find shifts without legs and delete them.
-            delete_stmt = "DELETE \
-                        FROM shift \
-                        WHERE id NOT IN ( \
-                            SELECT shift.id \
-                            FROM shift \
-                            INNER JOIN leg ON leg.shift_id = shift.id \
-                        )"
-            self.cursor.execute(delete_stmt)
-            # Find test events without shifts and delete them.
-            delete_stmt = "DELETE \
-                        FROM test_event \
-                        WHERE id NOT IN ( \
-                            SELECT test_event.id \
-                            FROM test_event \
-                            INNER JOIN shift ON shift.test_event_id = test_event.id \
-                        )"
-            self.cursor.execute(delete_stmt)
-            # Commit results.
-            self.conn.commit()
-        except Exception as err:
-            # Revert changes.
-            self.conn.rollback()
-            print(err.message)
-        return
-
 
 class FttReportGenerator:
     def __init__(self, db_adapter, env):
@@ -311,9 +261,132 @@ class FttReportGenerator:
         f_image.close()
         return
 
-    def get_segment_distance(self, segment_id, leg_id):
+    def draw_segment_local_points(self, seg_id, map_image, origin_x, origin_y, resolution):
+        # Define object for drawing over the map image.
+        draw = ImageDraw.Draw(map_image)
+        # Get this and next segment's local starting point
+        # and this segment type color from database.
+        sel_stmt = "SELECT ST_X(this.local_start_position), \
+                        ST_Y(this.local_start_position), \
+                        ST_X(next.local_start_position), \
+                        ST_Y(next.local_start_position), \
+                        segment_type.color \
+                    FROM segment AS this \
+                    LEFT OUTER JOIN segment AS next ON next.id > this.id AND next.leg_id = this.leg_id AND next.parent_id IS NULL \
+                    LEFT OUTER JOIN segment_type ON this.segment_type_id = segment_type.id \
+                    WHERE this.id = %s \
+                    ORDER BY next.id \
+                    LIMIT 1" % seg_id
+        self.db_adapter.dictcursor.execute(sel_stmt)
+        data = self.db_adapter.dictcursor.fetchone()
+        start_easting = data[0]
+        start_northing = data[1]
+        end_easting = data[2]
+        end_northing = data[3]
+        color = tuple([int(i) for i in data[4].split(',')])
+        # Get segment local points from database.
+        sel_stmt = "SELECT ST_X(local_pose.position), ST_Y(local_pose.position) \
+                    FROM local_pose \
+                    INNER JOIN segment ON local_pose.segment_id = segment.id \
+                    WHERE segment_id = %s \
+                    ORDER BY local_pose.id" % seg_id
+        self.db_adapter.dictcursor.execute(sel_stmt)
+        points = self.db_adapter.dictcursor.fetchall()
+        # Return if the segment has no data points.
+        if not (start_easting and start_northing or points):
+            return
+        # Build tuple array out of position data.
+        seg_xy = []
+        if start_easting and start_northing:
+            seg_xy.append((start_easting, start_northing))
+        for point in points:
+            if point and point[0] and point[1]:
+                seg_xy.append((point[0], point[1]))
+        if end_easting and end_northing:
+            seg_xy.append((end_easting, end_northing))
+        # Transform coordinates to image reference system.
+        seg_xy = [((point[0] - origin_x) / resolution, map_image.height - (point[1] - origin_y) / resolution) for point in seg_xy]
+        # Draw polyline on image.
+        if len(seg_xy) > 1:
+            draw.line(seg_xy, color, 1)
+        # Draw a 3px wide point on each position.
+        for p in seg_xy:
+            draw.ellipse([p[0]-1, p[1]-1, p[0]+1, p[1]+1], color, color)
+
+    def get_local_map(self, shift_id, seg_id, bb):
+        # Get the bounding box coordinates.
+        easting = bb[0::2]
+        northing = bb[1::2]
+        # Expand the bounding box by 10% of the longest dimension (at least 10m)
+        border = max((easting[1] - easting[0]) / 10, (northing[1] - northing[0]) / 10, 10)
+        easting[0] = easting[0] - border
+        easting[1] = easting[1] + border
+        northing[0] = northing[0] - border
+        northing[1] = northing[1] + border
+        # Get the local map image from the database.
+        sel_stmt = "SELECT resolution, ST_X(origin) as origin_x, ST_Y(origin) as origin_y, image_data as image \
+            FROM map_image \
+            WHERE shift_id = %s"
+        self.db_adapter.dictcursor.execute(sel_stmt, (shift_id,))
+        map_data = self.db_adapter.dictcursor.fetchone()
+        resolution = map_data["resolution"]
+        origin_x = map_data["origin_x"]
+        origin_y = map_data["origin_y"]
+        map_image = Image.open(StringIO(base64.standard_b64decode(map_data["image"]))).convert("RGB")
+        # Add local position data to image:
+        if seg_id:
+            # Draw segment points on image.
+            self.draw_segment_local_points(seg_id, map_image, origin_x, origin_y, resolution)
+        else:
+            # Get all master segment ids for the shift
+            sel_stmt = "SELECT segment.id \
+                        FROM segment \
+                        INNER JOIN leg ON segment.leg_id = leg.id \
+                        INNER JOIN shift on leg.shift_id = shift.id \
+                        WHERE shift.id = %s AND segment.parent_id IS NULL \
+                        ORDER BY segment.id" % shift_id
+            self.db_adapter.dictcursor.execute(sel_stmt)
+            segment_ids = [x[0] for x in self.db_adapter.dictcursor.fetchall()]
+            # Draw points on image for all the segments.
+            for segment_id in segment_ids:
+                self.draw_segment_local_points(segment_id, map_image, origin_x, origin_y, resolution)
+        # Get the distance between the original bounding box and the map image borders (in pixels).
+        xmin_excess = (easting[0] - origin_x) / resolution # Distance between left edges.
+        ymin_excess = (northing[0] - origin_y) / resolution # Distance between top edges.
+        xmax_excess = map_image.width - (easting[1] - origin_x) / resolution # Distance between right edges.
+        ymax_excess = map_image.height - (northing[1] - origin_y) / resolution # Distance between bottom edges.
+        # Parametrize cropping to proportionally cut borders of the map image up to a minimum size of 256 x 256 px.
+        h_crop_factor = max(0, min((map_image.width - 256) / (xmin_excess + xmax_excess), 1))
+        v_crop_factor = max(0, min((map_image.height - 256) / (ymin_excess + ymax_excess), 1))
+        # Crop excess size.
+        map_image = map_image.crop((
+            int(h_crop_factor * xmin_excess), 
+            int(v_crop_factor * ymax_excess), 
+            int(map_image.width - h_crop_factor * xmax_excess), 
+            int(map_image.height - v_crop_factor * ymin_excess)
+        ))
+        # Define file name.
+        if seg_id:
+            file_dir = "%s/%s/segment_%s.jpeg" % (builddir, imagedir, seg_id)
+        else:
+            file_dir = "%s/%s/shift_%s.jpeg" % (builddir, imagedir, shift_id)
+        # Save image to file.
+        f_image = open(file_dir, 'w')
+        map_image.save(f_image, "JPEG")
+        f_image.close()
+        return
+
+    def get_segment_distance(self, segment_id, leg_id, local):
         # Get distance between segment start position and first location point.
-        select_stmt = "SELECT st_distance (st_setsrid(segment.start_position,4326), st_setsrid(pose.position,4326), true) \
+        if local:
+            select_stmt = "SELECT st_distance (segment.local_start_position, local_pose.position) \
+                        FROM segment \
+                        INNER JOIN local_pose ON local_pose.segment_id = segment.id \
+                        WHERE segment.id = %s \
+                        ORDER BY local_pose.secs \
+                        LIMIT 1" % segment_id
+        else:  
+            select_stmt = "SELECT st_distance (st_setsrid(segment.start_position,4326), st_setsrid(pose.position,4326), true) \
                         FROM segment \
                         INNER JOIN pose ON pose.segment_id = segment.id \
                         WHERE segment.id = %s \
@@ -326,7 +399,15 @@ class FttReportGenerator:
         else:
             start_distance = 0
         # Get distance between location points.
-        select_stmt = "SELECT \
+        if local:
+            select_stmt = "SELECT \
+                    SUM (st_distance (this.position, next.position)) \
+                    FROM local_pose as this, local_pose as next \
+                    WHERE this.id+1 = next.id  \
+                        AND this.segment_id = next.segment_id \
+                        AND this.segment_id = %s" % segment_id
+        else:
+            select_stmt = "SELECT \
                     SUM (st_distance (st_setsrid(this.position,4326), st_setsrid(next.position,4326), true)) \
                     FROM pose as this, pose as next \
                     WHERE this.id+1 = next.id  \
@@ -339,7 +420,19 @@ class FttReportGenerator:
         else:
             distance = 0
         # Get distance between last location point and next segment's start position.
-        select_stmt = "SELECT st_distance (st_setsrid(segment.start_position,4326), st_setsrid(pose.position,4326), true) \
+        if local:
+            select_stmt = "SELECT st_distance (segment.local_start_position, local_pose.position) \
+                    FROM local_pose \
+                    LEFT OUTER JOIN segment ON segment.id = ( \
+                        SELECT MIN(id) \
+                        FROM segment \
+                        WHERE id > %s AND parent_id IS NULL AND leg_id = %s) \
+                    WHERE local_pose.id = ( \
+                        SELECT MAX(id) \
+                        FROM local_pose \
+                        WHERE segment_id = %s)" % (segment_id, leg_id, segment_id)
+        else:
+            select_stmt = "SELECT st_distance (st_setsrid(segment.start_position,4326), st_setsrid(pose.position,4326), true) \
                     FROM pose \
                     LEFT OUTER JOIN segment ON segment.id = ( \
                         SELECT MIN(id) \
@@ -371,8 +464,8 @@ class FttReportGenerator:
             duration = 0
         return duration
 
-    def get_shifts_by_test_event_id(self, test_event_id):
-        select_stmt = "SELECT shift.id as id, \
+    def get_shifts_by_test_event_id(self, test_event_id, local):
+        select_stmt = psycopg2.sql.SQL("SELECT shift.id as id, \
             to_timestamp(min(segment.starttime_secs)) as shift_start_datetime_raw,\
             to_char(to_timestamp(min(segment.starttime_secs)), 'YYYY-MM-DD HH24:MI') as shift_start_datetime, \
             to_char(to_timestamp(max(segment.endtime_secs)), 'YYYY-MM-DD HH24:MI') as shift_end_datetime, \
@@ -383,7 +476,7 @@ class FttReportGenerator:
             RTRIM(performer.institution) as performer_institution, \
             RTRIM(shift.test_intent) as test_intent, \
             shift.note as shift_note \
-            FROM pose \
+            FROM {} as pose \
             INNER JOIN segment ON pose.segment_id = segment.id \
             INNER JOIN leg ON segment.leg_id = leg.id \
             INNER JOIN shift on leg.shift_id = shift.id \
@@ -394,7 +487,7 @@ class FttReportGenerator:
             LEFT OUTER JOIN performer on shift.performer_id = performer.id \
             WHERE test_event_id = %s \
             GROUP BY shift.id, test_administrator_name, test_director_name, safety_officer_name, performer_institution \
-            ORDER BY shift.id"
+            ORDER BY shift.id").format(psycopg2.sql.Identifier("local_pose" if local else "pose"))
         self.db_adapter.dictcursor.execute(select_stmt, (test_event_id,))
         shifts = self.db_adapter.dictcursor.fetchall()
         return shifts
@@ -422,7 +515,7 @@ class FttReportGenerator:
         shift_timeline = self.db_adapter.dictcursor.fetchall()
         return shift_timeline
 
-    def get_shift_statistics(self, shift_id):
+    def get_shift_statistics(self, shift_id, local):
         # Get segment types.
         select_stmt = "SELECT id, short_description \
             FROM segment_type"
@@ -445,7 +538,7 @@ class FttReportGenerator:
             # Get id count.
             stats['cnt'] = len(data)
             # Get total segment distance.
-            stats['distance'] = sum([self.get_segment_distance(row[0], row[1]) for row in data])
+            stats['distance'] = sum([self.get_segment_distance(row[0], row[1], local) for row in data])
             # Get total segment duration.
             stats['duration'] = sum([self.get_segment_duration(row[0]) for row in data])
             # Add segment type statistics to result.
@@ -484,7 +577,7 @@ class FttReportGenerator:
         return s
 
     def generate_latex_shift_header(self, latexf, shift):
-        print " - Generating the Latex section for shift with id", shift["id"]
+        print(" - Generating the Latex section for shift with id", shift["id"])
         # Chapter title.
         latexf.write('\\section{Shift %s: %s -- %s (%s)}\n\n' % (shift["id"], shift['shift_start_datetime'],
                                                                  shift['shift_end_datetime'],
@@ -533,10 +626,11 @@ class FttReportGenerator:
         latexf.write('\\end{longtable}\n')
         latexf.write('\n')
 
-    def generate_latex_segment(self, latexf, shift_id):
+    def generate_latex_segment(self, latexf, shift_id, local):
         # Extract main info from master segments of selected shift.
         sel_stmt = "SELECT to_timestamp(segment.starttime_secs) as start_datetime, \
                    to_timestamp(segment.endtime_secs) as end_datetime, \
+                   segment.orig_starttime_secs as orig_start_timestamp, \
                    segment_type.short_description as segment_type_short_description, \
                    segment.endtime_secs - segment.starttime_secs as duration, \
                    segment.distance as distance, \
@@ -551,7 +645,7 @@ class FttReportGenerator:
         segment_values = self.db_adapter.dictcursor.fetchall()
         # Write individual segment data to tex file.
         for row in segment_values:
-            distance = self.get_segment_distance(row['segment_id'], row['leg_id'])
+            distance = self.get_segment_distance(row['segment_id'], row['leg_id'], local)
             # Get info from sub-segments for this master segment.
             sel_stmt = "SELECT ito_reason.short_description, segment.obstacle, segment.lighting, segment.slope " \
                        "FROM segment " \
@@ -616,7 +710,9 @@ class FttReportGenerator:
             template = self.env.get_template(DEFAULT_SEGMENT_HEADER_TEMPLATE)
             latexf.write(
                 template.render(segmentTypeShortDescription = row['segment_type_short_description'],
-                                startDatetime = row['start_datetime'].strftime("%Y-%m-%d %H:%M:%S"),
+                                startDatetime = row['start_datetime'].strftime('%Y-%m-%d %H:%M:%S'),
+                                origStartTimestamp = row['orig_start_timestamp'],
+                                origStartDatetime = datetime.datetime.fromtimestamp(int(row['orig_start_timestamp'])).strftime('%Y-%m-%d %H:%M:%S'),
                                 segmentId = row['segment_id'],
                                 legNumber = row['leg_number'],
                                 endDatetime = row['end_datetime'].strftime("%Y-%m-%d %H:%M:%S"),
@@ -632,16 +728,19 @@ class FttReportGenerator:
             )
             # Get bounding box for the segment location points.
             sel_stmt = "SELECT st_extent(pose.position) as seg_bb \
-                       FROM pose \
+                       FROM %s AS pose \
                        INNER JOIN segment ON pose.segment_id = segment.id \
-                       WHERE segment_id = %s" % row['segment_id']
+                       WHERE segment_id = %s" % ("local_pose" if local else "pose", row['segment_id'])
             self.db_adapter.dictcursor.execute(sel_stmt)
             data = self.db_adapter.dictcursor.fetchone()
             bb_str = data[0]
             # Build map image.
             if bb_str is not None:
                 seg_bb = self.get_bb_from_text(bb_str)
-                self.get_map(shift_id, row['segment_id'], seg_bb)
+                if local:
+                    self.get_local_map(shift_id, row['segment_id'], seg_bb)
+                else:
+                    self.get_map(shift_id, row['segment_id'], seg_bb)
             # Attach map image to tex file.
             image_path_file = "%s/%s/segment_%s.jpeg" % (builddir, imagedir, row['segment_id'])
             if os.path.isfile(image_path_file):
@@ -676,13 +775,13 @@ class FttReportGenerator:
                     latexf.write(
                         '\\includegraphics[width=12cm,height=10cm,keepaspectratio]{%s/%s_%s_cam.jpeg}\n\n' % (
                             imagedir, row2['image_segment_id'], count))
-                    if row2['description'] is not None and row2['description'] <> "":
+                    if row2['description'] is not None and row2['description'] != "":
                         latexf.write('%s.\\\\\n' % (row2['description'].replace("_", "\_")))
                     else:
                         latexf.write('Image captured from the chase vehicle.')
                     latexf.write('\\end{center}\n\n')
                 else:
-                    print "Warning: Image data starts with 'Error 404: Not Found'"
+                    print("Warning: Image data starts with 'Error 404: Not Found'")
             # End page for this segment.
             latexf.write('\\newpage\n\n')
         # End page for this shift.
@@ -690,15 +789,15 @@ class FttReportGenerator:
 
     @staticmethod
     def generate_latex_shift_timeline(latexf, shift, shift_timeline, min_dur):
-        print "Shift timeline:"
+        print("Shift timeline:")
 
         pattern = '%Y-%m-%d %H:%M'
         shift_start_datetime = shift["shift_start_datetime"]
         shift_start_secs = int(time.mktime(time.strptime(shift_start_datetime, pattern)))
-        print "shift_start_secs : %s" % (shift_start_secs,)
+        print("shift_start_secs : %s" % (shift_start_secs,))
         shift_end_datetime = shift["shift_end_datetime"]
         shift_end_secs = int(time.mktime(time.strptime(shift_end_datetime, pattern)))
-        print "shift_end_secs : %s" % (shift_end_secs,)
+        print("shift_end_secs : %s" % (shift_end_secs,))
 
         # Make sure that the bar is at least n hours long
         t_min = float(min_dur) * 3600
@@ -722,24 +821,24 @@ class FttReportGenerator:
             latexf.write('\\draw (%f,-0.1) -- (%f,0) node[anchor=south] {%s};\n' % (t * cm_p_s, t * cm_p_s, abs_time))
             t = t + shift_duration_sec / 10
         for row in shift_timeline:
-            print "============== New segment ============"
+            print("============== New segment ============")
             segment_type_key = row['segment_type_key']
             if (row['starttime'] is not None) & (shift['shift_start_datetime_raw'] is not None):
                 start_secs = (row['starttime'] - shift["shift_start_datetime_raw"]).total_seconds()
             elif row['starttime'] is None:
                 start_secs = 0
-                print "Error Startitme is %s" % row['starttime']
+                print("Error Startitme is %s" % row['starttime'])
             else:
                 start_secs = 0
-                print "Error Datetime Raw is %s" % shift['shift_start_datetime_raw']
+                print("Error Datetime Raw is %s" % shift['shift_start_datetime_raw'])
 
-            print "start_datetime. %s" % (row['starttime'],)
-            print "start_datetime from shift. %s" % (start_secs,)
+            print("start_datetime. %s" % (row['starttime'],))
+            print("start_datetime from shift. %s" % (start_secs,))
             if row['duration'] is not None:
                 duration = row["duration"].total_seconds()
-                print "duration: %s" % (duration,)
+                print("duration: %s" % (duration,))
             else:
-                print "Error Duration is unavible"
+                print("Error Duration is unavible")
 
             segment_id = row['segment_id']
             segment_parent_id = row['segment_parent_id']
@@ -825,7 +924,7 @@ class FttReportGenerator:
         latexf.write('\\newpage\n\n')
 
     def generate_latex_header(self, latexf, report_info):
-        print ">>> Generating the Latex files for", report_info["test_event_name"]
+        print(">>> Generating the Latex files for", report_info["test_event_name"])
         template = self.env.get_template(report_info["latex_template"])
         latexf.write(template.render(
             latexTestCampaignName = report_info["test_event_name"], 
@@ -851,11 +950,11 @@ class FttReportGenerator:
         filename = '%s/%s.tex' % (builddir, report_info["test_event_filename"])
         # Opens the File in write Mode
         latex_f = open(filename, 'w')
-        print "Writing report %s" % (filename,)
+        print("Writing report %s" % (filename,))
         # Generates the Latex Header
         self.generate_latex_header(latex_f, report_info)
         # Reads the Shift Values and Id's out of the DB
-        shifts = self.get_shifts_by_test_event_id(report_info["test_event_id"])
+        shifts = self.get_shifts_by_test_event_id(report_info["test_event_id"], report_info["local"])
 
         # Iterate over each Shift
         for shift in shifts:
@@ -867,24 +966,29 @@ class FttReportGenerator:
             shift_end_datetime = shift["shift_end_datetime"]
             # Boundingbox of the Shift text
             bb_str = shift["shift_bb"]
-            print "============== New Shift %s ============" % shift_id
-            print "Adding Shift %s (%s, %s)" % (shift_id, shift_start_datetime, shift_end_datetime)
+            print("============== New Shift %s ============" % shift_id)
+            print("Adding Shift %s (%s, %s)" % (shift_id, shift_start_datetime, shift_end_datetime))
 
             if not (bb_str is None):
                 bb = self.get_bb_from_text(bb_str)
-                # Gets the Map and will save it to ~/build/images/%s.jpeg
-                self.get_map(shift_id, None, bb)
+                # Gets the Map and will save it to ~/build/images/
+                if report_info["local"]:
+                    # Get map from local position data.
+                    self.get_local_map(shift_id, None, bb)
+                else:
+                    # Get map from GPS data.
+                    self.get_map(shift_id, None, bb)
             # Generates the Latex Shift Header
             self.generate_latex_shift_header(latex_f, shift)
             # Select the Shift statistics from the DB
-            shift_statisics = self.get_shift_statistics(shift_id)
+            shift_statisics = self.get_shift_statistics(shift_id, report_info["local"])
             # Generate the Shift statistics for a Latex file
             self.generate_latex_shift_statistic(latex_f, shift_statisics)
             # List the segments of the shift
             shift_timeline = self.get_shift_timeline(shift_id)
             # Create the Timeline for the Shift
             self.generate_latex_shift_timeline(latex_f, shift, shift_timeline, report_info['min_duration'])
-            self.generate_latex_segment(latex_f, shift_id)
+            self.generate_latex_segment(latex_f, shift_id, report_info["local"])
 
         self.generate_latex_end(latex_f)
         return
@@ -937,6 +1041,7 @@ class ReportGenerator:
                     if k.tag == "test_event":
                         report_info['test_event_id'] = k.get("id")
                         report_info['min_duration'] = k.get("min_dur")
+                        report_info['local'] = k.get("local").lower() == "true"
                     if k.tag == "recipient":
                         report_info['recipient_name'] = k.get("name")
                         report_info['recipient_address_l1'] = k.get("address_l1")
@@ -961,11 +1066,8 @@ class ReportGenerator:
         (report_info_list, db_info) = self.read_xml(argv[0])
 
         # Read connection details from the XML-File-Var and connect to the DB
-        ftt_adapter = FttAdapter(db_info['host'], db_info['dbname'], db_info['user'], db_info['password'])
+        ftt_adapter = PgAdapter(db_info['host'], db_info['dbname'], db_info['user'], db_info['password'])
         ftt_adapter.connect()
-
-        # Delete entries without position data.
-        ftt_adapter.clean_up_db()
 
         # Init the ReportGenerator
         env = Environment(

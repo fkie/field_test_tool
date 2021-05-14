@@ -6,7 +6,10 @@
 
 import { SegmentDetail } from "./SegmentDetail.js";
 import { LogSelection } from "./LogSelection.js";
-import { Personnel, PersonnelInterface } from "../database_interface/Personnel.js";
+import {
+  Personnel,
+  PersonnelInterface,
+} from "../database_interface/Personnel.js";
 import { UserSelect } from "../overlays/UserSelect.js";
 import { Modal } from "../utility/Modal.js";
 
@@ -22,10 +25,7 @@ export class MainFrame {
     this.personnelInterface = new PersonnelInterface(this.serverInterface);
     //Contruct page sections.
     this.segmentDetail = new SegmentDetail(serverInterface, this.currentUser);
-    this.trailSelection = new LogSelection(
-      serverInterface,
-      this.currentUser
-    );
+    this.trailSelection = new LogSelection(serverInterface, this.currentUser);
     //Add event listeners.
     this.userIcon.addEventListener(
       "click",

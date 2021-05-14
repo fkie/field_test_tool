@@ -3,16 +3,26 @@
   <arg name="ROBOT_MODE_TOPIC"        default="/robot_mode"/>
   <arg name="IMAGE_RAW_TOPIC"         default="/image_raw"/>
   <arg name="IMAGE_COMPRESSED_TOPIC"  default="/image_compressed"/>
+  <arg name="MAP_TOPIC"               default="/map"/>
   <arg name="SEND_POSE_TIMEOUT"       default="5.0"/>
+  <arg name="SEND_MAP_TIMEOUT"        default="5.0"/>
   <arg name="SERVER_ADDRESS"          default="localhost:5000"/>
+  <arg name="SAVE_IMAGE_DIR"          default="$(env HOME)/Pictures "/>
+  <arg name="MAP_FRAME"               default="map"/>
+  <arg name="ROBOT_FRAME"             default="base_link"/>
 
-  <node pkg="ros2db" type="ros2api.py" name="ros2api" output="screen">
-    <remap from="robot_position"   to="$(arg GPS_POSITION_TOPIC)"/>
-    <remap from="robot_mode"       to="$(arg ROBOT_MODE_TOPIC)"/>
-    <remap from="image_raw"        to="$(arg IMAGE_RAW_TOPIC)"/>
-    <remap from="image_compressed" to="$(arg IMAGE_COMPRESSED_TOPIC)"/>
+  <node pkg="ftt_ros_interface" type="ros2api.py" name="ros2api" output="screen">
+    <remap from="robot_position"    to="$(arg GPS_POSITION_TOPIC)"/>
+    <remap from="robot_mode"        to="$(arg ROBOT_MODE_TOPIC)"/>
+    <remap from="image_raw"         to="$(arg IMAGE_RAW_TOPIC)"/>
+    <remap from="image_compressed"  to="$(arg IMAGE_COMPRESSED_TOPIC)"/>
+    <remap from="map"               to="$(arg MAP_TOPIC)"/>
 
     <param name="send_pose_timeout" type="double" value="$(arg SEND_POSE_TIMEOUT)"/>
+    <param name="send_map_timeout" type="double" value="$(arg SEND_MAP_TIMEOUT)"/>
     <param name="server_address" type="string" value="$(arg SERVER_ADDRESS)"/>
+    <param name="save_image_dir" type="string" value="$(arg SAVE_IMAGE_DIR)"/>
+    <param name="map_frame" type="string" value="$(arg MAP_FRAME)"/>
+    <param name="robot_frame" type="string" value="$(arg ROBOT_FRAME)"/>
   </node>
 </launch>

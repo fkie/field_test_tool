@@ -6,13 +6,22 @@
 
 //Image data container class.
 export class Image {
-  constructor(id, segmentId, secs, imageFilename, imageData, description) {
+  constructor(
+    id,
+    segmentId,
+    secs,
+    imageFilename,
+    imageData,
+    description,
+    origSecs
+  ) {
     this.id = id;
     this.segmentId = segmentId;
     this.secs = secs;
     this.imageFilename = imageFilename;
     this.imageData = imageData;
     this.description = description;
+    this.origSecs = origSecs;
   }
 }
 
@@ -28,6 +37,7 @@ export class ImageInterface {
       "image_filename",
       "image_data",
       "description",
+      "orig_secs",
     ];
   }
 
@@ -43,9 +53,10 @@ export class ImageInterface {
           entry[0],
           entry[1],
           entry[2],
-          entry[3] && entry[3].trim(),
+          entry[3],
           "data:image/jpeg;base64, " + atob(entry[4]),
-          entry[5] && entry[5].trim()
+          entry[5],
+          entry[6]
         )
     );
   }
@@ -57,6 +68,7 @@ export class ImageInterface {
       [this.paramNames[3]]: imageFilename,
       [this.paramNames[4]]: imageData,
       [this.paramNames[5]]: description,
+      [this.paramNames[6]]: new Date().getTime() / 1000,
     };
     await this.serverInterface.sendPostRequest("image", data);
   }

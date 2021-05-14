@@ -23,9 +23,7 @@ export class PerformerInterface {
   async get() {
     //Get table data from server.
     const data = await this.serverInterface.sendGetRequest("performer");
-    return data.map(
-      (entry) => new Performer(entry[0], entry[1] && entry[1].trim())
-    );
+    return data.map((entry) => new Performer(entry[0], entry[1]));
   }
 
   async post(institution) {

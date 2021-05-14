@@ -9,7 +9,13 @@ export class PoseInterface {
   constructor(serverInterface) {
     //Set arguments as properties.
     this.serverInterface = serverInterface;
-    this.paramNames = ["segment_id", "lat", "lng", "pose_source_id"];
+    this.paramNames = [
+      "segment_id",
+      "lat",
+      "lng",
+      "pose_source_id",
+      "orig_secs",
+    ];
   }
 
   async get(segmentId) {
@@ -29,6 +35,7 @@ export class PoseInterface {
       [this.paramNames[1]]: lat,
       [this.paramNames[2]]: lng,
       [this.paramNames[3]]: poseSourceId,
+      [this.paramNames[4]]: new Date().getTime() / 1000,
     };
     await this.serverInterface.sendPostRequest("pose", data);
   }

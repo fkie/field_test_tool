@@ -46,6 +46,8 @@ The web GUI further allows you to:
 | /leg          | Interface to leg table          | GET, POST, PUT         |
 | /segment      | Interface to segment table      | GET, POST, PUT         |
 | /pose         | Interface to pose table         | GET, POST              |
+| /local_pose   | Interface to local_pose table   | GET, POST              |
+| /map_image    | Interface to map_image table    | GET, POST, PUT         |
 | /note         | Interface to note table         | GET, POST, PUT, DELETE |
 | /image        | Interface to image table        | GET, POST, DELETE      |
 | /segment_type | Interface to segment_type table | GET                    |
@@ -105,6 +107,9 @@ The following libraries and resources are needed for this project. They are show
 | Webpack CLI                | MIT License                             | https://github.com/webpack/webpack-cli/blob/master/LICENSE         |
 | Webpack Dev Server         | MIT License                             | https://github.com/webpack/webpack-dev-server/blob/master/LICENSE  |
 | HTML Webpack Plugin        | MIT License                             | https://github.com/jantimon/html-webpack-plugin/blob/main/LICENSE  |
+| Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt        |
+| Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE     |
+| Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE      |
 
 <span style="font-size:smaller">\* © OpenStreetMap contributors. Base map and data from OpenStreetMap and OpenStreetMap Foundation.</span>
 
@@ -278,6 +283,7 @@ The following npm libraries (and their dependencies) will be installed:
 | Webpack Dev Server v3.11.2 | Webpack simple serving for applications.    |
 | Material Design Icons      | Offline use of Google icons.                |
 | Leaflet                    | Offline use of Leaflet map viewer.          |
+| Easeljs                    | Offline use of Easeljs graphics library.    |
 
 <br/><br/>
 To install them, simply navigate to your project directory and run the following npm command:
@@ -326,10 +332,11 @@ The following command launches the ROS data collector for sending the operation 
 ```bash
 roslaunch ftt_ros_interface ros2api.launch <args>
 ```
-The launched ROS node will subscribe to the topics configured in the launchfile arguments (explained below) and additionally offer a debug topic for downloading the images stored in the database:
+The launched ROS node will subscribe to the topics configured in the launchfile arguments (explained below) and additionally offer two debug topics for downloading the images and map stored in the database:
 - /download_image
+- /download_map
 
-It takes a message of type std_msgs/Int32. Its value being the segment ID.
+Both take a message of type std_msgs/Int32. For images it expects the segment ID and for the map, the test event ID.
 
 ### **FTT web GUI**
 
@@ -356,10 +363,14 @@ The ROS interface launchfile (ros2api.launch) has arguments that should be set, 
 | GPS_POSITION_TOPIC     | ROS topic for GPS position data of type _sensor_msgs/NavSatFix_.                 |
 | ROBOT_MODE_TOPIC       | ROS topic for robot operating mode of type _industrial_msgs/RobotMode_.          |
 | IMAGE_RAW_TOPIC        | ROS topic for robot frontal camera images of type _sensor_msgs/Image_.           |
+| MAP_TOPIC              | ROS topic for the map of the environment of type _nav_msgs/OccupancyGrid_.       |
 | IMAGE_COMPRESSED_TOPIC | ROS topic for robot frontal camera images of type _sensor_msgs/CompressedImage_. |
 | SEND_POSE_TIMEOUT      | Parameter to set interval time for sending position data to the database.        |
+| SEND_MAP_TIMEOUT       | Parameter to set interval time for sending map data to the database.             |
 | SERVER_ADDRESS         | Parameter to set the Database API server IP and port.                            |
 | SAVE_IMAGE_DIR         | Parameter to set the directory for images downloaded from the node.              |
+| MAP_FRAME              | Parameter to set the name of the map frame for the tf listener.                  |
+| ROBOT_FRAME            | Parameter to set the name of the base link frame for the tf listener.            |  
 
 <br/><br/>
 
@@ -375,7 +386,7 @@ The report generator script requires an XML file with the following structure:
   <postgis host = "localhost" dbname="ftt" patch_schema="yes" user ="postgres" password = "postgres"/>
 
   <report name="<report_name>" version="<version>">
-    <test_event id="<test_event_id>" min_dur="<min_duration_in_hours>"/>
+    <test_event id="<test_event_id>" min_dur="<min_duration_in_hours>" local="<true/false>"/>
     <recipient name="<name>" address_l1="<address_line_1>" address_l2="<address_line_2>"/>
     <creator name="<name>" address_l1="<address_line_1>" address_l2="<address_line_2>"/>
     <logos top_logo_path = "<path_to_front_page_top_logo>" bottom_logo_path = "<path_to_front_page_bottom_logo>"/>
@@ -390,6 +401,7 @@ Most of the parameters are self-explanatory, but the following should be noted:
 - The **_zoom_level_** parameter sets the zoom level used for fetching the tiles from the tile server.
 - The **_report_name_** and **_version_** parameters are simply for the text to be displayed on the front page of the report.
 - The **_test_event_id_** parameter specifies the test event for which the information will be processed and written to the report.
+- The **_local_** parameter controls the usage of either locally referenced positions or GPS data.
 - The **_min_dur_** parameter is simply used to set a minimum length for the timeline generated in the report and the number should be specified in hours.
 
 ## _Offline Usage of the web GUI_
