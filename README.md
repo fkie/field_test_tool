@@ -42,6 +42,7 @@ Figures 2 and 3 show an overview of the FTT web GUI displaying GPS and local pos
   <img src="doc/ftt_web_overview_gps.png" alt="FTT GUI GPS" width="500">
   <figcaption>Figure 2. FTT web GUI overview with GPS data.</figcaption>
 </figure>
+<br/><br/>
 
 <figure>
   <img src="doc/ftt_web_overview_local.png" alt="FTT GUI local" width="500">
@@ -56,6 +57,7 @@ A python script that reads and processes the stored data, then generates and com
   <img src="doc/ftt_report_overview_map.png" alt="FTT report map overview" width="500">
   <figcaption>Figure 4. FTT report overview (map).</figcaption>
 </figure>
+<br/><br/>
 
 <figure>
   <img src="doc/ftt_report_overview_timeline.png" alt="FTT report timeline overview" width="500">
