@@ -2,84 +2,68 @@
 
 The purpose of this tool is to monitor and analyze the switching events between autonomous mode and manual mode on autonomous ground vehicles. This is done by collecting relevant data from the robot's ROS environment, alongside context data provided by users.
 The collected data is processed by an automatic report generator, which aims to help the manufacturer, the project manager and the customer to analyze software issues in certain enviroments.
-This project includes a web GUI for users to input context data as well as allow them to create new log entries in the database.
-
-The software allows you to:
-
-- Save ROS-messages to a database.
-- Analyze and view the collected data by generating reports (PDF) from the database.
-
-The web GUI further allows you to:
-
-- Create and edit log entries (test events, shifts, legs and segments).
-- Create and edit resource entries (performers, personnel, pose sources and vehicles).
-- Set reasons for Auto->Manual transitions (ITO Reasons).
-- Append segment notes and images.
-- View a list of ITO segments and a map with the geolocation data.
-
 <br/><br/>
 
-## _Relevant Info_
+## _1. Description_
 
-### **Database Info**
-
-|               |          |
-| ------------- | -------- |
-| Database Name | ftt      |
-| Username      | postgres |
-| Password      | postgres |
-
+The Field Test Tools comprises four software modules:
+- A database with a JSON API.
+- An interface between ROS and the database API.
+- An interface between the user and the database API.
+- An automatic report generator out of the stored data.
 <br/><br/>
 
-### **Database Schema**
+### **1.1. Database**
 
-<img src="doc/database_schema.png" width="500">
+A Postgres database with Postgis extension is used. A python script implements a JSON API with the common requests (POST, PUT, GET) to interact with the database tables through HTTP messages. The databse schema is shown in Figure 1.
 
+<figure>
+  <img src="doc/database_schema.png" alt="database schema" width="500">
+  <figcaption>Figure 1. Database schema.</figcaption>
+</figure>
 <br/><br/>
 
-### **Database Server API**
+### **1.2. ROS to databse API interface**
 
-| Endpoint      | Description                     | Supported HTTP methods |
-| ------------- | ------------------------------- | ---------------------- |
-| /test_event   | Interface to test_event table   | GET, POST, PUT         |
-| /shift        | Interface to shift table        | GET, POST, PUT         |
-| /leg          | Interface to leg table          | GET, POST, PUT         |
-| /segment      | Interface to segment table      | GET, POST, PUT         |
-| /pose         | Interface to pose table         | GET, POST              |
-| /local_pose   | Interface to local_pose table   | GET, POST              |
-| /map_image    | Interface to map_image table    | GET, POST, PUT         |
-| /note         | Interface to note table         | GET, POST, PUT, DELETE |
-| /image        | Interface to image table        | GET, POST, DELETE      |
-| /segment_type | Interface to segment_type table | GET                    |
-| /ito_reason   | Interface to ito_reason table   | GET                    |
-| /weather      | Interface to weather table      | GET                    |
-| /pose_source  | Interface to pose_source table  | GET, POST, PUT, DELETE |
-| /performer    | Interface to performer table    | GET, POST, PUT, DELETE |
-| /personnel    | Interface to personnel table    | GET, POST, PUT, DELETE |
-| /vehicle      | Interface to vehicle table      | GET, POST, PUT, DELETE |
-| /index.html   | Main GUI.                       | GET                    |
-| /config.html  | Configuration GUI.              | GET                    |
-
+A ROS node that subscribes to topics of the following messages to create database entries.
+- industrial_msgs/RobotMode
+- sensor_msgs/NavSatFix
+- sensor_msgs/Image
+- sensor_msgs/CompressedImage
+- nav_msgs/OccupancyGrid
 <br/><br/>
 
-### **ROS-packages**
+### **1.3. User to databse API interface**
 
-| Name              | Description                                         |
-| ----------------- | --------------------------------------------------- |
-| ftt_ros_interface | Robot interface to FTT-database through a JSON API. |
+A JavaScript web application implements a graphical user interface so that users can create new logging instances and append valuable context information. Feedback on the stored robot position data and operating mode is also displayed.
+Figures 2 and 3 show an overview of the FTT web GUI displaying GPS and local position, respectively. The data was generated using Clearpath's Husky ROS stack.
 
+<figure>
+  <img src="doc/ftt_web_overview_gps.png" alt="FTT GUI GPS" width="500">
+  <figcaption>Figure 2. FTT web GUI overview with GPS data.</figcaption>
+</figure>
+
+<figure>
+  <img src="doc/ftt_web_overview_local.png" alt="FTT GUI local" width="500">
+  <figcaption>Figure 3. FTT web GUI overview with local data.</figcaption>
+</figure>
 <br/><br/>
 
-### **Web GUI HTML files**
+### **1.4. Report generator**
+A python script that reads and processes the stored data, then generates and compiles a LaTeX report. The report includes an overview of the robot path and a timeline of the operating modes, as shown in Figures 4 and 5. Details for each individual segment (path section) are also annotated.
 
-| File        | Description                                                |
-| ----------- | ---------------------------------------------------------- |
-| index.html  | Main page. View, editing and creation of log-related data. |
-| config.html | Creation, editing and removal of test resources.           |
+<figure>
+  <img src="doc/ftt_report_overview_map.png" alt="FTT report map overview" width="500">
+  <figcaption>Figure 4. FTT report overview (map).</figcaption>
+</figure>
 
+<figure>
+  <img src="doc/ftt_report_overview_timeline.png" alt="FTT report timeline overview" width="500">
+  <figcaption>Figure 5. FTT report overview (timeline).</figcaption>
+</figure>
 <br/><br/>
 
-### **Required Libraries and Resources**
+## _2. Acknowledgements_
 
 The following libraries and resources are needed for this project. They are shown alongside their respective license.
 
@@ -115,7 +99,7 @@ The following libraries and resources are needed for this project. They are show
 
 <br/><br/>
 
-## _System requirements_
+## _3. System requirements_
 
 - Ubuntu 16.04 and ROS Kinetic OR Ubuntu 18.04 and ROS Melodic.
 - Current version of a web browser, at least<sup>\*</sup>:
@@ -126,9 +110,9 @@ The following libraries and resources are needed for this project. They are show
 <span style="font-size:smaller">\* Older destop versions might also work fine, but mobile ones probably won't.</span>
 <br/><br/>
 
-## _Installation_
+## _4. Installation_
 
-### **Installation of Python libraries**
+### **4.1. Installation of Python libraries**
 
 ```bash
 sudo apt-get install build-essential python-psycopg2 python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml
@@ -136,13 +120,13 @@ sudo python -m pip install requests Pillow Flask flask-restful
 sudo python -m pip install -U flask-cors
 ```
 
-### **Installation of LaTex and libraries**
+### **4.2. Installation of LaTeX and libraries**
 
 ```bash
 sudo apt-get install texlive texlive-lang-german texlive-doc-de texlive-latex-extra texmaker texlive-fonts-extra texlive-xetex latex-xcolor
 ```
 
-### **Installation of the Field Test Tool**
+### **4.3. Installation of the Field Test Tool**
 
 ```bash
 cd <ros_workspace>/src
@@ -150,13 +134,13 @@ git clone https://github.com/fkie/field_test_tool.git
 catkin build
 ```
 
-### **Installation of PostgreSQL server**
+### **4.4. Installation of PostgreSQL server**
 
 ```bash
 sudo apt-get install postgresql postgresql-client postgis
 ```
 
-### **Configuration of PostgreSQL**
+### **4.5. Configuration of PostgreSQL**
 
 Change to PostgreSQL interactive terminal (recognizable by postgres=#):
 
@@ -218,23 +202,23 @@ psql -h hostname -d ftt -U postgres -p 5432 -a -q -f <ros_workspace>/src/field_t
 psql -h hostname -d ftt -U postgres -p 5432 -a -q -f <ros_workspace>/src/field_test_tool/ftt_database/postgres/setup_queries.sql ftt
 ```
 
-### **Installation texmaker (optional)**
+### **4.6. Installation texmaker (optional)**
 
-Texmaker is an editor for editing LaTeX files.
+Texmaker is an editor of LaTeX files.
 
 ```bash
 sudo apt-get install texmaker
 ```
 
-### **Installation pgAdmin III (optional)**
+### **4.7. Installation pgAdmin III (optional)**
 
-PgAdmin is a management software for the PostgresSQL-database server.
+PgAdmin is a management software for the PostgreSQL-database.
 
 ```bash
 sudo apt-get install pgadmin3
 ```
 
-### **Installation of the FTT Web GUI**
+### **4.8. Installation of the FTT Web GUI**
 
 Once cloned, the repository already contains all the files ready for the web server to serve the web application. **However**, to further develop, make changes to the JavaScript code or use the application in offline mode, certain tools/libraries will be needed and the following steps will walk you through the installation process.
 
@@ -265,12 +249,12 @@ For:
 Otherwise, proceed with the installation steps below.
 <br/><br/>
 
-#### **_Installation of Node.js_**
+#### **_4.8.1. Installation of Node.js_**
 
 Install the latest version of Node.js for you machine from nodesjs.org. This will give you access to the **_npm_** package manager needed for the next steps.
 <br/><br/>
 
-#### **_Installation of npm libraries_**
+#### **_4.8.2. Installation of npm libraries_**
 
 The following npm libraries (and their dependencies) will be installed:
 
@@ -294,14 +278,14 @@ cd <ros_workspace>/src/field_test_tool/ftt_web_interface
 npm install
 ```
 
-#### **_Installation of ESLint (optional for VS Code)_**
+#### **_4.8.3. Installation of ESLint (optional for VS Code)_**
 
 If you're working with VS Code, linting can be made available for this project to help with development. To do this, install the ESLint extension from the extensions tab of VSCode and enable it.
 
 Linting will be shown according to the rules set in the _.eslintrc.json_ file.
 <br/><br/>
 
-#### **_Useful npm commands_**
+#### **_4.8.4. Useful npm commands_**
 
 From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interface_ the following npm commands are conveniently available:
 
@@ -313,9 +297,9 @@ From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interfac
 
 <br/><br/>
 
-## _Execution_
+## _5. Execution_
 
-### **FTT database API**
+### **5.1. FTT database API**
 
 The following commands starts the database JSON server API:
 
@@ -325,7 +309,7 @@ cd <ros_workspace>/src/field_test_tool/ftt_database/scripts/
 python api.py
 ```
 
-### **FTT ROS to API interface**
+### **5.2. FTT ROS to API interface**
 
 The following command launches the ROS data collector for sending the operation mode, ros images, GPS position, local map and base link position data.
 
@@ -336,13 +320,15 @@ The launched ROS node will subscribe to the topics configured in the launchfile 
 - /download_image
 - /download_map
 
-Both take a message of type std_msgs/Int32. For images it expects the segment ID and for the map, the test event ID.
+Both take a message of type std_msgs/Int32. It expects a segment ID for images and a shift ID for the map.
+<br/><br/>
 
-### **FTT web GUI**
+### **5.3. FTT web GUI**
 
-After running the FTT server API, visit http://localhost:5000/ from your web browser.
+After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server).
+<br/><br/>
 
-### **PDF-Report generator**
+### **5.4. PDF-Report generator**
 
 The following commands will run the report generator. The output PDF report will be available at _<ros_workspace>/src/field_test_tool/ftt_report_generator/build/<configured_report_name>.pdf_. The report configuration options are explained below.
 
@@ -351,10 +337,9 @@ cd <ros_workspace>/src/field_test_tool/ftt_report_generator/src/
 
 python db2rep.py <path_to_config_file> (e.g. ../config/2021_fkie_test.xml)
 ```
-
 <br/><br/>
 
-## _Launchfile arguments_
+## _6. Launchfile arguments_
 
 The ROS interface launchfile (ros2api.launch) has arguments that should be set, either from the command line, or from another launchfile importing it. These arguments are explained below.
 
@@ -363,8 +348,8 @@ The ROS interface launchfile (ros2api.launch) has arguments that should be set, 
 | GPS_POSITION_TOPIC     | ROS topic for GPS position data of type _sensor_msgs/NavSatFix_.                 |
 | ROBOT_MODE_TOPIC       | ROS topic for robot operating mode of type _industrial_msgs/RobotMode_.          |
 | IMAGE_RAW_TOPIC        | ROS topic for robot frontal camera images of type _sensor_msgs/Image_.           |
-| MAP_TOPIC              | ROS topic for the map of the environment of type _nav_msgs/OccupancyGrid_.       |
 | IMAGE_COMPRESSED_TOPIC | ROS topic for robot frontal camera images of type _sensor_msgs/CompressedImage_. |
+| MAP_TOPIC              | ROS topic for the map of the environment of type _nav_msgs/OccupancyGrid_.       |
 | SEND_POSE_TIMEOUT      | Parameter to set interval time for sending position data to the database.        |
 | SEND_MAP_TIMEOUT       | Parameter to set interval time for sending map data to the database.             |
 | SERVER_ADDRESS         | Parameter to set the Database API server IP and port.                            |
@@ -374,7 +359,7 @@ The ROS interface launchfile (ros2api.launch) has arguments that should be set, 
 
 <br/><br/>
 
-## _Report Generator Configuration File_
+## _7. Report Generator Configuration File_
 
 The report generator script requires an XML file with the following structure:
 
@@ -383,7 +368,7 @@ The report generator script requires an XML file with the following structure:
 
   <resource tile_server = "<server_dir>" zoom_level = "<integer>"/>
 
-  <postgis host = "localhost" dbname="ftt" patch_schema="yes" user ="postgres" password = "postgres"/>
+  <postgis host = "localhost" dbname="ftt" user ="postgres" password = "postgres"/>
 
   <report name="<report_name>" version="<version>">
     <test_event id="<test_event_id>" min_dur="<min_duration_in_hours>" local="<true/false>"/>
@@ -404,7 +389,9 @@ Most of the parameters are self-explanatory, but the following should be noted:
 - The **_local_** parameter controls the usage of either locally referenced positions or GPS data.
 - The **_min_dur_** parameter is simply used to set a minimum length for the timeline generated in the report and the number should be specified in hours.
 
-## _Offline Usage of the web GUI_
+<br/><br/>
+
+## _8. Offline Usage of the web GUI_
 
 Completing the installation steps for the web GUI enables the offline usage of the application on your machine, the one **exception** being the tile server.
 

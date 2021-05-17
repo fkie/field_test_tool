@@ -7,7 +7,7 @@ Base map and data from OpenStreetMap and OpenStreetMap Foundation.
 
   <resource tile_server = "a.tile.openstreetmap.org" zoom_level = "19"/>
   
-  <postgis host = "localhost" dbname="ftt" patch_schema="yes" user ="postgres" password = "postgres"/>
+  <postgis host = "localhost" dbname="ftt" user ="postgres" password = "postgres"/>
 
   <report name="2021-fkie-test" version="0.1">
     <test_event id="1" min_dur="0.1" local="false"/>
