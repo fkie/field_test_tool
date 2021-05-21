@@ -18,7 +18,7 @@ The Field Test Tools comprises four software modules:
 A Postgres database with Postgis extension is used. A python script implements a JSON API with the common requests (POST, PUT, GET) to interact with the database tables through HTTP messages. The databse schema is shown in Figure 1.
 
 <figure>
-  <img src="doc/database_schema.png" alt="database schema" width="500">
+  <img src="doc/images/database_schema.png" alt="database schema" width="500">
   <figcaption>Figure 1. Database schema.</figcaption>
 </figure>
 <br/><br/>
@@ -31,6 +31,8 @@ A ROS node that subscribes to topics of the following messages to create databas
 - sensor_msgs/Image
 - sensor_msgs/CompressedImage
 - nav_msgs/OccupancyGrid
+
+Aditionally, the node listens to the TF between the map frame (e.g. "map") and the robot frame (e.g. "base_link").
 <br/><br/>
 
 ### **1.3. User to databse API interface**
@@ -39,13 +41,13 @@ A JavaScript web application implements a graphical user interface so that users
 Figures 2 and 3 show an overview of the FTT web GUI displaying GPS and local position, respectively. The data was generated using Clearpath's Husky ROS stack.
 
 <figure>
-  <img src="doc/ftt_web_overview_gps.png" alt="FTT GUI GPS" width="500">
+  <img src="doc/images/ftt_web_overview_gps.png" alt="FTT GUI GPS" width="500">
   <figcaption>Figure 2. FTT web GUI overview with GPS data.</figcaption>
 </figure>
 <br/><br/>
 
 <figure>
-  <img src="doc/ftt_web_overview_local.png" alt="FTT GUI local" width="500">
+  <img src="doc/images/ftt_web_overview_local.png" alt="FTT GUI local" width="500">
   <figcaption>Figure 3. FTT web GUI overview with local data.</figcaption>
 </figure>
 <br/><br/>
@@ -54,13 +56,13 @@ Figures 2 and 3 show an overview of the FTT web GUI displaying GPS and local pos
 A python script that reads and processes the stored data, then generates and compiles a LaTeX report. The report includes an overview of the robot path and a timeline of the operating modes, as shown in Figures 4 and 5. Details for each individual segment (path section) are also annotated.
 
 <figure>
-  <img src="doc/ftt_report_overview_map.png" alt="FTT report map overview" width="500">
+  <img src="doc/images/ftt_report_overview_map.png" alt="FTT report map overview" width="500">
   <figcaption>Figure 4. FTT report overview (map).</figcaption>
 </figure>
 <br/><br/>
 
 <figure>
-  <img src="doc/ftt_report_overview_timeline.png" alt="FTT report timeline overview" width="500">
+  <img src="doc/images/ftt_report_overview_timeline.png" alt="FTT report timeline overview" width="500">
   <figcaption>Figure 5. FTT report overview (timeline).</figcaption>
 </figure>
 <br/><br/>
