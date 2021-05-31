@@ -20,8 +20,8 @@ class RobotModePublisher:
         self.joy_cmd_timeout = rospy.get_param("~joy_cmd_timeout", 0.5)
         self.publish_period = rospy.get_param("~publish_period", 1)
 
-        rospy.Subscriber("joy_cmd_vel", geometry_msgs.msg.Twist, self.joy_cmd_callback)
-        rospy.Subscriber("nav_cmd_vel", geometry_msgs.msg.Twist, self.nav_cmd_callback)
+        rospy.Subscriber("joy_cmd_vel", geometry_msgs.msg.TwistStamped, self.joy_cmd_callback)
+        rospy.Subscriber("nav_cmd_vel", geometry_msgs.msg.TwistStamped, self.nav_cmd_callback)
 
         self.pub = rospy.Publisher('robot_mode', industrial_msgs.msg.RobotMode, queue_size=10)
 
@@ -43,8 +43,9 @@ class RobotModePublisher:
     def joy_cmd_callback(self, cmd):
         if self.current_mode == industrial_msgs.msg.RobotMode.MANUAL:
             return
-        self.joy_cmd_start_time = rospy.get_time()
-        self.current_mode = industrial_msgs.msg.RobotMode.MANUAL
+        if cmd.twist.linear.x != 0 or cmd.twist.linear.y != 0 or cmd.twist.linear.z != 0 or cmd.twist.angular.x != 0 or cmd.twist.angular.y != 0 or cmd.twist.angular.z != 0:
+            self.joy_cmd_start_time = rospy.get_time()
+            self.current_mode = industrial_msgs.msg.RobotMode.MANUAL
         pass
 
     def nav_cmd_callback(self, cmd):
