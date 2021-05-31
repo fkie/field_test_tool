@@ -325,7 +325,13 @@ The launched ROS node will subscribe to the topics configured in the launchfile 
 - /download_map
 
 Both take a message of type std_msgs/Int32. It expects a segment ID for images and a shift ID for the map.
-<br/><br/>
+
+In addition, a second utility ROS node is provided, called robotModePublisher. This node subscribes to two velocity command topics (of type geometry_msgs/TwistStamped), one expected to come from the autonomous navigation stack and the other from a joystick interpreter. It then identifies the operation mode and publishes messages of type indutrial_msgs/robotMode accordingly. The autonomous mode is flagged at the arrival of autonomous command messages. The publised message switches to manual mode the moment a non-zero joystick command message arrives. After joystick messages stop, a fixed time (parameter) must elapse before returning to the autonomous mode if navigation commands keep being received. This timeout routine is implemented in order to prevent unwanted switching between modes.
+
+To launch the robotModePublisher, the following command can be used:
+```bash
+roslaunch ftt_ros_interface robot_mode_publisher.launch <args>
+```
 
 ### **5.3. FTT web GUI**
 
@@ -354,12 +360,24 @@ The ROS interface launchfile (ros2api.launch) has arguments that should be set, 
 | IMAGE_RAW_TOPIC        | ROS topic for robot frontal camera images of type _sensor_msgs/Image_.           |
 | IMAGE_COMPRESSED_TOPIC | ROS topic for robot frontal camera images of type _sensor_msgs/CompressedImage_. |
 | MAP_TOPIC              | ROS topic for the map of the environment of type _nav_msgs/OccupancyGrid_.       |
-| SEND_POSE_TIMEOUT      | Parameter to set interval time for sending position data to the database.        |
-| SEND_MAP_TIMEOUT       | Parameter to set interval time for sending map data to the database.             |
+| SEND_POSE_TIMEOUT      | Parameter to set the interval time for sending position data to the database.    |
+| SEND_MAP_TIMEOUT       | Parameter to set the interval time for sending map data to the database.         |
 | SERVER_ADDRESS         | Parameter to set the Database API server IP and port.                            |
 | SAVE_IMAGE_DIR         | Parameter to set the directory for images downloaded from the node.              |
 | MAP_FRAME              | Parameter to set the name of the map frame for the tf listener.                  |
 | ROBOT_FRAME            | Parameter to set the name of the base link frame for the tf listener.            |  
+
+<br/><br/>
+
+The robot_mode_publisher.launch also has arguments that should be set in the event of using it:
+
+| Parameter Name   | Description                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| JOY_CMD_TOPIC    | ROS topic for joystick velocity command messsages of type _geometry_msgs/TwistStamped_.               |
+| NAV_CMD_TOPIC    | ROS topic for navigation velocity command messsages of type _geometry_msgs/TwistStamped_.             |
+| ROBOT_MODE_TOPIC | ROS topic for robot operating mode of type _industrial_msgs/RobotMode_.                               |
+| JOY_CMD_TIMEOUT  | Parameter to set the mininum time to switch out of manual mode after joystick commands stop arriving. |
+| PUBLISH_PERIOD   | Parameter to set the interval time for publishing robot mode messages.                                |
 
 <br/><br/>
 
