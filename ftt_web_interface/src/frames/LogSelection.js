@@ -75,10 +75,10 @@ class Log {
       //Fill the specified select with the fetched data.
       DOMGeneric.populateSelect(
         this.select,
-        this.dataList.map((entry) => entry.id),
-        this.dataList.map((entry) =>
-          entry.endTime ? "closed-log" : "open-log"
-        )
+        this.dataList.map((entry) => entry.id).reverse(),
+        this.dataList
+          .map((entry) => (entry.endTime ? "closed-log" : "open-log"))
+          .reverse()
       );
       //Clear the child select data.
       if (this.childClass) {

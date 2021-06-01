@@ -577,7 +577,7 @@ class FttReportGenerator:
         return s
 
     def generate_latex_shift_header(self, latexf, shift):
-        print(" - Generating the Latex section for shift with id", shift["id"])
+        print(" - Generating the Latex section for shift with id " + str(shift["id"]))
         # Chapter title.
         latexf.write('\\section{Shift %s: %s -- %s (%s)}\n\n' % (shift["id"], shift['shift_start_datetime'],
                                                                  shift['shift_end_datetime'],
@@ -924,7 +924,7 @@ class FttReportGenerator:
         latexf.write('\\newpage\n\n')
 
     def generate_latex_header(self, latexf, report_info):
-        print(">>> Generating the Latex files for", report_info["test_event_name"])
+        print(">>> Generating the Latex files for " + report_info["test_event_name"])
         template = self.env.get_template(report_info["latex_template"])
         latexf.write(template.render(
             latexTestCampaignName = report_info["test_event_name"], 

@@ -126,7 +126,11 @@ export class LeafletMap {
   addActiveMarker(lat, lng) {
     //Add location marker to map.
     this.activeMarker = L.marker([lat, lng]).addTo(this.leafletMap);
-    this.leafletMap.setView([lat, lng], 17);
+    if (this.leafletMap.getZoom()) {
+      this.leafletMap.panTo([lat, lng]);
+    } else {
+      console.log("Cannot pan Leaflet map before loading it.");
+    }
   }
 
   addActivePoses(segmentId) {

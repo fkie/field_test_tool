@@ -65,6 +65,13 @@ export class SegmentEdit {
     obstacleInput.value = segment.obstacle;
     lightingInput.value = segment.lighting;
     slopeInput.value = segment.slope;
+    //Block obstacle context input fields for non ITO segments.
+    if (segment.segmentType != "ITO") {
+      itoReasonsSelect.disabled = true;
+      obstacleInput.disabled = true;
+      lightingInput.disabled = true;
+      slopeInput.disabled = true;
+    }
     //Set change event listeners.
     itoReasonsSelect.addEventListener(
       "change",
@@ -152,7 +159,12 @@ export class SegmentEdit {
     await this.renderImages();
   }
 
-  segmentDataChangedHandler() {
+  segmentDataChangedHandler(event) {
+    if (this.segment.segmentType == "AUTO") {
+      event.target.value = "";
+      alert("Obstacle context data available only for ITO segments!");
+      return;
+    }
     //Activate update button.
     this.element.querySelector("form button").disabled = false;
   }
@@ -313,7 +325,9 @@ export class SegmentEdit {
   async renderImages() {
     //Get images from server.
     try {
-      this.imageList = await this.imageInterface.get(this.segment.parentId);
+      this.imageList = await this.imageInterface.get(
+        this.segment.parentId || this.segment.id
+      );
       //Select the container area and clear it.
       const imagesContainer = this.element.querySelector(".current-images");
       DOMGeneric.clearChildren(imagesContainer);
@@ -437,7 +451,7 @@ export class SegmentEdit {
     if (this.newImage) {
       try {
         await this.imageInterface.post(
-          this.segment.parentId,
+          this.segment.parentId || this.segment.id,
           this.newImageName,
           this.newImage,
           `Image uploaded by ${this.currentUser.name}`

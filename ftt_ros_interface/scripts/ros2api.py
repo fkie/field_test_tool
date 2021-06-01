@@ -184,7 +184,7 @@ class Ros2api:
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rospy.logerr("Unable to get transfrom from %s to %s within the last %s seconds", self.map_frame, self.robot_frame, self.send_pose_timeout)
             except:
-                print("Exception:", sys.exc_info()[0])
+                print("Exception: " + sys.exc_info()[0])
         pass
 
     def send_last_image_msg(self):

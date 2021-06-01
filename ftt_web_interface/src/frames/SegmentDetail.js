@@ -200,16 +200,20 @@ export class SegmentDetail {
       //Add or edit data from table and map:
       for (const entry of this.segmentList.reverse()) {
         //Update table rows:
-        if (entry.segmentType == "ITO" && entry.parentId) {
+        if (
+          entry.segmentType == "AUTO" ||
+          (entry.segmentType == "ITO" && entry.parentId)
+        ) {
           const matchedRow = tableRows.find(
             (row) => row.firstChild.textContent == entry.id
           );
           const entryState = entry.endTime == null ? "OPEN" : "CLOSED";
+          const entryReason = entry.itoReason || "";
           if (matchedRow) {
             //Update row info with new data.
-            if (matchedRow.children[2].textContent != entry.itoReason) {
+            if (matchedRow.children[2].textContent != entryReason) {
               console.log("Updating row " + entry.id + " reason");
-              matchedRow.children[2].textContent = entry.itoReason;
+              matchedRow.children[2].textContent = entryReason;
             }
             if (matchedRow.children[3].textContent != entryState) {
               console.log("Updating row " + entry.id + " state");
@@ -221,7 +225,7 @@ export class SegmentDetail {
             DOMGeneric.addRow(this.segmentTable, [
               entry.id,
               entry.segmentType,
-              entry.itoReason,
+              entryReason,
               entryState,
             ]);
           }
@@ -236,7 +240,12 @@ export class SegmentDetail {
             if (!matchedMapLayer || entry.endTime == null) {
               //Create new or update points layer.
               await this.mapInterface.getAndDrawMapPoses(entry.id);
-              if (entry.id == this.selectedRowParentId) {
+              if (
+                (entry.segmentType == "AUTO" &&
+                  entry.id == this.selectedRowId) ||
+                (entry.segmentType == "ITO" &&
+                  entry.id == this.selectedRowParentId)
+              ) {
                 this.mapInterface.addActivePoses(entry.id);
               }
             }
@@ -252,7 +261,12 @@ export class SegmentDetail {
             if (!matchedMapLayer || entry.endTime == null) {
               //Create new or update points layer.
               await this.localMapInterface.getAndDrawMapPoses(entry.id);
-              if (entry.id == this.selectedRowParentId) {
+              if (
+                (entry.segmentType == "AUTO" &&
+                  entry.id == this.selectedRowId) ||
+                (entry.segmentType == "ITO" &&
+                  entry.id == this.selectedRowParentId)
+              ) {
                 this.localMapInterface.addActivePoses(entry.id);
               }
             }
@@ -311,9 +325,9 @@ export class SegmentDetail {
     this.selectedRowParentId = selectedEntry.parentId;
     if (selectedEntry.lat && selectedEntry.lng) {
       this.mapInterface.addActiveMarker(selectedEntry.lat, selectedEntry.lng);
-    } else {
+    } else if (this.selectedRowParentId) {
       const selectedEntryParent = this.segmentList.find(
-        (entry) => entry.id == selectedEntry.parentId
+        (entry) => entry.id == this.selectedRowParentId
       );
       if (selectedEntryParent.lat && selectedEntryParent.lng) {
         this.mapInterface.addActiveMarker(
@@ -328,9 +342,9 @@ export class SegmentDetail {
         selectedEntry.local_x,
         selectedEntry.local_y
       );
-    } else {
+    } else if (this.selectedRowParentId) {
       const selectedEntryParent = this.segmentList.find(
-        (entry) => entry.id == selectedEntry.parentId
+        (entry) => entry.id == this.selectedRowParentId
       );
       if (selectedEntryParent.local_x && selectedEntryParent.local_y) {
         this.localMapInterface.addActiveMarker(
@@ -340,15 +354,26 @@ export class SegmentDetail {
       }
     }
     //Highlight map poses of the selected parent segment.
-    this.mapInterface.addActivePoses(this.selectedRowParentId);
+    this.mapInterface.addActivePoses(
+      this.selectedRowParentId || this.selectedRowId
+    );
     //Highlight local map poses of the selected parent segment.
-    this.localMapInterface.addActivePoses(this.selectedRowParentId);
+    this.localMapInterface.addActivePoses(
+      this.selectedRowParentId || this.selectedRowId
+    );
   }
 
   async quickReasonEditBtnHandler(itoReasonId) {
     //Check that a segment is selected.
     if (!this.selectedRowId) {
       alert("No segment selected for edition!");
+      return;
+    }
+    const selectedEntry = this.segmentList.find(
+      (entry) => entry.id == this.selectedRowId
+    );
+    if (selectedEntry.segmentType == "AUTO") {
+      alert("Cannot assign ITO reason to AUTO segment!");
       return;
     }
     try {

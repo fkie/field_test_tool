@@ -41,7 +41,7 @@ You can find the corresponding endpoints at the bottom of the code.
 def print_and_return(print_string):
     # Global function. 
     # Prints the time and string argument then returns the argument.
-    print("["+datetime.now().strftime("%H:%M:%S")+"]",print_string)
+    print("["+datetime.now().strftime("%H:%M:%S")+"]"+print_string)
     return print_string
 
 def info_msg(msg):
