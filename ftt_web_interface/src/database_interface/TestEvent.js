@@ -79,10 +79,10 @@ export class TestEventInterface {
     //Optional parameters:
     Object.assign(
       data,
-      location && { [this.paramNames[3]]: location },
-      version && { [this.paramNames[4]]: version },
-      timeZone && { [this.paramNames[5]]: timeZone },
-      note && { [this.paramNames[6]]: note }
+      location !== null && { [this.paramNames[3]]: location },
+      version !== null && { [this.paramNames[4]]: version },
+      timeZone !== null && { [this.paramNames[5]]: timeZone },
+      note !== null && { [this.paramNames[6]]: note }
     );
     await this.serverInterface.sendPutRequest("test_event", data);
   }

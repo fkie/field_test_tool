@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -84,10 +85,10 @@ export class TestEventEdit {
   async updateDataBtnHandler(event) {
     event.preventDefault();
     //Get data to update.
-    const location = document.getElementById("location").value;
-    const version = document.getElementById("version").value;
+    const location = document.getElementById("location").value.replace(/[^\x00-\x7F]/g, "");
+    const version = document.getElementById("version").value.replace(/[^\x00-\x7F]/g, "");
     const timeZone = document.getElementById("time-zone").value;
-    const note = document.getElementById("test-event-note").value;
+    const note = document.getElementById("test-event-note").value.replace(/[^\x00-\x7F]/g, "");
     //Send put request.
     try {
       await this.testEventInterface.put(

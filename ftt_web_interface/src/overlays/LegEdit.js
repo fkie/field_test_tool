@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -99,7 +100,7 @@ export class LegEdit {
         entry.shortDescription ==
         document.getElementById("default-pose-source").value
     ).id;
-    const note = document.getElementById("leg-note").value;
+    const note = document.getElementById("leg-note").value.replace(/[^\x00-\x7F]/g, "");
     //Send put request.
     try {
       await this.legInterface.put(

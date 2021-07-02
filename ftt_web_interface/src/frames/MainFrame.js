@@ -11,6 +11,8 @@ import {
   PersonnelInterface,
 } from "../database_interface/Personnel.js";
 import { UserSelect } from "../overlays/UserSelect.js";
+import { TestEventInterface } from "../database_interface/TestEvent.js";
+import { ReportDownload } from "../overlays/ReportDownload.js";
 import { Modal } from "../utility/Modal.js";
 
 export class MainFrame {
@@ -20,9 +22,11 @@ export class MainFrame {
     //Reach to DOM elements.
     this.userIcon = document.getElementById("user-icon");
     this.userName = document.getElementById("user-name");
+    this.downloadIcon = document.getElementById("download-icon");
     //Initialize variables.
     this.currentUser = new Personnel();
     this.personnelInterface = new PersonnelInterface(this.serverInterface);
+    this.testEventInterface = new TestEventInterface(this.serverInterface);
     //Contruct page sections.
     this.segmentDetail = new SegmentDetail(serverInterface, this.currentUser);
     this.trailSelection = new LogSelection(serverInterface, this.currentUser);
@@ -30,6 +34,10 @@ export class MainFrame {
     this.userIcon.addEventListener(
       "click",
       this.userIconClickHandler.bind(this)
+    );
+    this.downloadIcon.addEventListener(
+      "click",
+      this.downloadIconClickHandler.bind(this)
     );
   }
 
@@ -46,6 +54,24 @@ export class MainFrame {
         () => {
           this.userName.textContent = this.currentUser.name || "Select User";
         }
+      );
+      userModal.show();
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  async downloadIconClickHandler() {
+    try {
+      //Get the latest test event data from the server.
+      const testEventList = await this.testEventInterface.get();
+      //Build a user selection overlay.
+      //Build a report generator overlay.
+      const reportDownload = new ReportDownload(this.serverInterface, testEventList);
+      //Display the overlay.
+      const userModal = new Modal(
+        reportDownload,
+        "Your browser does't support this feature! - Please change to a more modern one."
       );
       userModal.show();
     } catch (error) {

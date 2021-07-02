@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -160,13 +161,28 @@ export class SegmentEdit {
   }
 
   segmentDataChangedHandler(event) {
+    //Prevent selection for AUTO segments.
     if (this.segment.segmentType == "AUTO") {
       event.target.value = "";
       alert("Obstacle context data available only for ITO segments!");
       return;
     }
-    //Activate update button.
-    this.element.querySelector("form button").disabled = false;
+    //Check validity for all text inputs.
+    const invalid =
+      this.element.querySelector("#obstacle").validity.patternMismatch ||
+      this.element.querySelector("#lighting").validity.patternMismatch ||
+      this.element.querySelector("#slope").validity.patternMismatch;
+    if (invalid) {
+      //Disable update button.
+      this.element.querySelector("form button").disabled = true;
+      //Show info text.
+      this.element.querySelector(".info-text").style.display = "inline";
+    } else {
+      //Enable update button.
+      this.element.querySelector("form button").disabled = false;
+      //Hide info text.
+      this.element.querySelector(".info-text").style.display = "";
+    }
   }
 
   async updateDataBtnHandler(event) {
@@ -176,9 +192,15 @@ export class SegmentEdit {
       (entry) =>
         entry.shortDescription == document.getElementById("ito-reason").value
     ).id;
-    const obstacle = document.getElementById("obstacle").value;
-    const lighting = document.getElementById("lighting").value;
-    const slope = document.getElementById("slope").value;
+    const obstacle = document
+      .getElementById("obstacle")
+      .value.replace(/[^\x00-\x7F]/g, "");
+    const lighting = document
+      .getElementById("lighting")
+      .value.replace(/[^\x00-\x7F]/g, "");
+    const slope = document
+      .getElementById("slope")
+      .value.replace(/[^\x00-\x7F]/g, "");
     try {
       //Send update request to server.
       await this.segmentInterface.put(
@@ -284,7 +306,7 @@ export class SegmentEdit {
       return;
     }
     //Reach to the text content.
-    const noteText = document.getElementById("note-text").value;
+    const noteText = document.getElementById("note-text").value.replace(/[^\x00-\x7F]/g, "");
     try {
       //Check if the note is being modified or created.
       if (this.selectedNoteIdx < this.noteList.length) {

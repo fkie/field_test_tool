@@ -24,6 +24,20 @@ section {
   background: white;
 }
 
+input:invalid {
+  box-shadow: 0 0 1px 1px red;
+}
+
+input:focus:invalid {
+  box-shadow: none;
+}
+
+.info-text {
+  display: none;
+  font-size: smaller;
+  color: gray;
+}
+
 .styled-table {
   border-collapse: collapse;
   margin: 1rem 0;

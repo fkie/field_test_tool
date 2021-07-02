@@ -43,8 +43,8 @@ export class PersonnelInterface {
     //Optional parameters:
     Object.assign(
       data,
-      name && { [this.paramNames[1]]: name },
-      institution && { [this.paramNames[2]]: institution }
+      name !== null && { [this.paramNames[1]]: name },
+      institution !== null && { [this.paramNames[2]]: institution }
     );
     await this.serverInterface.sendPutRequest("personnel", data);
   }

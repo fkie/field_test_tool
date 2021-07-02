@@ -712,7 +712,7 @@ class FttReportGenerator:
                 template.render(segmentTypeShortDescription = row['segment_type_short_description'],
                                 startDatetime = row['start_datetime'].strftime('%Y-%m-%d %H:%M:%S'),
                                 origStartTimestamp = row['orig_start_timestamp'],
-                                origStartDatetime = datetime.datetime.fromtimestamp(int(row['orig_start_timestamp'])).strftime('%Y-%m-%d %H:%M:%S'),
+                                origStartDatetime = datetime.datetime.fromtimestamp(int(row['orig_start_timestamp'])).strftime('%Y-%m-%d %H:%M:%S') if row['orig_start_timestamp'] else "",
                                 segmentId = row['segment_id'],
                                 legNumber = row['leg_number'],
                                 endDatetime = row['end_datetime'].strftime("%Y-%m-%d %H:%M:%S"),
@@ -1036,7 +1036,7 @@ class ReportGenerator:
                 report_info = {}
                 report_info['test_event_name'] = child.get("name")
                 report_info['report_version'] = child.get("version")
-                report_info['test_event_filename'] = report_info['test_event_name'].lower().replace(" ", "_")
+                report_info['test_event_filename'] = "report" #report_info['test_event_name'].lower().replace(" ", "_")
                 for k in child:
                     if k.tag == "test_event":
                         report_info['test_event_id'] = k.get("id")

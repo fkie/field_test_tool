@@ -47,9 +47,9 @@ export class PoseSourceInterface {
     //Optional parameters:
     Object.assign(
       data,
-      key && { [this.paramNames[1]]: key },
-      shortDescription && { [this.paramNames[2]]: shortDescription },
-      longDescription && { [this.paramNames[3]]: longDescription }
+      key !== null && { [this.paramNames[1]]: key },
+      shortDescription !== null && { [this.paramNames[2]]: shortDescription },
+      longDescription !== null && { [this.paramNames[3]]: longDescription }
     );
     await this.serverInterface.sendPutRequest("pose_source", data);
   }

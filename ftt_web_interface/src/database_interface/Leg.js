@@ -93,9 +93,9 @@ export class LegInterface {
     //Optional parameters:
     Object.assign(
       data,
-      weatherId && { [this.paramNames[4]]: weatherId },
-      defaultPoseSourceId && { [this.paramNames[5]]: defaultPoseSourceId },
-      note && { [this.paramNames[6]]: note }
+      weatherId !== null && { [this.paramNames[4]]: weatherId },
+      defaultPoseSourceId !== null && { [this.paramNames[5]]: defaultPoseSourceId },
+      note !== null && { [this.paramNames[6]]: note }
     );
     await this.serverInterface.sendPutRequest("leg", data);
   }

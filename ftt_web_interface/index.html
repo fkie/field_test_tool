@@ -47,6 +47,7 @@
         <a href="./config.html" target="_blank">
           <i class="material-icons">settings</i>
         </a>
+        <i id="download-icon" class="material-icons">file_download</i>
       </div>
       <div class="nav-center">
         <h1>Field Test Tool</h1>
@@ -236,6 +237,91 @@
       </section>
     </template>
 
+    <template id="report-download-template">
+      <header class="modal__title">
+        <h2>Report Generation Interface</h2>
+      </header>
+      <section>
+        <form action="./report" target="_blank">
+          <div class="form-row">
+            <div class="form-col-50">
+              <label for="report-tile-server">Tile Server</label>
+              <input type="text" id="report-tile-server" name="report-tile-server" value="a.tile.openstreetmap.org"></input>
+            </div>
+            <div class="form-col-50">
+              <label for="report-zoom-level">Zoom Level</label>
+              <input type="text" id="report-zoom-level" name="report-zoom-level" value="19" pattern="[0-9]+" title="Only numbers allowed."></input>
+            </div>
+          </div>
+          <hr />
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="report-name">Report Name</label>
+              <input type="text" id="report-name" name="report-name" pattern="[\x00-\x7F]+" title="Special characters not allowed."></input>
+            </div>
+            <div class="form-col-33">
+              <label for="report-version">Report Version</label>
+              <input type="text" id="report-version" name="report-version" pattern="[\x00-\x7F]+" title="Special characters not allowed."></input>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="report-test-event-id">Test Event ID</label>
+              <select id="report-test-event-id" name="report-test-event-id"></select>
+            </div>
+            <div class="form-col-33">
+              <label for="report-min-duration">Min. Duration</label>
+              <input type="text" id="report-min-duration" name="report-min-duration" value="0.1" pattern="[0-9.]+" title="Only numbers and point allowed."></input>
+            </div>
+            <div class="form-col-33">
+              <label for="report-use-local-poses">Use Local Poses</label>
+              <select id="report-use-local-poses" name="report-use-local-poses">
+                <option value="false">False</option>
+                <option value="true">True</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="report-recipient-name">Recipient Name</label>
+              <input type="text" id="report-recipient-name" name="report-recipient-name" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
+            </div>
+            <div class="form-col-33">
+              <label for="report-recipient-address-1">Recipient Adr. L1</label>
+              <input type="text" id="report-recipient-address-1" name="report-recipient-address-1" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
+            </div>
+            <div class="form-col-33">
+              <label for="report-recipient-address-2">Recipient Adr. L2</label>
+              <input type="text" id="report-recipient-address-2" name="report-recipient-address-2" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col-33">
+              <label for="report-creator-name">Creator Name</label>
+              <input type="text" id="report-creator-name" name="report-creator-name" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
+            </div>
+            <div class="form-col-33">
+              <label for="report-creator-address-1">Creator Adr. L1</label>
+              <input type="text" id="report-creator-address-1" name="report-creator-address-1" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
+            </div>
+            <div class="form-col-33">
+              <label for="report-creator-address-2">Creator Adr. L2</label>
+              <input type="text" id="report-creator-address-2" name="report-creator-address-2" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
+            </div>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button">
+              Generate Report
+            </button>
+            <button type="submit" class="styled-button" disabled>
+              Get Report!
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+
     <template id="edit-segment-template">
       <header class="modal__title">
         <h2><span>Segment </span><span></span></h2>
@@ -251,21 +337,22 @@
             </div>
             <div class="form-col-25">
               <label for="obstacle">Obstacle</label>
-              <input type="text" id="obstacle" name="obstacle" />
+              <input type="text" id="obstacle" name="obstacle" pattern="[\x00-\x7F]+" title="Special characters not allowed." />
             </div>
             <div class="form-col-25">
               <label for="lighting">Lighting</label>
-              <input type="text" id="lighting" name="lighting" />
+              <input type="text" id="lighting" name="lighting" pattern="[\x00-\x7F]+" title="Special characters not allowed." />
             </div>
             <div class="form-col-25">
               <label for="slope">Slope</label>
-              <input type="text" id="slope" name="slope" />
+              <input type="text" id="slope" name="slope" pattern="[\x00-\x7F]+" title="Special characters not allowed." />
             </div>
           </div>
           <div class="btn-bar">
             <button type="submit" class="styled-button" disabled>
               Update Data
             </button>
+            <span class="info-text">(Text inputs can only contain ASCII characters)</span>
           </div>
         </form>
       </section>
@@ -332,11 +419,11 @@
           <div class="form-row">
             <div class="form-col-33">
               <label for="location">Location</label>
-              <input type="text" id="location" name="location" />
+              <input type="text" id="location" name="location" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
             </div>
             <div class="form-col-33">
               <label for="version">Version</label>
-              <input type="text" id="version" name="version" />
+              <input type="text" id="version" name="version" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
             </div>
             <div class="form-col-33">
               <label for="time-zone">Time Zone</label>
@@ -394,11 +481,11 @@
           <div class="form-row">
             <div class="form-col-33">
               <label for="test-intent">Test Intent</label>
-              <input type="text" id="test-intent" name="test-intent" />
+              <input type="text" id="test-intent" name="test-intent" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
             </div>
             <div class="form-col-33">
               <label for="workspace">Workspace</label>
-              <input type="text" id="workspace" name="workspace" />
+              <input type="text" id="workspace" name="workspace" pattern="[\x00-\x7F]+" title="Special characters not allowed."/>
             </div>
             <div class="form-col-33">
               <label for="vehicle">Vehicle</label>

@@ -39,7 +39,7 @@ export class PerformerInterface {
     //Mandatory parameters:
     const data = { [this.paramNames[0]]: id };
     //Optional parameters:
-    Object.assign(data, institution && { [this.paramNames[1]]: institution });
+    Object.assign(data, institution !== null && { [this.paramNames[1]]: institution });
     await this.serverInterface.sendPutRequest("performer", data);
   }
 

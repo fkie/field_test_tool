@@ -140,15 +140,15 @@ export class ShiftInterface {
     //Optional parameters:
     Object.assign(
       data,
-      testAdministratorId && { [this.paramNames[4]]: testAdministratorId },
-      testDirectorId && { [this.paramNames[5]]: testDirectorId },
-      safetyOfficerId && { [this.paramNames[6]]: safetyOfficerId },
-      robotOperatorId && { [this.paramNames[7]]: robotOperatorId },
-      performerId && { [this.paramNames[8]]: performerId },
-      testEventId && { [this.paramNames[9]]: testEventId },
-      workspace && { [this.paramNames[10]]: workspace },
-      vehicleId && { [this.paramNames[11]]: vehicleId },
-      note && { [this.paramNames[12]]: note }
+      testAdministratorId !== null && { [this.paramNames[4]]: testAdministratorId },
+      testDirectorId !== null && { [this.paramNames[5]]: testDirectorId },
+      safetyOfficerId !== null && { [this.paramNames[6]]: safetyOfficerId },
+      robotOperatorId !== null && { [this.paramNames[7]]: robotOperatorId },
+      performerId !== null && { [this.paramNames[8]]: performerId },
+      testEventId !== null && { [this.paramNames[9]]: testEventId },
+      workspace !== null && { [this.paramNames[10]]: workspace },
+      vehicleId !== null && { [this.paramNames[11]]: vehicleId },
+      note !== null && { [this.paramNames[12]]: note }
     );
     await this.serverInterface.sendPutRequest("shift", data);
   }

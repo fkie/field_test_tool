@@ -79,11 +79,11 @@ export class VehicleInterface {
     //Optional parameters:
     Object.assign(
       data,
-      key && { [this.paramNames[1]]: key },
-      shortDescription && { [this.paramNames[2]]: shortDescription },
-      longDescription && { [this.paramNames[3]]: longDescription },
-      institution && { [this.paramNames[4]]: institution },
-      configuration && { [this.paramNames[5]]: configuration }
+      key !== null && { [this.paramNames[1]]: key },
+      shortDescription !== null && { [this.paramNames[2]]: shortDescription },
+      longDescription !== null && { [this.paramNames[3]]: longDescription },
+      institution !== null && { [this.paramNames[4]]: institution },
+      configuration !== null && { [this.paramNames[5]]: configuration }
     );
     await this.serverInterface.sendPutRequest("vehicle", data);
   }

@@ -1,3 +1,4 @@
+/* eslint-disable no-control-regex */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -189,13 +190,13 @@ export class ShiftEdit {
     const performer = this.performerList.find(
       (entry) => entry.institution == document.getElementById("performer").value
     ).id;
-    const testIntent = document.getElementById("test-intent").value;
-    const workspace = document.getElementById("workspace").value;
+    const testIntent = document.getElementById("test-intent").value.replace(/[^\x00-\x7F]/g, "");
+    const workspace = document.getElementById("workspace").value.replace(/[^\x00-\x7F]/g, "");
     const vehicleId = this.vehicleList.find(
       (entry) =>
         entry.shortDescription == document.getElementById("vehicle").value
     ).id;
-    const note = document.getElementById("shift-note").value;
+    const note = document.getElementById("shift-note").value.replace(/[^\x00-\x7F]/g, "");
     //Send put request.
     try {
       await this.shiftInterface.put(

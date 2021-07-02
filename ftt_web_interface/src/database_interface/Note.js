@@ -51,8 +51,8 @@ export class NoteInterface {
     //Optional parameters:
     Object.assign(
       data,
-      personnelId && { [this.paramNames[3]]: personnelId },
-      note && { [this.paramNames[4]]: note }
+      personnelId !== null && { [this.paramNames[3]]: personnelId },
+      note !== null && { [this.paramNames[4]]: note }
     );
     await this.serverInterface.sendPutRequest("note", data);
   }
