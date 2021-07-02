@@ -28,7 +28,16 @@ input:invalid {
   box-shadow: 0 0 1px 1px red;
 }
 
+select:invalid {
+  box-shadow: 0 0 1px 1px red;
+  background-color: white;
+}
+
 input:focus:invalid {
+  box-shadow: none;
+}
+
+select:focus:invalid {
   box-shadow: none;
 }
 
