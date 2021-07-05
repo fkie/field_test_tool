@@ -6,16 +6,17 @@ The collected data is processed by an automatic report generator, which aims to 
 
 ## _1. Description_
 
-The Field Test Tools comprises four software modules:
-- A database with a JSON API.
-- An interface between ROS and the database API.
-- An interface between the user and the database API.
+The Field Test Tools comprises five software modules:
+- A PostgreSQL database with PostGIS extension. 
 - An automatic report generator out of the stored data.
+- A web server that exposes a JSON API for the database and report generator.
+- An interface between ROS and the server API.
+- An interface between the user and the server API.
 <br/><br/>
 
 ### **1.1. Database**
 
-A Postgres database with Postgis extension is used. A python script implements a JSON API with the common requests (POST, PUT, GET) to interact with the database tables through HTTP messages. The databse schema is shown in Figure 1.
+A PostgreSQL database with PostGIS extension is used to store the relevant data. The databse schema is shown in Figure 1. The robot's position, operating mode, images from on-board or off-board cameras and user notes are stored under a hierarchical logging structure representing the trial instance (Test Event), test attempt (Shift), and route section (Leg). Each trajectory under a single operating mode comprises a Segment entry.
 
 <figure>
   <img src="doc/images/database_schema.png" alt="database schema" width="500">
@@ -23,7 +24,27 @@ A Postgres database with Postgis extension is used. A python script implements a
 </figure>
 <br/><br/>
 
-### **1.2. ROS to databse API interface**
+### **1.2. Report generator**
+A python script that reads and processes the stored data, then generates and compiles a LaTeX report. The report includes an overview of the robot's path and a timeline of the operating modes, as shown in Figures 2 and 3. Details for each individual segment (path section) are also annotated.
+
+<figure>
+  <img src="doc/images/ftt_report_overview_map.png" alt="FTT report map overview" width="500">
+  <figcaption>Figure 2. FTT report overview (map).</figcaption>
+</figure>
+<br/><br/>
+
+<figure>
+  <img src="doc/images/ftt_report_overview_timeline.png" alt="FTT report timeline overview" width="500">
+  <figcaption>Figure 3. FTT report overview (timeline).</figcaption>
+</figure>
+<br/><br/>
+
+### **1.3. Web server**
+
+A python script implements a JSON API with the common requests (POST, PUT, GET) to interact with the database tables through HTTP messages. It also serves the main HTML pages and provides an interface to call and get the automatically generated report.
+<br/><br/>
+
+### **1.4. ROS to server API interface**
 
 A ROS node that subscribes to topics of the following messages to create database entries.
 - industrial_msgs/RobotMode
@@ -35,35 +56,20 @@ A ROS node that subscribes to topics of the following messages to create databas
 Aditionally, the node listens to the TF between the map frame (e.g. "map") and the robot frame (e.g. "base_link").
 <br/><br/>
 
-### **1.3. User to databse API interface**
+### **1.5. User to server API interface**
 
-A JavaScript web application implements a graphical user interface so that users can create new logging instances and append valuable context information. Feedback on the stored robot position data and operating mode is also displayed.
-Figures 2 and 3 show an overview of the FTT web GUI displaying GPS and local position, respectively. The data was generated using Clearpath's Husky ROS stack.
+A JavaScript web application that implements a graphical user interface to create new logging instances and append valuable context information. Feedback on the stored robot position data and operating mode is also displayed.
+Figures 4 and 5 show an overview of the FTT web GUI displaying GPS and local position, respectively. The data was generated using Clearpath's Husky ROS stack.
 
 <figure>
   <img src="doc/images/ftt_web_overview_gps.png" alt="FTT GUI GPS" width="500">
-  <figcaption>Figure 2. FTT web GUI overview with GPS data.</figcaption>
+  <figcaption>Figure 4. FTT web GUI overview with GPS data.</figcaption>
 </figure>
 <br/><br/>
 
 <figure>
   <img src="doc/images/ftt_web_overview_local.png" alt="FTT GUI local" width="500">
-  <figcaption>Figure 3. FTT web GUI overview with local data.</figcaption>
-</figure>
-<br/><br/>
-
-### **1.4. Report generator**
-A python script that reads and processes the stored data, then generates and compiles a LaTeX report. The report includes an overview of the robot path and a timeline of the operating modes, as shown in Figures 4 and 5. Details for each individual segment (path section) are also annotated.
-
-<figure>
-  <img src="doc/images/ftt_report_overview_map.png" alt="FTT report map overview" width="500">
-  <figcaption>Figure 4. FTT report overview (map).</figcaption>
-</figure>
-<br/><br/>
-
-<figure>
-  <img src="doc/images/ftt_report_overview_timeline.png" alt="FTT report timeline overview" width="500">
-  <figcaption>Figure 5. FTT report overview (timeline).</figcaption>
+  <figcaption>Figure 5. FTT web GUI overview with local data.</figcaption>
 </figure>
 <br/><br/>
 
@@ -303,12 +309,12 @@ From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interfac
 
 ## _5. Execution_
 
-### **5.1. FTT database API**
+### **5.1. FTT server**
 
-The following commands starts the database JSON server API:
+The following commands starts the web server:
 
 ```bash
-cd <ros_workspace>/src/field_test_tool/ftt_database/scripts/
+cd <ros_workspace>/src/field_test_tool/ftt_server/scripts/
 
 python api.py
 ```
@@ -335,12 +341,12 @@ roslaunch ftt_ros_interface robot_mode_publisher.launch <args>
 
 ### **5.3. FTT web GUI**
 
-After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server).
+After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server). Usage instructions can be found under the _docs_ directory of this repository.
 <br/><br/>
 
 ### **5.4. PDF-Report generator**
 
-The following commands will run the report generator. The output PDF report will be available at _<ros_workspace>/src/field_test_tool/ftt_report_generator/build/<configured_report_name>.pdf_. The report configuration options are explained below.
+The following commands will run the report generator. The output PDF report will be available at _<ros_workspace>/src/field_test_tool/ftt_report_generator/build/report.pdf_. The report configuration options are explained below.
 
 ```bash
 cd <ros_workspace>/src/field_test_tool/ftt_report_generator/src/
