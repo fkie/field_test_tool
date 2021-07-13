@@ -253,9 +253,13 @@ class ShiftLog extends Log {
       }
     }
     //Find the performer id that matches the selected user.
-    const matchedPerformer = this.performerList.find(
+    let matchedPerformer = this.performerList.find(
       (performer) => performer.institution == this.currentUser.institution
     );
+    //If the user's institution doesn't have a performer. Use the first one as default.
+    if (!matchedPerformer) {
+      matchedPerformer = this.performerList[0];
+    }
     //Set postData.
     this.postData = [
       this.parentSelect.value,
