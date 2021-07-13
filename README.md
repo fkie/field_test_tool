@@ -111,7 +111,7 @@ The following libraries and resources are needed for this project. They are show
 
 ## _3. System requirements_
 
-- Ubuntu 16.04 and ROS Kinetic OR Ubuntu 18.04 and ROS Melodic.
+- Ubuntu 18.04 and ROS Melodic.
 - Current version of a web browser, at least<sup>\*</sup>:
   - Chrome 89+
   - Firefox 86+
@@ -141,6 +141,7 @@ sudo apt-get install texlive texlive-lang-german texlive-doc-de texlive-latex-ex
 ```bash
 cd <ros_workspace>/src
 git clone https://github.com/fkie/field_test_tool.git
+rosdep install --from-paths field_test_tool/ --ignore-src
 catkin build
 ```
 
@@ -201,15 +202,17 @@ Quit Postgres interactive terminal:
 Create the database schema and fill some tables with the required values:
 
 ```bash
-psql -U postgres -h localhost ftt <ros_workspace>/src/field_test_tool/ftt_database/postgres/ftt_schema.sql
-psql -U postgres -h localhost ftt <ros_workspace>/src/field_test_tool/ftt_database/postgres/setup_queries.pgsql
+cd <ros_workspace>/src
+psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/ftt_schema.sql
+psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/setup_queries.pgsql
 ```
 
 Alternative: If postgres server is on a different host:
 
 ```bash
-psql -h hostname -d ftt -U postgres -p 5432 -a -q -f <ros_workspace>/src/field_test_tool/ftt_database/postgres/ftt_schema.sql ftt
-psql -h hostname -d ftt -U postgres -p 5432 -a -q -f <ros_workspace>/src/field_test_tool/ftt_database/postgres/setup_queries.sql ftt
+cd <ros_workspace>/src
+psql -h hostname -d ftt -U postgres -p 5432 -a -q -f field_test_tool/ftt_database/postgres/ftt_schema.sql ftt
+psql -h hostname -d ftt -U postgres -p 5432 -a -q -f field_test_tool/ftt_database/postgres/setup_queries.sql ftt
 ```
 
 ### **4.6. Installation texmaker (optional)**
