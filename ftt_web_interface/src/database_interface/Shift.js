@@ -125,7 +125,7 @@ export class ShiftInterface {
     safetyOfficerId = null,
     robotOperatorId = null,
     performerId = null,
-    testEventId = null,
+    testIntent = null,
     workspace = null,
     vehicleId = null,
     note = null
@@ -145,7 +145,7 @@ export class ShiftInterface {
       safetyOfficerId !== null && { [this.paramNames[6]]: safetyOfficerId },
       robotOperatorId !== null && { [this.paramNames[7]]: robotOperatorId },
       performerId !== null && { [this.paramNames[8]]: performerId },
-      testEventId !== null && { [this.paramNames[9]]: testEventId },
+      testIntent !== null && { [this.paramNames[9]]: testIntent },
       workspace !== null && { [this.paramNames[10]]: workspace },
       vehicleId !== null && { [this.paramNames[11]]: vehicleId },
       note !== null && { [this.paramNames[12]]: note }

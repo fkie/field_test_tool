@@ -243,19 +243,31 @@ class ShiftLog extends Log {
       alert("Please select a user to add a new shift!");
       return;
     }
-    //If needed, fetch performer data from server.
-    if (!this.performerList) {
-      try {
-        this.performerList = await this.performerInterface.get();
-      } catch (error) {
-        alert(error.message);
-        return;
-      }
+    //Fetch performer and vehicle data from server.
+    try {
+      this.performerList = await this.performerInterface.get();
+      this.vehicleList = await this.vehicleInterface.get();
+    } catch (error) {
+      alert(error.message);
+      return;
     }
-    //Find the performer id that matches the selected user.
-    const matchedPerformer = this.performerList.find(
-      (performer) => performer.institution == this.currentUser.institution
-    );
+    //If there are no performers or vehicles in the list, alert the user.
+    if (this.performerList.length == 0 || this.vehicleList.length == 0) {
+      alert(
+        "Please configure a performer and a vehicle before trying to add a new shift!"
+      );
+      return;
+    }
+    //Find the performer that matches the selected user. If none matches, use the first one.
+    let matchedPerformer =
+      this.performerList.find(
+        (performer) => performer.institution == this.currentUser.institution
+      ) || this.performerList[0];
+    //Find a vehicle that matches the selected user's institution. If none matches, use the first one.
+    let matchedVehicle =
+      this.vehicleList.find(
+        (vehicle) => vehicle.institution == this.currentUser.institution
+      ) || this.vehicleList[0];
     //Set postData.
     this.postData = [
       this.parentSelect.value,
@@ -266,7 +278,7 @@ class ShiftLog extends Log {
       matchedPerformer.id,
       null,
       null,
-      1,
+      matchedVehicle.id,
       null,
     ];
     //Call parent function.
@@ -283,17 +295,11 @@ class ShiftLog extends Log {
     const selectedLog = this.dataList.find(
       (entry) => entry.id == this.select.value
     );
-    //If needed, fetch performer, personnel and vehicle data from server.
+    //Fetch performer, personnel and vehicle data from server.
     try {
-      if (!this.performerList) {
-        this.performerList = await this.performerInterface.get();
-      }
-      if (!this.personnelList) {
-        this.personnelList = await this.personnelInterface.get();
-      }
-      if (!this.vehicleList) {
-        this.vehicleList = await this.vehicleInterface.get();
-      }
+      this.performerList = await this.performerInterface.get();
+      this.personnelList = await this.personnelInterface.get();
+      this.vehicleList = await this.vehicleInterface.get();
     } catch (error) {
       alert(error.message);
       return;
@@ -331,8 +337,36 @@ class LegLog extends Log {
   }
 
   async newBtnClickHandler() {
+    //Fetch weather and pose source data from server.
+    try {
+      //Weather data is static. Skip if already fetched.
+      if (!this.weatherList || this.weatherlist.length == 0) {
+        this.weatherList = await this.weatherInterface.get();
+      }
+      this.poseSourceList = await this.poseSourceInterface.get();
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
+    //If there are no weather states, alert the user.
+    if (this.weatherList.length == 0) {
+      alert(
+        "Weather list empty. Your database was not properly initialized. Please fix this before continuing."
+      );
+      return;
+    }
+    //If the pose source list is empty, alert the user.
+    if (this.poseSourceList.length == 0) {
+      alert("Please configure a pose source before trying to add a new leg!");
+      return;
+    }
     //Set postData.
-    this.postData = [this.parentSelect.value, 1, 1, null];
+    this.postData = [
+      this.parentSelect.value,
+      this.weatherList[0].id,
+      this.poseSourceList[0].id,
+      null,
+    ];
     //Call parent function.
     await super.newBtnClickHandler();
   }
@@ -347,14 +381,13 @@ class LegLog extends Log {
     const selectedLog = this.dataList.find(
       (entry) => entry.id == this.select.value
     );
-    //If needed, fetch weather and pose source data from server.
+    //Fetch weather and pose source data from server.
     try {
-      if (!this.weatherList) {
+      //Weather data is static. Skip if already fetched.
+      if (!this.weatherList || this.weatherList.length == 0) {
         this.weatherList = await this.weatherInterface.get();
       }
-      if (!this.poseSourceList) {
-        this.poseSourceList = await this.poseSourceInterface.get();
-      }
+      this.poseSourceList = await this.poseSourceInterface.get();
     } catch (error) {
       alert(error.message);
       return;

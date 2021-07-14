@@ -137,8 +137,18 @@ export class ConfigFrame {
     const dataRow = event.target.closest("tr");
     //Gather input data.
     let putData = [dataRow.children[0].textContent];
+    let missingData = false;
     for (let i = 1; i < dataInterface.paramNames.length; i++) {
-      putData.push(dataRow.children[i].value);
+      const colValue = dataRow.children[i].value;
+      if (!colValue) {
+        dataRow.children[i].required = true;
+        missingData = true;
+      }
+      putData.push(colValue);
+    }
+    //Return if there are missing data.
+    if (missingData) {
+      return;
     }
     //Put entry through dataInterface.
     try {
@@ -154,8 +164,18 @@ export class ConfigFrame {
     const dataRow = event.target.closest("tr");
     //Gather input data.
     let postData = [];
+    let missingData = false;
     for (let i = 1; i < dataInterface.paramNames.length; i++) {
-      postData.push(dataRow.children[i].value);
+      const colValue = dataRow.children[i].value;
+      if (!colValue) {
+        dataRow.children[i].required = true;
+        missingData = true;
+      }
+      postData.push(colValue);
+    }
+    //Return if there are missing data.
+    if (missingData) {
+      return;
     }
     //Post entry through dataInterface.
     try {
