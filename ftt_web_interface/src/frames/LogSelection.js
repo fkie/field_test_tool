@@ -340,7 +340,7 @@ class LegLog extends Log {
     //Fetch weather and pose source data from server.
     try {
       //Weather data is static. Skip if already fetched.
-      if (!this.weatherList || this.weatherlist.length == 0) {
+      if (!this.weatherList || this.weatherList.length == 0) {
         this.weatherList = await this.weatherInterface.get();
       }
       this.poseSourceList = await this.poseSourceInterface.get();
