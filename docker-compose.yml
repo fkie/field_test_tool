@@ -18,6 +18,7 @@ services:
       - "5000:5000"
     depends_on:
       - "ftt-database"
+    restart: on-failure
   ftt-ros-interface:
     build: 
       context: .
