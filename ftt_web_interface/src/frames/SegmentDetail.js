@@ -20,7 +20,7 @@ const ITO_REASON_UNEXPECTED = 12;
 const ITO_REASON_PLANNER = 3;
 const ITO_REASON_SAFETY = 1;
 const ITO_REASON_TRANSIT = 9;
-const ITO_REASON_UNASSIGNED = 11;
+// const ITO_REASON_UNASSIGNED = 11;
 
 export class SegmentDetail {
   //Container class for the segment info and map display sections of the web page.
@@ -387,11 +387,41 @@ export class SegmentDetail {
   }
 
   async newSegmentHandler() {
+    //Fetch ito reason data from server if needed.
+    try {
+      if (!this.itoReasonList || this.itoReasonList.length == 0) {
+        this.itoReasonList = await this.itoReasonInterface.get();
+        //If there are no ito reasons, alert the user.
+        if (this.itoReasonList.length == 0) {
+          alert(
+            "ITO reasons list empty. Your database was not properly initialized. Please fix this before continuing."
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
+    //Select the unassigned ito reason.
+    const matchedItoReason = this.itoReasonList.find(
+      (entry) => entry.shortDescription == "Unassigned"
+    );
+    //Check there is a match and keep the id of the unassigned ito reason.
+    let unassignedItoReasonId;
+    if (matchedItoReason) {
+      unassignedItoReasonId = matchedItoReason.id;
+    } else {
+      alert(
+        "Unable to find the 'Unassigned' ITO reason. Your database was not properly initialized. Please fix this before continuing."
+      );
+      return;
+    }
     try {
       //Send post request to create a new ITO segment with unassigned reason.
       await this.segmentInterface.post(
         this.legSelectHook.value,
-        ITO_REASON_UNASSIGNED,
+        unassignedItoReasonId,
         SEGMENT_TYPE_ITO,
         null,
         null,
@@ -429,7 +459,7 @@ export class SegmentDetail {
     }
     try {
       //Fetch ito reason data from server if needed.
-      if (!this.itoReasonList) {
+      if (!this.itoReasonList || this.itoReasonList.length == 0) {
         this.itoReasonList = await this.itoReasonInterface.get();
       }
       //Find the selected segment entry.
