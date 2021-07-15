@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
     python2.7 \
     python-pip \
-    python-psycopg2 \
     python-pyproj \
     python-jinja2 \
     python-parse \
@@ -22,6 +21,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     Flask \
     flask-restful \
     flask-cors \
+    psycopg2 \
   && rm -rf /var/lib/apt/lists/*
 
 # make the directory for the web server code (to be mounted as volume)
