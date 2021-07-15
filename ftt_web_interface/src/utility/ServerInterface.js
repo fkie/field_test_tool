@@ -23,7 +23,9 @@ export class ServerInterface {
     } else {
       const response_data = await response.json();
       console.log(response_data.message);
-      throw new Error("Something went wrong!");
+      throw new Error(
+        "Something went wrong! Server message: " + response_data.message
+      );
     }
   }
 

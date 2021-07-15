@@ -166,7 +166,7 @@ export class ConfigFrame {
     let postData = [];
     let missingData = false;
     for (let i = 1; i < dataInterface.paramNames.length; i++) {
-      const colValue = dataRow.children[i].value;
+      const colValue = dataRow.children[i].value || dataRow.children[i].placeholder;
       if (!colValue) {
         dataRow.children[i].required = true;
         missingData = true;
@@ -256,6 +256,13 @@ export class ConfigFrame {
         const newInput = document.createElement("input");
         newInput.type = "text";
         newInput.className = "new-entry-input";
+        //Insert default value for secondary fields.
+        if (
+          dataInterface.paramNames[i] == "long_description" ||
+          dataInterface.paramNames[i] == "configuration"
+        ) {
+          newInput.placeholder = "--";
+        }
         target.appendChild(newInput);
       }
       //Insert done icon in last cell.
