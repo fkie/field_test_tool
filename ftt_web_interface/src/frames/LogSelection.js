@@ -238,6 +238,11 @@ class ShiftLog extends Log {
   }
 
   async newBtnClickHandler() {
+    //Make sure a test event is selected.
+    if(!this.parentSelect.value) {
+      alert("Please select a test event to add a new shift!");
+      return;
+    }
     //Make sure a user is selected from the interface.
     if (!this.currentUser.id) {
       alert("Please select a user to add a new shift!");
@@ -337,6 +342,11 @@ class LegLog extends Log {
   }
 
   async newBtnClickHandler() {
+    //Make sure a shift is selected.
+    if(!this.parentSelect.value) {
+      alert("Please select a shift to add a new leg!");
+      return;
+    }
     //Fetch weather and pose source data from server.
     try {
       //Weather data is static. Skip if already fetched.
