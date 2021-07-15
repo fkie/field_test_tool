@@ -125,15 +125,14 @@ The following libraries and resources are needed for this project. They are show
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python-psycopg2 python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml
-sudo python -m pip install requests Pillow Flask flask-restful
-sudo python -m pip install -U flask-cors
+sudo apt-get install build-essential python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml
+sudo python -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
 ```
 
 ### **4.2. Installation of LaTeX and libraries**
 
 ```bash
-sudo apt-get install texlive texlive-lang-german texlive-doc-de texlive-latex-extra texmaker texlive-fonts-extra texlive-xetex latex-xcolor
+sudo apt-get install texlive texlive-lang-german texlive-latex-extra texmaker texlive-fonts-extra texlive-xetex
 ```
 
 ### **4.3. Installation of the Field Test Tool**
@@ -264,7 +263,7 @@ Otherwise, proceed with the installation steps below.
 
 #### **_4.8.1. Installation of Node.js_**
 
-Install the latest version of Node.js for you machine from nodesjs.org. This will give you access to the **_npm_** package manager needed for the next steps.
+Install the latest version of Node.js for you machine from https://nodejs.org. This will give you access to the **_npm_** package manager needed for the next steps.
 <br/><br/>
 
 #### **_4.8.2. Installation of npm libraries_**

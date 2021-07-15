@@ -408,13 +408,13 @@ class ApiCommon:
         # Specialization.
         # Method to get the ids of the "open" log entries of the specified table.
         entry = ApiCommon.get_table_data(table_name, ["id"], {"endtime_secs": None}, "DESC", limit)
-        if entry is not None:
+        if entry:
             if limit == 1:
                 return entry[0]
             else:
                 return list(map(lambda x: x[0], entry))
         else:
-            msg = error_msg("LogError","No open %s entry in the DB. DB query aborted." % table_name)
+            msg = error_msg("LogError","No open %s entry in the DB. Aborted." % table_name)
             raise ApiError(msg, status_code=400)
         pass
 
@@ -422,12 +422,15 @@ class ApiCommon:
     def check_open_log(table_name, entry_id):
         # Specialization.
         # Method to check if the specified log entry is "open".
-        open_ids = ApiCommon.get_open_log_ids(table_name)
-        if int(entry_id) in open_ids: 
-            return True, None
-        else:
-            msg = warn_msg("Log entry %s %s is already closed." % (table_name, entry_id))
-            return False, print_and_return(msg)
+        try:
+            open_ids = ApiCommon.get_open_log_ids(table_name)
+            if int(entry_id) in open_ids: 
+                return True
+            else:
+                raise ApiError()
+        except:
+            msg = error_msg("LogError", "Log entry %s %s is closed. Aborted." % (table_name, entry_id))
+            raise ApiError(msg, status_code=400)
         pass
 
     @staticmethod
@@ -472,9 +475,10 @@ class TestEvent(Resource):
         table_name = "test_event"
         # If provided, check that the id is open.
         if entry_id:
-            id_open, msg = ApiCommon.check_open_log(table_name, entry_id)
-            if not id_open:
-                return msg
+            try:
+                ApiCommon.check_open_log(table_name, entry_id)
+            except ApiError as err:
+                return err.message
         # Close open child log entry.
         Shift.close()
         # Close log entry.
@@ -531,9 +535,10 @@ class Shift(Resource):
         table_name = "shift"
         # If provided, check that the id is open.
         if entry_id:
-            id_open, msg = ApiCommon.check_open_log(table_name, entry_id)
-            if not id_open:
-                return msg
+            try:
+                ApiCommon.check_open_log(table_name, entry_id)
+            except ApiError as err:
+                return err.message
         # Close open child log entry.
         Leg.close()
         # Close log entry.
@@ -559,6 +564,8 @@ class Shift(Resource):
         # Get parameter values.
         param_names = ["test_event_id","test_administrator_id", "test_director_id", "safety_officer_id", "robot_operator_id", "performer_id", "test_intent", "workspace", "vehicle_id", "note"]
         data = ApiCommon.get_all_params_from_json(param_names)
+        # Check that the requested test event is open.
+        ApiCommon.check_open_log("test_event", data[param_names[0]])
         # Close any open entries.
         Shift.close()
         # Find shift count.
@@ -597,9 +604,10 @@ class Leg(Resource):
         table_name = "leg"
         # If provided, check that the id is open.
         if entry_id:
-            id_open, msg = ApiCommon.check_open_log(table_name, entry_id)
-            if not id_open:
-                return msg
+            try:
+                ApiCommon.check_open_log(table_name, entry_id)
+            except ApiError as err:
+                return err.message
         # Close open child log entries.
         Segment.close()
         # Close log entry.
@@ -625,6 +633,8 @@ class Leg(Resource):
         # Get parameter values.
         param_names = ["shift_id", "weather_id", "default_pose_source_id", "note"]
         data = ApiCommon.get_all_params_from_json(param_names)
+        # Check that the requested shift is open.
+        ApiCommon.check_open_log("shift", data[param_names[0]])
         # Close any open entries.
         Leg.close()
         # Find leg count.
@@ -663,9 +673,10 @@ class Segment(Resource):
         table_name = "segment"
         # If provided, check that the id is open.
         if entry_id:
-            id_open, msg = ApiCommon.check_open_log(table_name, entry_id)
-            if not id_open:
-                return msg
+            try:
+                ApiCommon.check_open_log(table_name, entry_id)
+            except ApiError as err:
+                return err.message
         if entry_id:
             # Close specified log entry.
             return ApiCommon.close_log(table_name, entry_id)
@@ -775,8 +786,12 @@ class Segment(Resource):
         # Allow selection of leg_id by string.
         if leg_id == "Current Leg":
             leg_id = ApiCommon.get_open_log_ids("leg", 1)
-        # Check that the leg_id and segment_type_id are valid.
-        ApiCommon.check_id(leg_id)
+        else:
+            # Check that the leg_id is valid.
+            ApiCommon.check_id(leg_id)
+            # Check that the requested leg is open.
+            ApiCommon.check_open_log("leg", leg_id)
+        # Check that the segment_type_id is valid.
         Segment.check_segment_type(segment_type_id)
         # Get current open master segment id and type
         try:
@@ -1166,7 +1181,7 @@ class MapImage(Resource):
         data["secs"] = int(time.time())
         # Allow selection of shift_id by string.
         if data[param_names[0]] == "Current Shift":
-                data[param_names[0]] = ApiCommon.get_open_log_ids("shift", 1)
+            data[param_names[0]] = ApiCommon.get_open_log_ids("shift", 1)
         # Check that the id is a number.
         ApiCommon.check_id(data[param_names[0]])
         # Get position data.
