@@ -6,6 +6,8 @@
   <arg name="MAP_TOPIC"               default="/map"/>
   <arg name="SEND_POSE_TIMEOUT"       default="5.0"/>
   <arg name="SEND_MAP_TIMEOUT"        default="5.0"/>
+  <arg name="IMAGE_BUFFER_SIZE"       default="3"/>
+  <arg name="IMAGE_BUFFER_TIMESTEP"   default="1.0"/>
   <arg name="SERVER_ADDRESS"          default="localhost:5000"/>
   <arg name="SAVE_IMAGE_DIR"          default="$(env HOME)/Pictures "/>
   <arg name="MAP_FRAME"               default="map"/>
@@ -20,6 +22,8 @@
 
     <param name="send_pose_timeout" type="double" value="$(arg SEND_POSE_TIMEOUT)"/>
     <param name="send_map_timeout" type="double" value="$(arg SEND_MAP_TIMEOUT)"/>
+    <param name="image_buffer_size" type="int" value="$(arg IMAGE_BUFFER_SIZE)"/>
+    <param name="image_buffer_timestep" type="double" value="$(arg IMAGE_BUFFER_TIMESTEP)"/>
     <param name="server_address" type="string" value="$(arg SERVER_ADDRESS)"/>
     <param name="save_image_dir" type="string" value="$(arg SAVE_IMAGE_DIR)"/>
     <param name="map_frame" type="string" value="$(arg MAP_FRAME)"/>

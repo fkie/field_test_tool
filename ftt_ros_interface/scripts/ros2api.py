@@ -17,6 +17,7 @@ import nav_msgs.msg
 import base64
 import requests
 import json
+import collections
 from PIL import Image
 from cv_bridge import CvBridge, CvBridgeError
 from StringIO import StringIO
@@ -31,8 +32,6 @@ class Ros2api:
     last_ts = None
     last_lat = None
     last_lng = None
-    last_rgb_image = None
-    last_compressed_image = None
     last_map = None
     map_sent = False
 
@@ -45,6 +44,8 @@ class Ros2api:
 
         self.send_pose_timeout = rospy.get_param("~send_pose_timeout", 2.0)
         self.send_map_timeout = rospy.get_param("~send_map_timeout", 2.0)
+        image_buffer_size = rospy.get_param("~image_buffer_size", 3)
+        self.image_buffer_timestep = rospy.get_param("~image_buffer_timestep", 1.0)
         self.server_address = rospy.get_param("~server_address", "localhost:5000")
         self.save_image_dir = rospy.get_param("~save_image_dir", ".")
         self.map_frame = rospy.get_param("~map_frame", "map")
@@ -60,8 +61,14 @@ class Ros2api:
         rospy.Timer(rospy.Duration(self.send_pose_timeout), self.send_pose_timer_callback)
         rospy.Timer(rospy.Duration(self.send_map_timeout), self.send_map_timer_callback)
         
+        self.raw_image_buffer = collections.deque(image_buffer_size*[sensor_msgs.msg.Image()], image_buffer_size)
+        self.compressed_image_buffer = collections.deque(image_buffer_size*[sensor_msgs.msg.CompressedImage()], image_buffer_size)
+        self.last_raw_image_time = rospy.Time.now()
+        self.last_compressed_image = rospy.Time.now()
+
         self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_timeout))
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
+
         pass
 
     def __enter__(self):
@@ -120,7 +127,7 @@ class Ros2api:
                 resp = requests.post('http://%s/segment' % self.server_address, json=data)
                 if resp.status_code == 200:
                     self.last_robot_mode = mode.val
-                    self.send_last_image_msg()
+                    self.send_image_buffer()
                 self.print_resp_json(resp)
             except:
                 rospy.logerr("Server unavailable!")
@@ -133,11 +140,13 @@ class Ros2api:
         pass
 
     def image_callback(self, img_msg):
-        self.last_rgb_image = img_msg
+        if (rospy.Time.now() - self.last_raw_image_time).to_sec() > self.image_buffer_timestep:
+            self.raw_image_buffer.append(img_msg)
         pass
 
     def compressed_image_callback (self, compressed_img_msg):
-        self.last_compressed_image = compressed_img_msg
+        if (rospy.Time.now() - self.last_compressed_image_time).to_sec() > self.image_buffer_timestep:
+            self.compressed_image_buffer.append(compressed_img_msg)
         pass
 
     def map_callback (self, map_msg):
@@ -187,14 +196,14 @@ class Ros2api:
                 print("Exception: " + sys.exc_info()[0])
         pass
 
-    def send_last_image_msg(self):
-        if self.last_rgb_image is not None:
-            img = self.create_image_jpg(self.last_rgb_image)
-            time = self.last_rgb_image.header.stamp.secs+(self.last_rgb_image.header.stamp.nsecs / 1000000000.0)
+    def send_image_buffer(self):
+        for raw_image in self.raw_image_buffer():
+            img = self.create_image_jpg(raw_image)
+            time = raw_image.header.stamp.secs+(raw_image.header.stamp.nsecs / 1000000000.0)
             self.send_image(img, time)
-        if self.last_compressed_image is not None:
-            time = self.last_compressed_image.header.stamp.secs+(self.last_compressed_image.header.stamp.nsecs / 1000000000.0)
-            self.send_image(self.last_compressed_image.data, time)
+        for compressed_image in self.compressed_image_buffer:
+            time = compressed_image.header.stamp.secs+(compressed_image.header.stamp.nsecs / 1000000000.0)
+            self.send_image(compressed_image.data, time)
         pass
 
     def create_image_jpg(self, image):
