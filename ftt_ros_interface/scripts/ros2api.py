@@ -64,7 +64,7 @@ class Ros2api:
         self.raw_image_buffer = collections.deque(image_buffer_size*[sensor_msgs.msg.Image()], image_buffer_size)
         self.compressed_image_buffer = collections.deque(image_buffer_size*[sensor_msgs.msg.CompressedImage()], image_buffer_size)
         self.last_raw_image_time = rospy.Time.now()
-        self.last_compressed_image = rospy.Time.now()
+        self.last_compressed_image_time = rospy.Time.now()
 
         self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_timeout))
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
@@ -142,11 +142,13 @@ class Ros2api:
     def image_callback(self, img_msg):
         if (rospy.Time.now() - self.last_raw_image_time).to_sec() > self.image_buffer_timestep:
             self.raw_image_buffer.append(img_msg)
+            self.last_raw_image_time = rospy.Time.now()
         pass
 
     def compressed_image_callback (self, compressed_img_msg):
         if (rospy.Time.now() - self.last_compressed_image_time).to_sec() > self.image_buffer_timestep:
             self.compressed_image_buffer.append(compressed_img_msg)
+            self.last_compressed_image_time = rospy.Time.now()
         pass
 
     def map_callback (self, map_msg):
@@ -197,13 +199,15 @@ class Ros2api:
         pass
 
     def send_image_buffer(self):
-        for raw_image in self.raw_image_buffer():
-            img = self.create_image_jpg(raw_image)
-            time = raw_image.header.stamp.secs+(raw_image.header.stamp.nsecs / 1000000000.0)
-            self.send_image(img, time)
+        for raw_image in self.raw_image_buffer:
+            if len(raw_image.data) > 0:
+                img = self.create_image_jpg(raw_image)
+                time = raw_image.header.stamp.secs+(raw_image.header.stamp.nsecs / 1000000000.0)
+                self.send_image(img, time)
         for compressed_image in self.compressed_image_buffer:
-            time = compressed_image.header.stamp.secs+(compressed_image.header.stamp.nsecs / 1000000000.0)
-            self.send_image(compressed_image.data, time)
+            if len(compressed_image.data) > 0:
+                time = compressed_image.header.stamp.secs+(compressed_image.header.stamp.nsecs / 1000000000.0)
+                self.send_image(compressed_image.data, time)
         pass
 
     def create_image_jpg(self, image):
