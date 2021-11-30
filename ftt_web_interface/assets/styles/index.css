@@ -5,21 +5,15 @@
   justify-content: space-between;
 }
 
-.nav-right {
+.nav-right, .nav-center {
   display: flex;
-}
-
-.nav-left i {
-  font-size: 2rem;
-  color: white;
-  margin: 1rem;
-  cursor: pointer;
 }
 
 .nav-center h1 {
   font-size: 2rem;
   color: white;
   margin: 0;
+  align-self: center;
 }
 
 .nav-right p {
@@ -28,11 +22,26 @@
   align-self: center;
 }
 
-.nav-right i {
+.header-icon {
   font-size: 2rem;
   color: white;
   margin: 1rem;
   cursor: pointer;
+}
+.header-icon:hover {
+  color: #3a6ddb;
+}
+
+.header-icon:active {
+  color: #0e4acc;
+}
+
+.connected {
+  color: darkgreen;
+}
+
+.disconnected {
+  color: darkred;
 }
 
 .main-content {
@@ -86,7 +95,7 @@
   background-color: rgba(255, 0, 0, 0.2);
 }
 
-#get-segments-btn {
+.log-big-btn {
   /* margin-left: 3rem; */
   margin-top: 0.5rem;
   width: 5rem;

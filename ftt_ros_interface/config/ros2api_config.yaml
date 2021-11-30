@@ -1,0 +1,21 @@
+# Absolutely namespaced params
+set_logging_service: set_ftt_logging
+
+# Relatively namespaced params
+map_frame: map
+robot_frame: base_link
+
+server_address: localhost:5000
+
+robot_mode_topic: robot_mode
+
+gps_position_topic: robot_position
+send_pose_timeout: 2.0
+
+map_topic: map
+send_map_timeout: 2.0
+
+image_topic: image_raw
+image_compressed_topic: image_compressed
+image_buffer_size: 3
+image_buffer_timestep: 1.0 

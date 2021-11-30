@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -41,6 +42,7 @@ class Log {
     //Initialize variables.
     this.postData = null; //To be redefined by child class.
     this.dataList = [];
+    this.open = false;
     //Add event listeners
     this.select.addEventListener("change", this.selectChangeHandler.bind(this));
     this.newBtn.addEventListener("click", this.newBtnClickHandler.bind(this));
@@ -92,6 +94,9 @@ class Log {
   async selectChangeHandler() {
     //Remove top blank option.
     DOMGeneric.removeFirstEmptyOption(this.select);
+    //Update open log status
+    this.open = !this.dataList.find((entry) => entry.id == this.select.value)
+      .endTime;
     //Update the child options.
     if (this.childClass) {
       await this.childClass.updateSelect();
@@ -110,6 +115,8 @@ class Log {
       DOMGeneric.removeFirstEmptyOption(this.select);
       //Choose the newly created log entry from the select.
       this.select.value = Math.max(...this.dataList.map((entry) => entry.id));
+      //Update open log status
+      this.open = true;
       //Trigger the edit behavior.
       await this.editBtnClickHandler();
       //Check log IDs, hide segments and map
@@ -129,6 +136,9 @@ class Log {
     if (!this.parentSelect || (this.parentSelect && this.parentSelect.value)) {
       //Update this dataList:
       await this.updateData();
+      //Update open log status
+      this.open = !this.dataList.find((entry) => entry.id == this.select.value)
+        .endTime;
       //Change the select option html class for the all closed logs.
       Array.from(this.select.children).forEach((option) => {
         if (option.value) {
@@ -239,7 +249,7 @@ class ShiftLog extends Log {
 
   async newBtnClickHandler() {
     //Make sure a test event is selected.
-    if(!this.parentSelect.value) {
+    if (!this.parentSelect.value) {
       alert("Please select a test event to add a new shift!");
       return;
     }
@@ -343,7 +353,7 @@ class LegLog extends Log {
 
   async newBtnClickHandler() {
     //Make sure a shift is selected.
-    if(!this.parentSelect.value) {
+    if (!this.parentSelect.value) {
       alert("Please select a shift to add a new leg!");
       return;
     }
@@ -416,7 +426,24 @@ class LegLog extends Log {
 
 export class LogSelection {
   //Container class for the log selection section of the web page.
-  constructor(serverInterface, currentUser) {
+  constructor(serverInterface, rosInterface, currentUser, doneCallback) {
+    //Set arguments as properties.
+    this.ros = rosInterface;
+    this.doneCallback = doneCallback;
+    //Reach to DOM elements.
+    this.startLoggingBtn = document.getElementById("start-logging-btn");
+    //Initialize variables.
+    this.isLogging = false;
+    this.setLoggingClient = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/set_ftt_logging",
+      serviceType: "std_srvs/SetBool",
+    });
+    this.getLoggingClient = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/get_ftt_logging",
+      serviceType: "std_srvs/Trigger",
+    });
     //Initialize log objects.
     this.legLog = new LegLog(
       serverInterface,
@@ -433,6 +460,11 @@ export class LogSelection {
       this.shiftLog,
       this.checkSelectedLogs.bind(this)
     );
+    //Add event listeners.
+    this.startLoggingBtn.addEventListener(
+      "click",
+      this.loggingBtnClickHandler.bind(this)
+    );
     //Trigger init behavior.
     this.init();
   }
@@ -441,20 +473,69 @@ export class LogSelection {
     this.testEventLog.updateSelect();
   }
 
+  toggleLogging() {
+    //Toggle logging status.
+    this.isLogging = !this.isLogging;
+    //Update button display.
+    if (!this.isLogging) {
+      this.startLoggingBtn.textContent = "Start Logging";
+    } else {
+      this.startLoggingBtn.textContent = "Stop Logging";
+    }
+  }
+
+  updateLogging() {
+    //Enable the start logging button if all logs are open and ros is connected.
+    if (
+      this.testEventLog.open &&
+      this.shiftLog.open &&
+      this.legLog.open &&
+      this.ros.isConnected
+    ) {
+      //Check current logging status in ros.
+      const request = new ROSLIB.ServiceRequest({});
+      this.getLoggingClient.callService(request, (result) => {
+        if (result.success != this.isLogging) {
+          //Toggle logging to match status in ros.
+          this.toggleLogging();
+        }
+      });
+      this.startLoggingBtn.disabled = false;
+    } else {
+      this.startLoggingBtn.disabled = true;
+    }
+  }
+
+  loggingBtnClickHandler() {
+    //Call ros service to start/stop logging.
+    const request = new ROSLIB.ServiceRequest({
+      data: !this.isLogging,
+    });
+    this.setLoggingClient.callService(request, (result) => {
+      if (result.success) {
+        //Toggle logging status and display.
+        this.toggleLogging();
+      } else {
+        alert(result.message);
+      }
+    });
+  }
+
   checkSelectedLogs() {
-    //Hide the segment details and map
+    //Hide the segment details and map.
     document.getElementById("segment-detail").style.display = "none";
     document.getElementById("map-viewer").style.display = "none";
-    //Only enable the get segments button if all log ids have been selected.
-    const getSegmentsBtn = document.getElementById("get-segments-btn");
+    //Trigger callback if all log ids have been selected.
     if (
       this.testEventLog.select.value &&
       this.shiftLog.select.value &&
       this.legLog.select.value
     ) {
-      getSegmentsBtn.disabled = false;
+      this.doneCallback();
+      //Update the logging status.
+      this.updateLogging();
     } else {
-      getSegmentsBtn.disabled = true;
+      this.startLoggingBtn.disabled = true;
     }
     //Guarantee the segment auto-refresh isn't active.
     const autoRefreshBox = document.getElementById("auto-refresh");

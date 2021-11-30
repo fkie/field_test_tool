@@ -10,15 +10,16 @@ __email__ = "carlos.tampier.cotoras@fkie.fraunhofer.de"
 import sys
 import rospy
 import tf2_ros
-import sensor_msgs.msg
-import std_msgs.msg
-import industrial_msgs.msg
-import nav_msgs.msg
+from sensor_msgs.msg import NavSatFix, Image, CompressedImage
+from std_msgs.msg import Int32
+from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
+from industrial_msgs.msg import RobotMode
+from nav_msgs.msg import OccupancyGrid
 import base64
 import requests
 import json
 import collections
-from PIL import Image
+from PIL import Image as PilImage
 from cv_bridge import CvBridge, CvBridgeError
 from StringIO import StringIO
 
@@ -28,12 +29,7 @@ class Ros2api:
     SEGMENT_TYPE_TELEOP = 3
     ITO_REASON_UNASSIGNED = 11
 
-    last_robot_mode = None
-    last_ts = None
-    last_lat = None
-    last_lng = None
-    last_map = None
-    map_sent = False
+    start_logging = False
 
     image_count = 0
 
@@ -42,33 +38,23 @@ class Ros2api:
         self.bridge = CvBridge()
         rospy.init_node('ros2api', anonymous=True)
 
-        self.send_pose_timeout = rospy.get_param("~send_pose_timeout", 2.0)
-        self.send_map_timeout = rospy.get_param("~send_map_timeout", 2.0)
-        image_buffer_size = rospy.get_param("~image_buffer_size", 3)
-        self.image_buffer_timestep = rospy.get_param("~image_buffer_timestep", 1.0)
-        self.server_address = rospy.get_param("~server_address", "localhost:5000")
-        self.save_image_dir = rospy.get_param("~save_image_dir", ".")
-        self.map_frame = rospy.get_param("~map_frame", "map")
-        self.robot_frame = rospy.get_param("~robot_frame", "base_link")
+        # Read absolute parameters
+        self.set_logging_service = self.read_param("set_logging_service", "set_ftt_logging")
+        self.get_logging_service = self.read_param("get_logging_service", "get_ftt_logging")
+        # Read relative parameters
+        # (parameters read upon "start logging" message)
+        # Debug parameters
+        self.save_image_dir = self.read_param("~save_image_dir", ".")
 
-        rospy.Subscriber("robot_position", sensor_msgs.msg.NavSatFix, self.navsatfix_callback)
-        rospy.Subscriber("robot_mode", industrial_msgs.msg.RobotMode, self.robot_mode_callback)
-        rospy.Subscriber("image_raw",sensor_msgs.msg.Image, self.image_callback)
-        rospy.Subscriber("image_compressed", sensor_msgs.msg.CompressedImage, self.compressed_image_callback)
-        rospy.Subscriber("map", nav_msgs.msg.OccupancyGrid, self.map_callback)
-        rospy.Subscriber("download_image",std_msgs.msg.Int32, self.download_images)
-        rospy.Subscriber("download_map",std_msgs.msg.Int32, self.download_map)
-        rospy.Timer(rospy.Duration(self.send_pose_timeout), self.send_pose_timer_callback)
-        rospy.Timer(rospy.Duration(self.send_map_timeout), self.send_map_timer_callback)
-        
-        self.raw_image_buffer = collections.deque(image_buffer_size*[sensor_msgs.msg.Image()], image_buffer_size)
-        self.compressed_image_buffer = collections.deque(image_buffer_size*[sensor_msgs.msg.CompressedImage()], image_buffer_size)
-        self.last_raw_image_time = rospy.Time.now()
-        self.last_compressed_image_time = rospy.Time.now()
+        # Create subscribers
+        # (data subscribers created upon "start logging" message)
+        # Debug subscribers
+        rospy.Subscriber("download_image", Int32, self.download_images)
+        rospy.Subscriber("download_map", Int32, self.download_map)
 
-        self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_timeout))
-        self.listener = tf2_ros.TransformListener(self.tfBuffer)
-
+        # Create service servers
+        rospy.Service(self.set_logging_service, SetBool, self.set_logging_callback)
+        rospy.Service(self.get_logging_service, Trigger, self.get_logging_callback)
         pass
 
     def __enter__(self):
@@ -77,6 +63,14 @@ class Ros2api:
     def __exit__(self, type, value, traceback):
         print("Closing ros2api.")
         pass
+
+    def reset_variables(self):
+        self.last_robot_mode = None
+        self.last_ts = None
+        self.last_lat = None
+        self.last_lng = None
+        self.last_map = None
+        self.map_sent = False
 
     def print_resp_json(self, resp):
         print_msg = ""
@@ -100,6 +94,114 @@ class Ros2api:
             print_msg = "Server internal error."
             rospy.logerr(print_msg)
         return print_msg
+
+    def read_param(self, param_name, default_value):
+        param_value = rospy.get_param(param_name, default_value)
+        rospy.loginfo("Parameter: [{0}]: [{1}]".format(
+            param_name, param_value))
+        return param_value
+
+    def get_params(self):
+        # Read parameters
+        self.map_frame = self.read_param("~map_frame", "map")
+        self.robot_frame = self.read_param("~robot_frame", "base_link")
+        self.server_address = self.read_param("~server_address", "localhost:5000")
+        self.robot_mode_topic = self.read_param("~robot_mode_topic", "robot_mode")
+        self.gps_position_topic = self.read_param("~gps_position_topic", "robot_position")
+        self.send_pose_timeout = self.read_param("~send_pose_timeout", 2.0)
+        self.map_topic = self.read_param("~map_topic", "map")
+        self.send_map_timeout = self.read_param("~send_map_timeout", 2.0)
+        self.image_topic = self.read_param("~image_topic", "image_raw")
+        self.image_compressed_topic = self.read_param("~image_compressed_topic", "image_compressed")
+        self.image_buffer_size = self.read_param("~image_buffer_size", 3)
+        self.image_buffer_timestep = self.read_param("~image_buffer_timestep", 1.0)
+        pass
+
+    def subscribe_robot_data(self):
+        rospy.loginfo("Subscribing to robot data.")
+        # Reset variables
+        self.reset_variables()
+        # Create image buffers
+        self.raw_image_buffer = collections.deque(self.image_buffer_size*[Image()], self.image_buffer_size)
+        self.compressed_image_buffer = collections.deque(self.image_buffer_size*[CompressedImage()], self.image_buffer_size)
+        self.last_raw_image_time = rospy.Time.now()
+        self.last_compressed_image_time = rospy.Time.now()
+        # Create robot data subscribers
+        self.robot_data_subscribers = []
+        self.robot_data_subscribers.append(rospy.Subscriber(self.robot_mode_topic, RobotMode, self.robot_mode_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.gps_position_topic, NavSatFix, self.navsatfix_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.map_topic, OccupancyGrid, self.map_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.image_topic, Image, self.image_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.image_compressed_topic, CompressedImage, self.compressed_image_callback))
+        # Create tf listener for local position
+        self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_timeout))
+        self.listener = tf2_ros.TransformListener(self.tfBuffer)
+        pass
+
+    def unsubscribe_robot_data(self):
+        rospy.loginfo("Unsubscribing from robot data.")
+        for subscriber in self.robot_data_subscribers:
+            subscriber.unregister()
+        pass
+
+    def create_post_timers(self):
+        # Create data POST timers
+        self.data_post_timers = []
+        self.data_post_timers.append(rospy.Timer(rospy.Duration(self.send_pose_timeout), self.send_pose_timer_callback))
+        self.data_post_timers.append(rospy.Timer(rospy.Duration(self.send_map_timeout), self.send_map_timer_callback))
+        pass
+
+    def stop_post_timers(self):
+        for timer in self.data_post_timers:
+            timer.shutdown()
+        pass
+
+    def close_current_segment(self):
+        data = {"id": "Current Segment", "action": "close"}
+        try:
+            resp = requests.put('http://%s/segment' % self.server_address, json=data)
+            if resp.status_code == 200:
+                self.last_robot_mode = None
+                msg = self.print_resp_json(resp)
+                return True, msg
+            else:
+                self.print_resp_json(resp)
+                msg = "Segment already closed."
+                return True, msg
+        except:
+            msg = "Server unavailable!"
+            rospy.logerr(msg)
+            return False, msg
+
+    def set_logging_callback(self, req):
+        if req.data and not self.start_logging:
+            self.start_logging = True
+            # Get params
+            self.get_params()
+            # Subscribe to robot data
+            self.subscribe_robot_data()
+            # Create POST timers
+            self.create_post_timers()
+        elif not req.data and self.start_logging:
+            # Close open segment
+            segment_closed, message = self.close_current_segment()
+            if segment_closed:
+                self.start_logging = False
+                # Unsubscribe to robot data
+                self.unsubscribe_robot_data()
+                # Stop POST timers
+                self.stop_post_timers()
+            else:
+                return SetBoolResponse(False, message)
+        else:
+            if req.data:
+                rospy.logwarn("Tried to start logging, but it's already running.")
+            else:
+                rospy.logwarn("Tried to stop logging, but it's not running.")
+        return SetBoolResponse(True, "Logging is " + ("started." if req.data else "stopped."))
+
+    def get_logging_callback(self, req):
+        return TriggerResponse(success = self.start_logging)
 
     def robot_mode_callback(self, mode):
         if self.last_robot_mode != mode.val:
@@ -213,7 +315,7 @@ class Ros2api:
     def create_image_jpg(self, image):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(image, 'rgb8')
-            pil_img = Image.fromarray(cv_image)
+            pil_img = PilImage.fromarray(cv_image)
             image_string = StringIO()
             pil_img.save(image_string, 'JPEG')
             return image_string.getvalue()
@@ -247,15 +349,15 @@ class Ros2api:
             encoded_image = image_data[4]
             b64_decoded_img = encoded_image.decode("base64")
             image = base64.decodestring(b64_decoded_img)
-            pil_img = Image.open(StringIO(image))
+            pil_img = PilImage.open(StringIO(image))
             with open(image_filename.rstrip()+"."+pil_img.format.lower(), "wb") as image_file:
                 image_file.write(image)
         pass
 
     def create_map_jpg(self, map_msg):
-        pil_img = Image.new("L", (map_msg.info.width, map_msg.info.height))
+        pil_img = PilImage.new("L", (map_msg.info.width, map_msg.info.height))
         pil_img.putdata([255 - point/100*255 if point >= 0 else 127 for point in map_msg.data])
-        pil_img = pil_img.transpose(Image.FLIP_TOP_BOTTOM)
+        pil_img = pil_img.transpose(PilImage.FLIP_TOP_BOTTOM)
         image_string = StringIO()
         pil_img.save(image_string, 'JPEG')
         return image_string.getvalue()
@@ -315,7 +417,7 @@ class Ros2api:
             encoded_image = r_json[7]
             b64_decoded_img = encoded_image.decode("base64")
             image = base64.decodestring(b64_decoded_img)
-            pil_img = Image.open(StringIO(image))
+            pil_img = PilImage.open(StringIO(image))
             with open(self.save_image_dir + "/map_" + str(int_msg.data) + "."+pil_img.format.lower(), "wb") as image_file:
                 image_file.write(image)
         else:
