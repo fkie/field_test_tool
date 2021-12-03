@@ -39,15 +39,15 @@ class Ros2api:
         rospy.init_node('ros2api', anonymous=True)
 
         # Read absolute parameters
-        self.set_logging_service = self.read_param("set_logging_service", "set_ftt_logging")
-        self.get_logging_service = self.read_param("get_logging_service", "get_ftt_logging")
+        self.set_logging_service = self.read_param("/set_ftt_logging_service", "/set_ftt_logging")
+        self.get_logging_service = self.read_param("/get_ftt_logging_service", "/get_ftt_logging")
         # Read relative parameters
-        # (parameters read upon "start logging" message)
+        # (parameters read upon "start logging" service call)
         # Debug parameters
         self.save_image_dir = self.read_param("~save_image_dir", ".")
 
         # Create subscribers
-        # (data subscribers created upon "start logging" message)
+        # (data subscribers created upon "start logging" service call)
         # Debug subscribers
         rospy.Subscriber("download_image", Int32, self.download_images)
         rospy.Subscriber("download_map", Int32, self.download_map)
@@ -103,18 +103,19 @@ class Ros2api:
 
     def get_params(self):
         # Read parameters
-        self.map_frame = self.read_param("~map_frame", "map")
-        self.robot_frame = self.read_param("~robot_frame", "base_link")
-        self.server_address = self.read_param("~server_address", "localhost:5000")
-        self.robot_mode_topic = self.read_param("~robot_mode_topic", "robot_mode")
-        self.gps_position_topic = self.read_param("~gps_position_topic", "robot_position")
-        self.send_pose_timeout = self.read_param("~send_pose_timeout", 2.0)
-        self.map_topic = self.read_param("~map_topic", "map")
-        self.send_map_timeout = self.read_param("~send_map_timeout", 2.0)
-        self.image_topic = self.read_param("~image_topic", "image_raw")
-        self.image_compressed_topic = self.read_param("~image_compressed_topic", "image_compressed")
-        self.image_buffer_size = self.read_param("~image_buffer_size", 3)
-        self.image_buffer_timestep = self.read_param("~image_buffer_timestep", 1.0)
+        self.map_frame = self.read_param("~params/map_frame", "map")
+        self.robot_frame = self.read_param("~params/robot_frame", "base_link")
+        self.server_address = self.read_param("~params/server_address", "localhost:5000")
+        self.send_pose_period = self.read_param("~params/send_pose_period", 2.0)
+        self.send_map_period = self.read_param("~params/send_map_period", 2.0)
+        self.image_buffer_size = self.read_param("~params/image_buffer_size", 3)
+        self.image_buffer_step = self.read_param("~params/image_buffer_step", 1.0)
+        
+        self.robot_mode_topic = self.read_param("~topics/robot_mode", "robot_mode")
+        self.gps_position_topic = self.read_param("~topics/gps_position", "robot_position")
+        self.map_topic = self.read_param("~topics/map", "map")
+        self.image_topic = self.read_param("~topics/image", "image_raw")
+        self.image_compressed_topic = self.read_param("~topics/image_compressed", "image_compressed")
         pass
 
     def subscribe_robot_data(self):
@@ -134,7 +135,7 @@ class Ros2api:
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_topic, Image, self.image_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_compressed_topic, CompressedImage, self.compressed_image_callback))
         # Create tf listener for local position
-        self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_timeout))
+        self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_period))
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
         pass
 
@@ -147,8 +148,8 @@ class Ros2api:
     def create_post_timers(self):
         # Create data POST timers
         self.data_post_timers = []
-        self.data_post_timers.append(rospy.Timer(rospy.Duration(self.send_pose_timeout), self.send_pose_timer_callback))
-        self.data_post_timers.append(rospy.Timer(rospy.Duration(self.send_map_timeout), self.send_map_timer_callback))
+        self.data_post_timers.append(rospy.Timer(rospy.Duration(self.send_pose_period), self.send_pose_timer_callback))
+        self.data_post_timers.append(rospy.Timer(rospy.Duration(self.send_map_period), self.send_map_timer_callback))
         pass
 
     def stop_post_timers(self):
@@ -242,13 +243,13 @@ class Ros2api:
         pass
 
     def image_callback(self, img_msg):
-        if (rospy.Time.now() - self.last_raw_image_time).to_sec() > self.image_buffer_timestep:
+        if (rospy.Time.now() - self.last_raw_image_time).to_sec() > self.image_buffer_step:
             self.raw_image_buffer.append(img_msg)
             self.last_raw_image_time = rospy.Time.now()
         pass
 
     def compressed_image_callback (self, compressed_img_msg):
-        if (rospy.Time.now() - self.last_compressed_image_time).to_sec() > self.image_buffer_timestep:
+        if (rospy.Time.now() - self.last_compressed_image_time).to_sec() > self.image_buffer_step:
             self.compressed_image_buffer.append(compressed_img_msg)
             self.last_compressed_image_time = rospy.Time.now()
         pass
@@ -295,7 +296,7 @@ class Ros2api:
                 except:
                     rospy.logerr("Server unavailable!")
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rospy.logerr("Unable to get transfrom from %s to %s within the last %s seconds", self.map_frame, self.robot_frame, self.send_pose_timeout)
+                rospy.logerr("Unable to get transfrom from %s to %s within the last %s seconds", self.map_frame, self.robot_frame, self.send_pose_period)
             except:
                 print("Exception: " + sys.exc_info()[0])
         pass

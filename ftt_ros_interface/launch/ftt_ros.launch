@@ -1,7 +1,7 @@
 <launch>
   <arg name="save_image_dir" default="$(env HOME)/Pictures "/>
 
-  <node pkg="ftt_ros_interface" type="ros2api.py" name="ros2api" output="screen">
+  <node pkg="ftt_ros_interface" type="ros2api.py" name="ftt_ros" output="screen">
     <rosparam command="load" file="$(find ftt_ros_interface)/config/ros2api_config.yaml" subst_value="True" />
     <param name="save_image_dir" type="string" value="$(arg save_image_dir)"/>
   </node>

@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -9,6 +10,8 @@ import { PerformerInterface } from "../database_interface/Performer.js";
 import { PersonnelInterface } from "../database_interface/Personnel.js";
 import { PoseSourceInterface } from "../database_interface/PoseSource.js";
 import { VehicleInterface } from "../database_interface/Vehicle.js";
+import { RosParamsInterface } from "../ros_interface/Parameters.js";
+import { RosTopicsInterface } from "../ros_interface/Topics.js";
 
 export class ConfigFrame {
   constructor(serverInterface) {
@@ -18,6 +21,8 @@ export class ConfigFrame {
       document.getElementById("personnel"),
       document.getElementById("pose-source"),
       document.getElementById("vehicle"),
+      document.getElementById("parameters"),
+      document.getElementById("topics"),
     ];
 
     this.newEntryHooks = [
@@ -26,13 +31,20 @@ export class ConfigFrame {
       document.getElementById("pose-source-table-body").lastElementChild,
       document.getElementById("vehicle-table-body").lastElementChild,
     ];
+    this.rosConnectIcon = document.getElementById("ros-connect-icon");
 
+    //Initialize variables.
+    this.forceRosConnect = false;
+    this.ros = new ROSLIB.Ros();
+    this.ros_server_adr = `ws://${location.hostname}:9090`;
     //Build database tables interface.
     this.dataInterfaces = [
       new PerformerInterface(serverInterface),
       new PersonnelInterface(serverInterface),
       new PoseSourceInterface(serverInterface),
       new VehicleInterface(serverInterface),
+      new RosParamsInterface(this.ros, "/ftt_ros/params/"),
+      new RosTopicsInterface(this.ros, "/ftt_ros/topics/"),
     ];
 
     //Append event listeners:
@@ -57,6 +69,16 @@ export class ConfigFrame {
         this.newEntryDefocusHandler.bind(this)
       );
     }
+    //ROS stuff.
+    this.rosConnectIcon.addEventListener(
+      "click",
+      this.rosConnectIconClickHandler.bind(this)
+    );
+    this.ros.on("error", this.rosErrorHandler.bind(this));
+    this.ros.on("connection", this.rosConnectionHandler.bind(this));
+    this.ros.on("close", this.rosCloseHandler.bind(this));
+    //Try to connect to ROS.
+    this.rosConnect();
   }
 
   static resetNewEntryRow(rowHook) {
@@ -70,21 +92,22 @@ export class ConfigFrame {
 
   insertTableIcons(tableBodyRef, dataInterface) {
     Array.from(tableBodyRef.children).forEach((row) => {
+      //check available methods in dataInterface.
+      const methods = [];
+      const callbacks = [];
+      if (typeof dataInterface.put === "function") {
+        methods.push("edit");
+        callbacks.push(this.editEntryClickHandler.bind(this, dataInterface));
+      }
+      if (typeof dataInterface.delete === "function") {
+        methods.push("clear");
+        callbacks.push(this.clearEntryClickHandler.bind(this, dataInterface));
+      }
       //Create an icon container.
       const container = DOMGeneric.createMaterialIconsContainer(
         "div",
-        "edit",
-        "clear"
-      );
-      //Assign an event listener to the edit icon.
-      container.firstElementChild.addEventListener(
-        "click",
-        this.editEntryClickHandler.bind(this, dataInterface)
-      );
-      //Assign an event listener to the clear icon.
-      container.lastElementChild.addEventListener(
-        "click",
-        this.clearEntryClickHandler.bind(this, dataInterface)
+        methods,
+        callbacks
       );
       //Add the container at the end of the row.
       row.appendChild(container);
@@ -166,7 +189,8 @@ export class ConfigFrame {
     let postData = [];
     let missingData = false;
     for (let i = 1; i < dataInterface.paramNames.length; i++) {
-      const colValue = dataRow.children[i].value || dataRow.children[i].placeholder;
+      const colValue =
+        dataRow.children[i].value || dataRow.children[i].placeholder;
       if (!colValue) {
         dataRow.children[i].required = true;
         missingData = true;
@@ -209,18 +233,35 @@ export class ConfigFrame {
       "focusout",
       this.editEntryDefocusHandler.bind(this, dataInterface)
     );
-    //Change table data cells to input fields.
+    //Change table data cells' type for edition.
     for (let i = 1; i < dataInterface.paramNames.length; i++) {
       const newInput = document.createElement("input");
       newInput.type = "text";
       newInput.className = "new-entry-input";
       newInput.value = editRow.children[i].textContent;
       editRow.children[i].replaceWith(newInput);
+      //Workaround for the topics interface: add a datalist to the input.
+      if (dataInterface instanceof RosTopicsInterface) {
+        let dataList = document.getElementById("topics-list");
+        if (!dataList) {
+          dataList = document.createElement("datalist");
+          dataList.id = "topics-list";
+          newInput.insertAdjacentElement("afterend", dataList);
+        }
+        const options = await dataInterface.getOptions(
+          editRow.children[0].textContent
+        );
+        DOMGeneric.populateSelect(dataList, options);
+        DOMGeneric.removeFirstEmptyOption(dataList);
+        newInput.setAttribute("list", "topics-list");
+      }
     }
     //Change row icons to done icon.
-    const doneCell = DOMGeneric.createMaterialIconsContainer("button", "done");
+    const doneCell = DOMGeneric.createMaterialIconsContainer("button", [
+      "done",
+    ]);
     editRow.lastElementChild.replaceWith(doneCell);
-    //Append event listener to done icon.
+    //Append event listener to the button (not to the icon, so it can be triggered with an "enter").
     doneCell.addEventListener(
       "click",
       this.putEntryClickHandler.bind(this, dataInterface)
@@ -266,12 +307,11 @@ export class ConfigFrame {
         target.appendChild(newInput);
       }
       //Insert done icon in last cell.
-      const doneCell = DOMGeneric.createMaterialIconsContainer(
-        "button",
-        "done"
-      );
+      const doneCell = DOMGeneric.createMaterialIconsContainer("button", [
+        "done",
+      ]);
       target.appendChild(doneCell);
-      //Append event listener to done icon.
+      //Append event listener to the button (not to the icon, so it can be triggered with an "enter").
       doneCell.addEventListener(
         "click",
         this.postEntryClickHandler.bind(this, dataInterface)
@@ -288,6 +328,46 @@ export class ConfigFrame {
     if (!event.relatedTarget || event.relatedTarget.closest("tr") != target) {
       //Reset row state.
       ConfigFrame.resetNewEntryRow(target);
+    }
+  }
+
+  rosConnectIconClickHandler() {
+    this.forceRosConnect = true;
+    this.rosConnect();
+  }
+
+  rosConnect() {
+    this.ros.connect(this.ros_server_adr);
+  }
+
+  rosErrorHandler() {
+    console.log("Error connecting to ROS");
+    if (this.forceRosConnect) {
+      alert("Error connecting to ROS");
+      this.forceRosConnect = false;
+    }
+  }
+
+  rosConnectionHandler() {
+    this.rosConnectIcon.classList.remove("disconnected");
+    this.rosConnectIcon.classList.add("connected");
+    this.rosConnectIcon.textContent = "sensors";
+    console.log("Connection to ROS established.");
+  }
+
+  rosCloseHandler() {
+    this.rosConnectIcon.classList.remove("connected");
+    this.rosConnectIcon.classList.add("disconnected");
+    this.rosConnectIcon.textContent = "sensors_off";
+    console.log("Connection to ROS closed.");
+    //Close any open table to prevent parameter modification attempts.
+    const paramsDiv = document.getElementById("parameters");
+    const topicsDiv = document.getElementById("topics");
+    if (paramsDiv.nextElementSibling.style.display == "block") {
+      paramsDiv.click();
+    }
+    if (topicsDiv.nextElementSibling.style.display == "block") {
+      topicsDiv.click();
     }
   }
 }

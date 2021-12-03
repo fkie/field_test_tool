@@ -493,7 +493,7 @@ export class LogSelection {
       this.ros.isConnected
     ) {
       //Check current logging status in ros.
-      const request = new ROSLIB.ServiceRequest({});
+      const request = new ROSLIB.ServiceRequest();
       this.getLoggingClient.callService(request, (result) => {
         if (result.success != this.isLogging) {
           //Toggle logging to match status in ros.

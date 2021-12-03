@@ -22,28 +22,6 @@
   align-self: center;
 }
 
-.header-icon {
-  font-size: 2rem;
-  color: white;
-  margin: 1rem;
-  cursor: pointer;
-}
-.header-icon:hover {
-  color: #3a6ddb;
-}
-
-.header-icon:active {
-  color: #0e4acc;
-}
-
-.connected {
-  color: darkgreen;
-}
-
-.disconnected {
-  color: darkred;
-}
-
 .main-content {
   float: left;
 }

@@ -18,6 +18,20 @@ body > header {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.26);
 }
 
+.header-icon {
+  font-size: 2rem;
+  color: white;
+  margin: 1rem;
+  cursor: pointer;
+}
+.header-icon:hover {
+  color: #3a6ddb;
+}
+
+.header-icon:active {
+  color: #0e4acc;
+}
+
 section {
   border-radius: 10px;
   padding: 1rem;
@@ -176,11 +190,18 @@ input:checked + .slider:before {
   transform: translateX(1rem);
 }
 
-/* Rounded sliders */
 .slider.round {
   border-radius: 34px;
 }
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+.connected {
+  color: darkgreen;
+}
+
+.disconnected {
+  color: darkred;
 }

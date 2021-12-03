@@ -91,14 +91,26 @@ export class DOMGeneric {
     return icon;
   }
 
-  static createMaterialIconsContainer(containerTag, ...iconNames) {
-    //Creates a container (of the specified type) with as many icons as specified in the arguments.
+  static createMaterialIconsContainer(
+    containerTag,
+    iconNames,
+    clickCallbacks = null
+  ) {
+    //Creates a container (of the specified type) with as many icons as specified in the iconNames argument.
+    //If specified, also binds a callback function to a "click" event on the icon.
     //Assigns an icon-container html class to the container.
     //The icons are actually inserted from the google material icons, that must be included in the html.
     const container = document.createElement(containerTag);
     container.className = "icon-container";
-    iconNames.forEach((iconName) => {
-      container.appendChild(DOMGeneric.createMaterialIcon(iconName));
+    iconNames.forEach((iconName, index) => {
+      //Create icon.
+      const icon = DOMGeneric.createMaterialIcon(iconName);
+      //Add click callback.
+      if (clickCallbacks && typeof clickCallbacks[index] === "function") {
+        icon.addEventListener("click", clickCallbacks[index]);
+      }
+      //Add icon to container.
+      container.appendChild(icon);
     });
     return container;
   }
