@@ -1,8 +1,16 @@
 <launch>
   <arg name="save_image_dir" default="$(env HOME)/Pictures "/>
+  <arg name="robot_namespace" default="/"/>
 
-  <node pkg="ftt_ros_interface" type="ros2api.py" name="ftt_ros" output="screen">
-    <rosparam command="load" file="$(find ftt_ros_interface)/config/ros2api_config.yaml" subst_value="True" />
-    <param name="save_image_dir" type="string" value="$(arg save_image_dir)"/>
-  </node>
+  <group ns="$(arg robot_namespace)">
+    <!-- ROS Bridge -->
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+    <!-- FTT interface node -->
+    <node pkg="ftt_ros_interface" type="ros2api.py" name="ftt_ros" output="screen">
+      <rosparam command="load" file="$(find ftt_ros_interface)/config/ros2api_config.yaml" subst_value="True" />
+      <param name="save_image_dir" type="string" value="$(arg save_image_dir)"/>
+    </node>
+  </group>
+
 </launch>

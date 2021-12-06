@@ -16,7 +16,7 @@ import { RosTopicsInterface } from "../ros_interface/Topics.js";
 export class ConfigFrame {
   constructor(serverInterface) {
     //Get html hooks.
-    this.titleHooks = [
+    const titleHooks = [
       document.getElementById("performer"),
       document.getElementById("personnel"),
       document.getElementById("pose-source"),
@@ -24,14 +24,18 @@ export class ConfigFrame {
       document.getElementById("parameters"),
       document.getElementById("topics"),
     ];
-
-    this.newEntryHooks = [
+    const newEntryHooks = [
       document.getElementById("performer-table-body").lastElementChild,
       document.getElementById("personnel-table-body").lastElementChild,
       document.getElementById("pose-source-table-body").lastElementChild,
       document.getElementById("vehicle-table-body").lastElementChild,
     ];
     this.rosConnectIcon = document.getElementById("ros-connect-icon");
+    const saveRosParamsHook = document.getElementById(
+      "parameters-table-body"
+    ).lastElementChild;
+    const saveRosTopicsHook =
+      document.getElementById("topics-table-body").lastElementChild;
 
     //Initialize variables.
     this.forceRosConnect = false;
@@ -49,27 +53,30 @@ export class ConfigFrame {
 
     //Append event listeners:
     //1.Display table listeners.
-    for (let i = 0; i < this.titleHooks.length; i++) {
-      this.titleHooks[i].addEventListener(
+    for (let i = 0; i < titleHooks.length; i++) {
+      titleHooks[i].addEventListener(
         "click",
         this.titleClickHandler.bind(this, this.dataInterfaces[i])
       );
     }
     //2.Add row listeners.
-    for (let i = 0; i < this.newEntryHooks.length; i++) {
-      this.newEntryHooks[i].addEventListener(
+    for (let i = 0; i < newEntryHooks.length; i++) {
+      newEntryHooks[i].addEventListener(
         "click",
         this.inputNewEntryClickHandler.bind(this, this.dataInterfaces[i])
       );
     }
     //3.Reset add row listeners.
-    for (let i = 0; i < this.newEntryHooks.length; i++) {
-      this.newEntryHooks[i].addEventListener(
+    for (let i = 0; i < newEntryHooks.length; i++) {
+      newEntryHooks[i].addEventListener(
         "focusout",
         this.newEntryDefocusHandler.bind(this)
       );
     }
-    //ROS stuff.
+    //4.Save ROS config.
+    saveRosParamsHook.addEventListener("click", this.saveRosParams.bind(this));
+    saveRosTopicsHook.addEventListener("click", this.saveRosParams.bind(this));
+    //5.ROS connection.
     this.rosConnectIcon.addEventListener(
       "click",
       this.rosConnectIconClickHandler.bind(this)
@@ -329,6 +336,29 @@ export class ConfigFrame {
       //Reset row state.
       ConfigFrame.resetNewEntryRow(target);
     }
+  }
+
+  async saveRosParams() {
+    //Call ros service to save parameters to file.
+    const client = new ROSLIB.Service({
+      ros: this.ros,
+      name: "/save_ftt_params",
+      serviceType: "std_srvs/Trigger",
+    });
+    const request = new ROSLIB.ServiceRequest();
+    client.callService(
+      request,
+      function (result) {
+        if (result.success) {
+          alert("Request succeeded! " + result.message);
+        } else {
+          alert("Request failed! " + result.message);
+        }
+      },
+      function (message) {
+        alert(message);
+      }
+    );
   }
 
   rosConnectIconClickHandler() {

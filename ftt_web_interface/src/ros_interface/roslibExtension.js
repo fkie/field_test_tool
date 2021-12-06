@@ -11,6 +11,8 @@
 //  * set_param
 //  * topic_type
 //  * topics_for_type
+//  * nodes
+//  * node_details
 
 export function getRosParamNames(ros) {
   return new Promise((resolve, reject) => {
@@ -124,5 +126,63 @@ export function getRosTopicsForType(ros, topicType) {
         reject(new Error(message));
       }
     );
+  });
+}
+
+export function getRosNodes(ros) {
+  return new Promise((resolve, reject) => {
+    const client = new ROSLIB.Service({
+      ros: ros,
+      name: "/rosapi/nodes",
+      serviceType: "rosapi/Nodes",
+    });
+
+    const request = new ROSLIB.ServiceRequest();
+    if (typeof failedCallback === "function") {
+      client.callService(
+        request,
+        function (result) {
+          console.log(`Got all ROS nodes`);
+          resolve(result.nodes);
+        },
+        function (message) {
+          reject(new Error(message));
+        }
+      );
+    } else {
+      client.callService(request, function (result) {
+        callback(result.nodes);
+      });
+    }
+  });
+}
+
+export function getRosNodeDetails(ros, node) {
+  return new Promise((resolve, reject) => {
+    const client = new ROSLIB.Service({
+      ros: ros,
+      name: "/rosapi/node_details",
+      serviceType: "rosapi/NodeDetails",
+    });
+
+    const request = new ROSLIB.ServiceRequest({
+      node: node,
+    });
+    if (typeof failedCallback === "function") {
+      client.callService(
+        request,
+        function (result) {
+          console.log(`Got details of node ${node}`);
+          resolve([result.subscribing, result.publishing, result.services]);
+        },
+        function (message) {
+          reject(new Error(message));
+        }
+      );
+    } else {
+      client.callService(request, function (result) {
+        callback(result);
+      });
+    }
   });
 }

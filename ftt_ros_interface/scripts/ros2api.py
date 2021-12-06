@@ -17,8 +17,9 @@ from industrial_msgs.msg import RobotMode
 from nav_msgs.msg import OccupancyGrid
 import base64
 import requests
-import json
 import collections
+import ruamel.yaml
+import rospkg
 from PIL import Image as PilImage
 from cv_bridge import CvBridge, CvBridgeError
 from StringIO import StringIO
@@ -41,6 +42,7 @@ class Ros2api:
         # Read absolute parameters
         self.set_logging_service = self.read_param("/set_ftt_logging_service", "/set_ftt_logging")
         self.get_logging_service = self.read_param("/get_ftt_logging_service", "/get_ftt_logging")
+        self.save_params_service = self.read_param("/save_ftt_params_service", "/save_ftt_params")
         # Read relative parameters
         # (parameters read upon "start logging" service call)
         # Debug parameters
@@ -55,6 +57,7 @@ class Ros2api:
         # Create service servers
         rospy.Service(self.set_logging_service, SetBool, self.set_logging_callback)
         rospy.Service(self.get_logging_service, Trigger, self.get_logging_callback)
+        rospy.Service(self.save_params_service, Trigger, self.save_params_callback)
         pass
 
     def __enter__(self):
@@ -202,7 +205,48 @@ class Ros2api:
         return SetBoolResponse(True, "Logging is " + ("started." if req.data else "stopped."))
 
     def get_logging_callback(self, req):
+        # Return current logging status
         return TriggerResponse(success = self.start_logging)
+
+    def save_params_callback(self, req):
+        # Update params
+        self.get_params()
+        # Get the config file's path
+        package_path = rospkg.RosPack().get_path('ftt_ros_interface')
+        file_path = package_path + "/config/ros2api_config.yaml"
+        # Load the config file
+        yaml = ruamel.yaml.YAML()
+        try:
+            with open(file_path, "r") as stream:
+                config = yaml.load(stream)
+        except:
+            # Error
+            return TriggerResponse(False, "Error while opening config file.")
+        
+        # Overwrite "params" and "topics" configs with current values 
+        config["params"]["map_frame"] = self.map_frame
+        config["params"]["robot_frame"] = self.robot_frame
+        config["params"]["server_address"] = self.server_address
+        config["params"]["send_pose_period"] = self.send_pose_period
+        config["params"]["send_map_period"] = self.send_map_period
+        config["params"]["image_buffer_size"] = self.image_buffer_size
+        config["params"]["image_buffer_step"] = self.image_buffer_step
+        
+        config["topics"]["robot_mode"] = self.robot_mode_topic
+        config["topics"]["gps_position"] = self.gps_position_topic
+        config["topics"]["map"] = self.map_topic
+        config["topics"]["image"] = self.image_topic
+        config["topics"]["image_compressed"] = self.image_compressed_topic
+
+        # Save the updated config to file
+        try:
+            with open(file_path, "w") as outfile:
+                yaml.dump(config, outfile)
+            # Return successfully
+            return TriggerResponse(True, "FTT parameters saved to %s" % file_path)
+        except:
+            # Error
+            return TriggerResponse(False, "Error while saving parameters to file.")
 
     def robot_mode_callback(self, mode):
         if self.last_robot_mode != mode.val:
