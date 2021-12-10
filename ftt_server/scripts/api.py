@@ -671,17 +671,24 @@ class Segment(Resource):
     @staticmethod
     def close(entry_id = None):
         table_name = "segment"
-        # If provided, check that the id is open.
+        master_segment = False
         if entry_id:
+            # If provided, check that the id is open.
             try:
                 ApiCommon.check_open_log(table_name, entry_id)
             except ApiError as err:
                 return err.message
-        if entry_id:
-            # Close specified log entry.
+            # Also check if the segment is a master segment
+            try:
+                Segment.check_master_segment(entry_id)
+                master_segment = True
+            except ApiError as err:
+                master_segment = False
+        if entry_id and not master_segment:
+            # Close specified log entry if it's a child entry.
             return ApiCommon.close_log(table_name, entry_id)
         else:
-            # Close all open entries.
+            # Close all open entries for master segments and unspecified ids.
             return ApiCommon.close_open_logs(table_name)
         pass
 
@@ -827,8 +834,12 @@ class Segment(Resource):
         params = ApiCommon.get_all_params_from_json(param_names)
         segment_id = params[param_names[0]]
         action = params[param_names[1]]
-        # Check that the id is a number.
-        ApiCommon.check_id(segment_id)
+        # Allow selection of segment_id by string.
+        if segment_id == "Current Segment":
+            segment_id = Segment.get_current_master_segment()[0]
+        else:
+            # Check that the id is a number.
+            ApiCommon.check_id(segment_id)
         # Check if the request is to edit the data or close the segment entry.
         if action == "edit":
             # Check for any properties to edit

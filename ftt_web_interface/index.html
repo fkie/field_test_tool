@@ -37,7 +37,15 @@
           '<script src="node_modules/easeljs/lib/easeljs.min.js" defer>\x3C/script>'
         );
     </script>
-    <script src="src/lib/RoslibVector3.js" defer></script>
+    <script src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js" defer></script>
+    <script>
+      window.EventEmitter2 ||
+        document.write(
+          '<script src="node_modules/eventemitter2/lib/eventemitter2.js" defer>\x3C/script>'
+        );
+    </script>
+    <script src="src/lib/roslib.js" defer></script>
+    <!-- <script src="src/lib/RoslibVector3.js" defer></script> -->
     <script src="src/lib/Ros2DVisualization.js" defer></script>
     <script src="assets/scripts/index.js" defer type="module"></script>
   </head>
@@ -45,16 +53,17 @@
     <header id="nav-bar">
       <div class="nav-left">
         <a href="./config.html" target="_blank" style="text-decoration: none;">
-          <i class="material-icons">settings</i>
+          <i class="material-icons header-icon">settings</i>
         </a>
-        <i id="download-icon" class="material-icons">file_download</i>
+        <i id="download-icon" class="material-icons header-icon">file_download</i>
       </div>
       <div class="nav-center">
         <h1>Field Test Tool</h1>
+        <i id="ros-status-light" class="material-icons header-icon">sensors_off</i>
       </div>
       <div class="nav-right">
         <p id="user-name">Select User</p>
-        <i id="user-icon" class="material-icons">account_circle</i>
+        <i id="user-icon" class="material-icons header-icon">account_circle</i>
       </div>
     </header>
     <div class="main-content">
@@ -107,11 +116,11 @@
         <div class="actioners">
           <button
             type="button"
-            id="get-segments-btn"
-            class="styled-button"
+            id="start-logging-btn"
+            class="styled-button log-big-btn"
             disabled
           >
-            Get Segments
+            Start Logging
           </button>
         </div>
       </section>
