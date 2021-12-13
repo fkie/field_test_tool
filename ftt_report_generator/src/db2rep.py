@@ -467,8 +467,8 @@ class FttReportGenerator:
     def get_shifts_by_test_event_id(self, test_event_id, local):
         select_stmt = psycopg2.sql.SQL("SELECT shift.id as id, \
             to_timestamp(min(segment.starttime_secs)) as shift_start_datetime_raw,\
-            to_char(to_timestamp(min(segment.starttime_secs)), 'YYYY-MM-DD HH24:MI') as shift_start_datetime, \
-            to_char(to_timestamp(max(segment.endtime_secs)), 'YYYY-MM-DD HH24:MI') as shift_end_datetime, \
+            to_char(to_timestamp(min(segment.starttime_secs)), 'YYYY-MM-DD HH24:MI:SS') as shift_start_datetime, \
+            to_char(to_timestamp(max(segment.endtime_secs)), 'YYYY-MM-DD HH24:MI:SS') as shift_end_datetime, \
             st_extent (pose.position) as shift_bb, \
             user_test_administrator.name as test_administrator_name, \
             user_test_director.name as test_director_name, \
@@ -791,7 +791,7 @@ class FttReportGenerator:
     def generate_latex_shift_timeline(latexf, shift, shift_timeline, min_dur):
         print("Shift timeline:")
 
-        pattern = '%Y-%m-%d %H:%M'
+        pattern = '%Y-%m-%d %H:%M:%S'
         shift_start_datetime = shift["shift_start_datetime"]
         shift_start_secs = int(time.mktime(time.strptime(shift_start_datetime, pattern)))
         print("shift_start_secs : %s" % (shift_start_secs,))
@@ -817,7 +817,11 @@ class FttReportGenerator:
         t = 0
         last_weather_icon_filename = ""
         while t <= shift_duration_sec:
-            abs_time = str(datetime.timedelta(seconds=t))[:-3]  # [:-3] to remove the seconds
+            abs_time = str(datetime.timedelta(seconds=t))
+            if shift_duration_sec < 3600:
+                abs_time = abs_time[3:] + 's' # [3:] to remove the hours
+            else:
+                abs_time = abs_time[:-3] + 'm' # [:-3] to remove the seconds
             latexf.write('\\draw (%f,-0.1) -- (%f,0) node[anchor=south] {%s};\n' % (t * cm_p_s, t * cm_p_s, abs_time))
             t = t + shift_duration_sec / 10
         for row in shift_timeline:

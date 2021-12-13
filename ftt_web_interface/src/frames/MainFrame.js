@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /**
  * @author Carlos Tampier Cotoras - carlos.tampier.cotoras@fkie.fraunhofer.de
  *
@@ -23,13 +24,24 @@ export class MainFrame {
     this.userIcon = document.getElementById("user-icon");
     this.userName = document.getElementById("user-name");
     this.downloadIcon = document.getElementById("download-icon");
+    this.rosConnectIcon = document.getElementById("ros-status-light");
     //Initialize variables.
     this.currentUser = new Personnel();
     this.personnelInterface = new PersonnelInterface(this.serverInterface);
     this.testEventInterface = new TestEventInterface(this.serverInterface);
+    this.openLogsSelected = false;
+    this.ros = new ROSLIB.Ros();
+    this.rosConnectIntervalId = null;
+    this.forceRosConnect = false;
+    this.ros_server_adr = `ws://${location.hostname}:9090`;
     //Contruct page sections.
     this.segmentDetail = new SegmentDetail(serverInterface, this.currentUser);
-    this.trailSelection = new LogSelection(serverInterface, this.currentUser);
+    this.logSelection = new LogSelection(
+      serverInterface,
+      this.ros,
+      this.currentUser,
+      this.logSelectionDoneCallback.bind(this)
+    );
     //Add event listeners.
     this.userIcon.addEventListener(
       "click",
@@ -39,6 +51,23 @@ export class MainFrame {
       "click",
       this.downloadIconClickHandler.bind(this)
     );
+    this.rosConnectIcon.addEventListener(
+      "click",
+      this.rosConnectIconClickHandler.bind(this)
+    );
+    this.ros.on("error", this.rosErrorHandler.bind(this));
+    this.ros.on("connection", this.rosConnectionHandler.bind(this));
+    this.ros.on("close", this.rosCloseHandler.bind(this));
+    //Try to connect to ROS.
+    this.rosConnect();
+  }
+
+  logSelectionDoneCallback() {
+    //Display segment and map sections.
+    document.getElementById("segment-detail").style.display = "block";
+    document.getElementById("map-viewer").style.display = "block";
+    //Update segments table.
+    this.segmentDetail.updateSegments();
   }
 
   async userIconClickHandler() {
@@ -50,7 +79,7 @@ export class MainFrame {
       //Display the overlay.
       const userModal = new Modal(
         userSelect,
-        "Your browser does't support this feature! - Please change to a more modern one.",
+        "Your browser doesn't support this feature! - Please change to a more modern one.",
         () => {
           this.userName.textContent = this.currentUser.name || "Select User";
         }
@@ -67,15 +96,62 @@ export class MainFrame {
       const testEventList = await this.testEventInterface.get();
       //Build a user selection overlay.
       //Build a report generator overlay.
-      const reportDownload = new ReportDownload(this.serverInterface, testEventList);
+      const reportDownload = new ReportDownload(
+        this.serverInterface,
+        testEventList
+      );
       //Display the overlay.
       const userModal = new Modal(
         reportDownload,
-        "Your browser does't support this feature! - Please change to a more modern one."
+        "Your browser doesn't support this feature! - Please change to a more modern one."
       );
       userModal.show();
     } catch (error) {
       alert(error.message);
     }
+  }
+
+  rosConnectIconClickHandler() {
+    this.forceRosConnect = true;
+    this.rosConnect();
+  }
+
+  rosConnect() {
+    this.ros.connect(this.ros_server_adr);
+  }
+
+  rosErrorHandler() {
+    this.logSelection.updateLogging();
+    console.log("Error connecting to ROS");
+    if (this.forceRosConnect) {
+      alert("Error connecting to ROS");
+      this.forceRosConnect = false;
+    }
+  }
+
+  rosConnectionHandler() {
+    this.logSelection.updateLogging();
+    this.rosConnectIcon.classList.remove("disconnected");
+    this.rosConnectIcon.classList.add("connected");
+    this.rosConnectIcon.textContent = "sensors";
+    console.log("Connection to ROS established.");
+    // if(this.rosConnectIntervalId) {
+    //   clearInterval(this.rosConnectIntervalId);
+    //   this.rosConnectIntervalId = null;
+    // }
+  }
+
+  rosCloseHandler() {
+    this.logSelection.updateLogging();
+    this.rosConnectIcon.classList.remove("connected");
+    this.rosConnectIcon.classList.add("disconnected");
+    this.rosConnectIcon.textContent = "sensors_off";
+    console.log("Connection to ROS closed.");
+    // if(!this.rosConnectIntervalId) {
+    //   this.rosConnectIntervalId = setInterval(
+    //     this.rosConnect.bind(this),
+    //     2000
+    //   );
+    // }
   }
 }

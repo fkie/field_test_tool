@@ -1,0 +1,21 @@
+# Absolute params
+/set_ftt_logging_service: /set_ftt_logging
+/get_ftt_logging_service: /get_ftt_logging
+/save_ftt_params_service: /save_ftt_params
+
+# Relative params
+params:
+  map_frame: map
+  robot_frame: base_link
+  server_address: localhost:5000
+  send_pose_period: 2.0
+  send_map_period: 2.0
+  image_buffer_size: 3
+  image_buffer_step: 1.0
+
+topics:
+  robot_mode: robot_mode
+  gps_position: robot_position
+  map: map
+  image: image_raw
+  image_compressed: image_compressed

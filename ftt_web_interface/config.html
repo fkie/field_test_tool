@@ -11,16 +11,22 @@
     />
     <link rel="stylesheet" href="assets/styles/generic.css" />
     <link rel="stylesheet" href="assets/styles/config.css" />
+    <script src="src/lib/roslib.js" defer></script>
     <script src="assets/scripts/config.js" defer type="module"></script>
   </head>
   <body>
     <header>
       <h1>Field Test Tool Configuration</h1>
     </header>
+
+    <div class="separator-header">
+      <h2>Database Configuration</h2>
+    </div>
+
     <div class="config-content">
       <section>
         <div id="performer" class="section__title">
-          <h2>Performers</h2>
+          <h3>Performers</h3>
           <i class="material-icons">add</i>
         </div>
         <div>
@@ -32,7 +38,7 @@
               </tr>
             </thead>
             <tbody id="performer-table-body">
-              <tr style="grid-template-columns: none">
+              <tr class="slimmer-row" style="grid-template-columns: none">
                 <td><i class="add-button material-icons">add_circle</i></td>
               </tr>
             </tbody>
@@ -42,7 +48,7 @@
 
       <section>
         <div id="personnel" class="section__title">
-          <h2>Personnel</h2>
+          <h3>Personnel</h3>
           <i class="material-icons">add</i>
         </div>
         <div>
@@ -55,7 +61,7 @@
               </tr>
             </thead>
             <tbody id="personnel-table-body">
-              <tr style="grid-template-columns: none">
+              <tr class="slimmer-row" style="grid-template-columns: none">
                 <td><i class="add-button material-icons">add_circle</i></td>
               </tr>
             </tbody>
@@ -65,7 +71,7 @@
 
       <section>
         <div id="pose-source" class="section__title">
-          <h2>Pose Sources</h2>
+          <h3>Pose Sources</h3>
           <i class="material-icons">add</i>
         </div>
         <div>
@@ -79,7 +85,7 @@
               </tr>
             </thead>
             <tbody id="pose-source-table-body">
-              <tr style="grid-template-columns: none">
+              <tr class="slimmer-row" style="grid-template-columns: none">
                 <td><i class="add-button material-icons">add_circle</i></td>
               </tr>
             </tbody>
@@ -89,7 +95,7 @@
 
       <section>
         <div id="vehicle" class="section__title">
-          <h2>Vehicles</h2>
+          <h3>Vehicles</h3>
           <i class="material-icons">add</i>
         </div>
         <div>
@@ -105,8 +111,59 @@
               </tr>
             </thead>
             <tbody id="vehicle-table-body">
-              <tr style="grid-template-columns: none">
+              <tr class="slimmer-row" style="grid-template-columns: none">
                 <td><i class="add-button material-icons">add_circle</i></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="separator-header">
+      <h2>ROS Interface Configuration</h2>
+      <i id="ros-connect-icon" class="material-icons header-icon"
+        >sensors_off</i
+      >
+    </div>
+
+    <div class="config-content">
+      <section>
+        <div id="parameters" class="section__title">
+          <h3>Parameters</h3>
+          <i class="material-icons">add</i>
+        </div>
+        <div>
+          <table id="parameters-table" class="styled-table">
+            <tbody id="parameters-table-body">
+              <tr class="slimmer-row" style="grid-template-columns: none">
+                <td>
+                  <i class="add-button material-icons">save_as</i>
+                  <p style="font-size: smaller; margin: 0">
+                    Save to node's YAML
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div id="topics" class="section__title">
+          <h3>Subscribed Topics</h3>
+          <i class="material-icons">add</i>
+        </div>
+        <div>
+          <table id="topics-table" class="styled-table">
+            <tbody id="topics-table-body">
+              <tr class="slimmer-row" style="grid-template-columns: none">
+                <td>
+                  <i class="add-button material-icons">save_as</i>
+                  <p style="font-size: smaller; margin: 0">
+                    Save to node's YAML
+                  </p>
+                </td>
               </tr>
             </tbody>
           </table>

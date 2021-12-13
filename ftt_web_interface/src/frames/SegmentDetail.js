@@ -29,7 +29,6 @@ export class SegmentDetail {
     this.serverInterface = serverInterface;
     this.currentUser = currentUser;
     //Reach to DOM elements.
-    this.getSegmentsBtn = document.getElementById("get-segments-btn");
     this.legSelectHook = document.getElementById("leg-id");
     this.unexpectedBtn = document.getElementById("unexpected-btn");
     this.plannerBtn = document.getElementById("planner-btn");
@@ -57,13 +56,6 @@ export class SegmentDetail {
     this.selectedRowId = null;
     this.selectedRowParentId = null;
     //Add event listeners.
-    this.getSegmentsBtn.addEventListener("click", () => {
-      //Display segment and map sections.
-      document.getElementById("segment-detail").style.display = "block";
-      document.getElementById("map-viewer").style.display = "block";
-      //Update segments table.
-      this.updateSegments();
-    });
     this.segmentTable.addEventListener(
       "click",
       this.segmentTableClickHandler.bind(this)
