@@ -16,6 +16,7 @@ services:
       - ./ftt_report_generator:/ftt_report_generator
     ports: 
       - "5000:5000"
+      # - "9090:9090"
     depends_on:
       - "ftt-database"
     restart: on-failure

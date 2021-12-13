@@ -9,7 +9,7 @@ __maintainer__ = "Carlos Tampier Cotoras"
 __email__ = "carlos.tampier.cotoras@fkie.fraunhofer.de"
 
 import os
-import sys
+import argparse, sys
 import time
 from datetime import datetime
 from psycopg2 import connect, sql, IntegrityError
@@ -57,9 +57,12 @@ def error_msg(error_type, msg):
 
 class DBInterface:
     # Static class to wrap psycopg2 functions.
-    db_host = "localhost"
-    conn = connect("host=%s dbname='ftt' user='postgres' password='postgres'" % db_host)
-    cur = conn.cursor()
+
+    @staticmethod
+    def init(db_host):
+        DBInterface.host = db_host or "localhost"
+        DBInterface.conn = connect("host=%s dbname='ftt' user='postgres' password='postgres'" % DBInterface.host)
+        DBInterface.cur = DBInterface.conn.cursor()
 
     @staticmethod
     def execute(sql_stmt, params=None):
@@ -1298,6 +1301,9 @@ class GenerateReport(Resource):
             if child.tag == "resource":
                 child.set("tile_server", data["tile_server"])
                 child.set("zoom_level", data["zoom_level"])
+            # Edit database ip.
+            if child.tag == "postgis":
+                child.set("host", DBInterface.host)
             # Edit report info.
             if child.tag == "report":
                 child.set("name", data["report_name"])
@@ -1403,7 +1409,20 @@ def report():
     return send_from_directory('../../ftt_report_generator/build', 'report.pdf')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Optional arguments.
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--server_ip', help='IP on which this server will run')
+    parser.add_argument('--server_port', help='IP on which this server will run')
+    parser.add_argument('--database_ip', help='IP on which the postgres database runs')
+    args=parser.parse_args()
+
+    # Initialize the database interface.
+    DBInterface.init(args.database_ip)
+    # Run the web server.
+    server_ip = args.server_ip or '0.0.0.0'
+    server_port = args.server_port or 5000
+    app.run(debug=True, host=server_ip, port=server_port)
+    # Close the database connection.
     print("Closing database connection.")
     DBInterface.close()
     pass

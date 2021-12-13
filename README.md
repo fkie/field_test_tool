@@ -137,8 +137,8 @@ The following libraries and resources are needed for this project. They are show
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml
-sudo python -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2 ruamel.yaml
+sudo apt-get install build-essential python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml python-ruamel.yaml
+sudo python -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
 ```
 
 ### **4.2. Installation of LaTeX and libraries**

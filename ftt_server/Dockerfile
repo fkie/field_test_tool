@@ -4,7 +4,10 @@ FROM ubuntu:18.04
 RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
     python2.7 \
+    python-dev \
+    python-wheel \
     python-pip \
+    python-setuptools \
     python-pyproj \
     python-jinja2 \
     python-parse \
@@ -15,6 +18,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     texmaker \
     texlive-fonts-extra \
     texlive-xetex \
+    libpq-dev \
   && python -m pip install -U \
     requests \
     Pillow \
@@ -34,4 +38,4 @@ RUN mkdir /ftt_web_interface
 RUN mkdir /ftt_report_generator
 
 # run the web server
-CMD ["/bin/bash", "-c", "cd ftt_server/scripts; python api.py;"]
+CMD ["/bin/bash", "-c", "cd ftt_server/scripts; python api.py --database_ip=ftt-database;"]
