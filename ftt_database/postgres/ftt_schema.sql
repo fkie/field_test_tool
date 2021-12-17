@@ -20,7 +20,7 @@ SET row_security = off;
 -- Name: topology; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
-CREATE SCHEMA topology;
+CREATE SCHEMA IF NOT EXISTS topology;
 
 
 ALTER SCHEMA topology OWNER TO postgres;

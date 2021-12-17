@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  ftt-database:
+    build: 
+      context: .
+      dockerfile: ftt_database/Dockerfile
+    volumes:
+      - ./ftt_database/data:/var/lib/postgresql/data
+  ftt-web-server:
+    build: 
+      context: .
+      dockerfile: ftt_server/Dockerfile
+    volumes:
+      - ./ftt_server:/ftt_server
+      - ./ftt_web_interface:/ftt_web_interface
+      - ./ftt_report_generator:/ftt_report_generator
+    ports: 
+      - "5000:5000"
+    depends_on:
+      - "ftt-database"
+    restart: on-failure
+  ftt-ros-interface:
+    build: 
+      context: .
+      dockerfile: ftt_ros_interface/Dockerfile
+    network_mode: "host"
+    volumes:
+      - ./ftt_ros_interface:/ros/src/ftt_ros_interface

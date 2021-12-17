@@ -134,11 +134,13 @@ The following libraries and resources are needed for this project. They are show
 
 ## _4. Installation_
 
+**Note**: See installation with Docker at the end of the section.
+
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml
-sudo python -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2 ruamel.yaml
+sudo apt-get install build-essential python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml python-ruamel.yaml
+sudo python -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
 ```
 
 ### **4.2. Installation of LaTeX and libraries**
@@ -318,6 +320,27 @@ From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interfac
 | npm run build:dev  | Bundles the scripts and starts a development server to serve the applications at _localhost:8080_. </br>**Warning**: Since the web app is meant to be served from the same server as the database API,</br>the app won't work properly unless the server address is manually changed in _src/utility/ServerInterface.js_. |
 | npm run build:prod | Just like build, but the built scripts are also optimized for production. |
 
+
+### **4.9. Installation with Docker**
+
+The project includes Docker files and a docker-compose file to speed up the deployment of the application for testing purposes.
+The docker containers do not include building of the web application's front end (GUI), so please follow the instructions of [section 4.8](#48-installation-of-the-ftt-web-gui) for complete development and offline usage.
+
+First, make sure to have [Docker](https://docs.docker.com/engine/install/ubuntu/) and [docker-compose](https://docs.docker.com/compose/install/) installed on your machine or follow the official documentation to install them. Then, simply step in the project's directory and run docker-compose:
+```
+cd <ros_workspace>/src/field_test_tool
+
+docker-compose up
+```
+
+Doing so will build and start three docker containers:
+  * One for the FTT ROS interface node, with access to all network ports.
+  * One for the FTT server and web interface (back- and front-end), with access to port 5000.
+  * One for the FTT database (access only to docker's internal network).
+
+The input source code is made available to the docker containers via volume mounting. Likewise, a volume is mounted in the FTT database directory of the host environment for the database structure.
+
+With the docker containers running, the execution steps from sections [5.1](#51-ftt-server) and [5.2](#52-ftt-ros-interface) can be skipped.
 <br/><br/>
 
 ## _5. Execution_
@@ -334,7 +357,7 @@ python api.py
 
 ### **5.2. FTT ROS interface**
 
-The following command launches the ROS data collector for sending the operation mode, ros images, GPS position, local map and base link position data.
+The following command launches the ROS data collector for sending the operation mode, ros images, GPS position, local map and base link position data. Additionally, the rosbridge_server's rosbrige_websocket launcher file will be executed, allowing direct communication between the ROS environment and the web application.
 
 ```bash
 roslaunch ftt_ros_interface ftt_ros.launch
