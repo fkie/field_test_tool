@@ -255,7 +255,7 @@ class ShiftLog extends Log {
     }
     //Make sure a user is selected from the interface.
     if (!this.currentUser.id) {
-      alert("Please select a user to add a new shift!");
+      document.getElementById("user-icon").click();
       return;
     }
     //Fetch performer and vehicle data from server.

@@ -122,9 +122,11 @@ export class MainFrame {
 
   rosErrorHandler() {
     this.logSelection.updateLogging();
-    console.log("Error connecting to ROS");
+    const errorMsg =
+      "Error connecting to ROS. Make sure rosbridge_server is running.";
+    console.log(errorMsg);
     if (this.forceRosConnect) {
-      alert("Error connecting to ROS");
+      alert(errorMsg);
       this.forceRosConnect = false;
     }
   }
