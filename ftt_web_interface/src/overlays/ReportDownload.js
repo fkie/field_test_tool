@@ -47,6 +47,22 @@ export class ReportDownload {
     });
     //Register input handler for the complete form.
     form.addEventListener("input", this.formChangedHandler.bind(this));
+    //Register input handler for textareas to highlight when empty.
+    form.querySelectorAll("textarea").forEach((textarea) => {
+      textarea.addEventListener("input", this.checkTextareas.bind(this));
+    });
+    //Run the textarea check
+    this.checkTextareas();
+  }
+
+  checkTextareas() {
+    this.element.querySelectorAll("form textarea").forEach((textarea) => {
+      if (textarea.value.match(/[^\x00-\x7F]/g)) {
+        textarea.classList.add("error");
+      } else {
+        textarea.classList.remove("error");
+      }
+    });
   }
 
   formChangedHandler() {
@@ -73,19 +89,13 @@ export class ReportDownload {
         .getElementById("report-recipient-name")
         .value.replace(/[^\x00-\x7F]/g, "") &&
       document
-        .getElementById("report-recipient-address-1")
-        .value.replace(/[^\x00-\x7F]/g, "") &&
-      document
-        .getElementById("report-recipient-address-2")
+        .getElementById("report-recipient-address")
         .value.replace(/[^\x00-\x7F]/g, "") &&
       document
         .getElementById("report-creator-name")
         .value.replace(/[^\x00-\x7F]/g, "") &&
       document
-        .getElementById("report-creator-address-1")
-        .value.replace(/[^\x00-\x7F]/g, "") &&
-      document
-        .getElementById("report-creator-address-2")
+        .getElementById("report-creator-address")
         .value.replace(/[^\x00-\x7F]/g, "")
     ) {
       generateBtn.disabled = false;
@@ -117,20 +127,14 @@ export class ReportDownload {
     const recipientName = document
       .getElementById("report-recipient-name")
       .value.replace(/[^\x00-\x7F]/g, "");
-    const recipientAdr1 = document
-      .getElementById("report-recipient-address-1")
-      .value.replace(/[^\x00-\x7F]/g, "");
-    const recipientAdr2 = document
-      .getElementById("report-recipient-address-2")
+    const recipientAddress = document
+      .getElementById("report-recipient-address")
       .value.replace(/[^\x00-\x7F]/g, "");
     const creatorName = document
       .getElementById("report-creator-name")
       .value.replace(/[^\x00-\x7F]/g, "");
-    const creatorAdr1 = document
-      .getElementById("report-creator-address-1")
-      .value.replace(/[^\x00-\x7F]/g, "");
-    const creatorAdr2 = document
-      .getElementById("report-creator-address-2")
+    const creatorAddress = document
+      .getElementById("report-creator-address")
       .value.replace(/[^\x00-\x7F]/g, "");
     // Send post request.
     try {
@@ -143,11 +147,9 @@ export class ReportDownload {
         min_duration: minDuration,
         use_local_poses: useLocal,
         recipient_name: recipientName,
-        recipient_address_l1: recipientAdr1,
-        recipient_address_l2: recipientAdr2,
+        recipient_address: recipientAddress,
         creator_name: creatorName,
-        creator_address_l1: creatorAdr1,
-        creator_address_l2: creatorAdr2,
+        creator_address: creatorAddress,
       };
       await this.serverInterface.sendPostRequest("generate_report", data);
       this.element.querySelector("form button:last-of-type").disabled = false;

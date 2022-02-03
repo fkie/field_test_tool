@@ -934,11 +934,9 @@ class FttReportGenerator:
             latexTestCampaignName = report_info["test_event_name"], 
             version = report_info["report_version"],
             recipientName = report_info["recipient_name"],
-            recipientAddress1 = report_info["recipient_address_l1"],
-            recipientAddress2 = report_info["recipient_address_l2"],
+            recipientAddress = report_info["recipient_address"],
             creatorName = report_info["creator_name"],
-            creatorAddress1 = report_info["creator_address_l1"],
-            creatorAddress2 = report_info["creator_address_l2"],
+            creatorAddress = report_info["creator_address"],
             topLogoPath = report_info["top_logo_path"],
             bottomLogoPath = report_info["bottom_logo_path"]
         ))
@@ -1048,12 +1046,10 @@ class ReportGenerator:
                         report_info['local'] = k.get("local").lower() == "true"
                     if k.tag == "recipient":
                         report_info['recipient_name'] = k.get("name")
-                        report_info['recipient_address_l1'] = k.get("address_l1")
-                        report_info['recipient_address_l2'] = k.get("address_l2")
+                        report_info['recipient_address'] = k.get("address")
                     if k.tag == "creator":
                         report_info['creator_name'] = k.get("name")
-                        report_info['creator_address_l1'] = k.get("address_l1")
-                        report_info['creator_address_l2'] = k.get("address_l2")
+                        report_info['creator_address'] = k.get("address")
                     if k.tag == "logos":
                         report_info['top_logo_path'] = k.get("top_logo_path")
                         report_info['bottom_logo_path'] = k.get("bottom_logo_path")

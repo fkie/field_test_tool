@@ -265,6 +265,10 @@
           <hr />
           <div class="form-row">
             <div class="form-col-33">
+              <label for="report-test-event-id">Test Event ID</label>
+              <select id="report-test-event-id" name="report-test-event-id" required></select>
+            </div>
+            <div class="form-col-33">
               <label for="report-name">Report Name</label>
               <input type="text" id="report-name" name="report-name" pattern="[\x00-\x7F]+" title="Special characters not allowed." required></input>
             </div>
@@ -274,10 +278,6 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-col-33">
-              <label for="report-test-event-id">Test Event ID</label>
-              <select id="report-test-event-id" name="report-test-event-id" required></select>
-            </div>
             <div class="form-col-33">
               <label for="report-min-duration">Min. Duration</label>
               <input type="text" id="report-min-duration" name="report-min-duration" value="0.1" pattern="[0-9.]+" title="Only numbers and point allowed." required></input>
@@ -291,31 +291,23 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-col-33">
+            <div class="form-col-50">
               <label for="report-recipient-name">Recipient Name</label>
               <input type="text" id="report-recipient-name" name="report-recipient-name" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
             </div>
-            <div class="form-col-33">
-              <label for="report-recipient-address-1">Recipient Adr. L1</label>
-              <input type="text" id="report-recipient-address-1" name="report-recipient-address-1" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
-            </div>
-            <div class="form-col-33">
-              <label for="report-recipient-address-2">Recipient Adr. L2</label>
-              <input type="text" id="report-recipient-address-2" name="report-recipient-address-2" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-col-33">
+            <div class="form-col-50">
               <label for="report-creator-name">Creator Name</label>
               <input type="text" id="report-creator-name" name="report-creator-name" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
             </div>
-            <div class="form-col-33">
-              <label for="report-creator-address-1">Creator Adr. L1</label>
-              <input type="text" id="report-creator-address-1" name="report-creator-address-1" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
+          </div>
+          <div class="form-row">
+            <div class="form-col-50">
+              <label for="report-recipient-address">Recipient Address</label>
+              <textarea id="report-recipient-address" name="report-recipient-address" title="Special characters not allowed." required></textarea>
             </div>
-            <div class="form-col-33">
-              <label for="report-creator-address-2">Creator Adr. L2</label>
-              <input type="text" id="report-creator-address-2" name="report-creator-address-2" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
+            <div class="form-col-50">
+              <label for="report-creator-address">Creator Address</label>
+              <textarea id="report-creator-address" name="report-creator-address" title="Special characters not allowed." required></textarea>
             </div>
           </div>
           <hr />

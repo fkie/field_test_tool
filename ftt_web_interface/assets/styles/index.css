@@ -125,6 +125,10 @@
   z-index: 800;
 }
 
+textarea.error {
+  outline: 1px solid red;
+}
+
 @media screen and (max-width: 70rem) {
   #map-viewer {
     width: 32rem;
