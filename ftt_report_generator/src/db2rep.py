@@ -36,6 +36,7 @@ DEFAULT_SHIFT_STATISTICS_DATA_TEMPLATE = "rep_data_stat_template.j2"
 DEFAULT_SEGMENT_HEADER_TEMPLATE = "rep_segment_header_template.j2"
 TILE_SERVER = ""
 ZOOM_LEVEL = 19
+TILE_FIX_SIZE = 1024
 
 ###############################################################
 
@@ -122,14 +123,18 @@ class FttReportGenerator:
     @staticmethod
     def merge_map_tiles(xmin, ymin, xmax, ymax, zoom):
         # Create image canvas.
-        map_images = Image.new('RGB',((xmax-xmin+1)*256, (ymax-ymin+1)*256))
+        map_images = Image.new('RGB',((xmax-xmin+1)*TILE_FIX_SIZE, (ymax-ymin+1)*TILE_FIX_SIZE))
         # Find downloaded map tiles and paste them in the canvas.
         for xtile in range(xmin, xmax+1):
             for ytile in range(ymin,  ymax+1):
                 filename = "%s/%s/%s_%s_%s.png" % (builddir, maptiledir, zoom, xtile, ytile)
                 try:
+                    # Get the tile.
                     tile = Image.open(filename)
-                    map_images.paste(tile, box=((xtile-xmin)*256 ,  (ytile-ymin)*256))
+                    # Fix the tile size.
+                    tile = tile.resize((TILE_FIX_SIZE, TILE_FIX_SIZE), Image.ANTIALIAS)
+                    # Paste it in the canvas.
+                    map_images.paste(tile, box=((xtile-xmin)*TILE_FIX_SIZE ,  (ytile-ymin)*TILE_FIX_SIZE))
                 except:
                     print("Tile not found: %s/%s/%s" % (zoom, xtile, ytile))
         return map_images
@@ -181,14 +186,14 @@ class FttReportGenerator:
         # (to use as origin for the position data in the image reference system).
         o_easting, o_northing = FttReportGenerator.tiles2webmercator(xmin, ymin, zoom)
         # Transform coordinates to image reference system.
-        scale = FttReportGenerator.tile_px_scale(256, zoom)
+        scale = FttReportGenerator.tile_px_scale(TILE_FIX_SIZE, zoom)
         seg_xy = [(scale * (point[0] - o_easting), scale * (o_northing - point[1])) for point in seg_xy]
         # Draw polyline on image.
         if len(seg_xy) > 1:
-            draw.line(seg_xy, color, 1)
-        # Draw a 3px wide point on each position.
+            draw.line(seg_xy, color, 3)
+        # Draw a 9px wide point on each position.
         for p in seg_xy:
-            draw.ellipse([p[0]-1, p[1]-1, p[0]+1, p[1]+1], color, color)
+            draw.ellipse([p[0]-4, p[1]-4, p[0]+4, p[1]+4], color, color)
 
     def get_map(self, shift_id, seg_id, bb):
         # Get the bounding box coordinates.
@@ -240,15 +245,15 @@ class FttReportGenerator:
             # Draw points on image for all the segments.
             for segment_id in segment_ids:
                 self.draw_segment_points(segment_id, map_images, xmin, ymin, zoom)
-        # Parametrize cropping to proportionally cut borders of the merged map image up to a minimum size of 256 x 256 px.
-        h_crop_factor = max(0, min((map_images.width / 256 - 1) / (xmin_excess + xmax_excess), 1))
-        v_crop_factor = max(0, min((map_images.height / 256 - 1) / (ymin_excess + ymax_excess), 1))
+        # Parametrize cropping to proportionally cut borders of the merged map image up to a minimum size of TILE_FIX_SIZE x TILE_FIX_SIZE px.
+        h_crop_factor = max(0, min((map_images.width / TILE_FIX_SIZE - 1) / (xmin_excess + xmax_excess), 1))
+        v_crop_factor = max(0, min((map_images.height / TILE_FIX_SIZE - 1) / (ymin_excess + ymax_excess), 1))
         # Crop excess size.
         map_images = map_images.crop((
-            int(h_crop_factor * xmin_excess * 256), 
-            int(v_crop_factor * ymin_excess * 256), 
-            int(map_images.width - h_crop_factor * xmax_excess * 256), 
-            int(map_images.height - v_crop_factor * ymax_excess * 256)
+            int(h_crop_factor * xmin_excess * TILE_FIX_SIZE), 
+            int(v_crop_factor * ymin_excess * TILE_FIX_SIZE), 
+            int(map_images.width - h_crop_factor * xmax_excess * TILE_FIX_SIZE), 
+            int(map_images.height - v_crop_factor * ymax_excess * TILE_FIX_SIZE)
         ))
         # Define file name.
         if seg_id:
@@ -257,7 +262,7 @@ class FttReportGenerator:
             file_dir = "%s/%s/shift_%s.jpeg" % (builddir, imagedir, shift_id)
         # Save image to file.
         f_image = open(file_dir, 'w')
-        map_images.save(f_image, "JPEG")
+        map_images.save(f_image, "JPEG", dpi=(300, 300))
         f_image.close()
         return
 
@@ -308,10 +313,10 @@ class FttReportGenerator:
         seg_xy = [((point[0] - origin_x) / resolution, map_image.height - (point[1] - origin_y) / resolution) for point in seg_xy]
         # Draw polyline on image.
         if len(seg_xy) > 1:
-            draw.line(seg_xy, color, 1)
-        # Draw a 3px wide point on each position.
+            draw.line(seg_xy, color, 3)
+        # Draw a 9px wide point on each position.
         for p in seg_xy:
-            draw.ellipse([p[0]-1, p[1]-1, p[0]+1, p[1]+1], color, color)
+            draw.ellipse([p[0]-4, p[1]-4, p[0]+4, p[1]+4], color, color)
 
     def get_local_map(self, shift_id, seg_id, bb):
         # Get the bounding box coordinates.
@@ -333,6 +338,14 @@ class FttReportGenerator:
         origin_x = map_data["origin_x"]
         origin_y = map_data["origin_y"]
         map_image = Image.open(StringIO(base64.standard_b64decode(map_data["image"]))).convert("RGB")
+        # Make sure this image has a width of at least 4*TILE_FIX_SIZE
+        map_image_width, map_image_height = map_image.size
+        if map_image_width < 4*TILE_FIX_SIZE:
+            resize_ratio = 4.0*TILE_FIX_SIZE/map_image_width
+            # Fix the tile size.
+            map_image = map_image.resize((int(map_image_width*resize_ratio), int(map_image_height*resize_ratio)), Image.ANTIALIAS)
+            # Adjust the resolution accordingly.
+            resolution /= resize_ratio
         # Add local position data to image:
         if seg_id:
             # Draw segment points on image.
@@ -355,9 +368,9 @@ class FttReportGenerator:
         ymin_excess = (northing[0] - origin_y) / resolution # Distance between top edges.
         xmax_excess = map_image.width - (easting[1] - origin_x) / resolution # Distance between right edges.
         ymax_excess = map_image.height - (northing[1] - origin_y) / resolution # Distance between bottom edges.
-        # Parametrize cropping to proportionally cut borders of the map image up to a minimum size of 256 x 256 px.
-        h_crop_factor = max(0, min((map_image.width - 256) / (xmin_excess + xmax_excess), 1))
-        v_crop_factor = max(0, min((map_image.height - 256) / (ymin_excess + ymax_excess), 1))
+        # Parametrize cropping to proportionally cut borders of the map image up to a minimum size of TILE_FIX_SIZE x TILE_FIX_SIZE px.
+        h_crop_factor = max(0, min((map_image.width - TILE_FIX_SIZE) / (xmin_excess + xmax_excess), 1))
+        v_crop_factor = max(0, min((map_image.height - TILE_FIX_SIZE) / (ymin_excess + ymax_excess), 1))
         # Crop excess size.
         map_image = map_image.crop((
             int(h_crop_factor * xmin_excess), 
@@ -372,7 +385,7 @@ class FttReportGenerator:
             file_dir = "%s/%s/shift_%s.jpeg" % (builddir, imagedir, shift_id)
         # Save image to file.
         f_image = open(file_dir, 'w')
-        map_image.save(f_image, "JPEG")
+        map_image.save(f_image, "JPEG", dpi=(300, 300))
         f_image.close()
         return
 
