@@ -530,6 +530,11 @@ class TestEvent(Resource):
             return TestEvent.close(test_event_id)
         pass
 
+    def delete(self):
+        # This method deletes an entry in the test_event table.
+        # The entry id is retrieved from the json data using the table name.
+        return ApiCommon.delete_by_id("test_event")
+
 
 class Shift(Resource):
 
@@ -599,6 +604,11 @@ class Shift(Resource):
             return Shift.close(shift_id)
         pass
 
+    def delete(self):
+        # This method deletes an entry in the shift table.
+        # The entry id is retrieved from the json data using the table name.
+        return ApiCommon.delete_by_id("shift")
+
 
 class Leg(Resource):
 
@@ -667,6 +677,11 @@ class Leg(Resource):
             # Close table entry.
             return Leg.close(leg_id)
         pass
+
+    def delete(self):
+        # This method deletes an entry in the leg table.
+        # The entry id is retrieved from the json data using the table name.
+        return ApiCommon.delete_by_id("leg")
 
 
 class Segment(Resource):

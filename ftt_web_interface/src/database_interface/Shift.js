@@ -152,4 +152,9 @@ export class ShiftInterface {
     );
     await this.serverInterface.sendPutRequest("shift", data);
   }
+
+  async delete(id) {
+    //Delete entry in server table.
+    await this.serverInterface.sendDeleteRequest("shift", "id=" + id);
+  }
 }

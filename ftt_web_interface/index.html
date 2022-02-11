@@ -78,12 +78,11 @@
             <button type="button" id="end-test-event-btn" class="styled-button">
               End
             </button>
-            <button
-              type="button"
-              id="edit-test-event-btn"
-              class="styled-button"
-            >
+            <button type="button" id="edit-test-event-btn" class="styled-button">
               Edit
+            </button>
+            <button type="button" id="delete-test-event-btn" class="styled-button red-button">
+              Del.
             </button>
           </form>
           <form>
@@ -98,6 +97,9 @@
             <button type="button" id="edit-shift-btn" class="styled-button">
               Edit
             </button>
+            <button type="button" id="delete-shift-btn" class="styled-button red-button">
+              Del.
+            </button>
           </form>
           <form>
             <label for="leg-id">Leg</label>
@@ -110,6 +112,9 @@
             </button>
             <button type="button" id="edit-leg-btn" class="styled-button">
               Edit
+            </button>
+            <button type="button" id="delete-leg-btn" class="styled-button red-button">
+              Del.
             </button>
           </form>
         </div>
@@ -229,6 +234,24 @@
         <div class="modal__end">
           <button type="button" id="modal-close-btn" class="styled-button">
             Done
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <template id="confirmation-modal-template">
+      <div class="backdrop"></div>
+      <div class="modal">
+        <header class="modal__title" style="text-align: center;">
+          <h2>Warning!</h2>
+        </header>
+        <p style="white-space: pre-line; text-align: center;"></p>
+        <div class="modal__end">
+          <button id="modal-confirm-btn" class="styled-button">
+            Confirm
+          </button>
+          <button id="modal-cancel-btn" class="styled-button">
+            Cancel
           </button>
         </div>
       </div>

@@ -28,6 +28,7 @@
 
 .main-content > section {
   margin: 1rem;
+  justify-content: space-around;
 }
 
 #trail-selection {
@@ -35,25 +36,17 @@
   width: 32rem;
 }
 
-#trail-selection .selectors {
-  width: 80%;
-}
-
-#trail-selection .actioners {
-  width: 20%;
-}
-
 #trail-selection form {
   display: grid;
-  grid-template-columns: max-content max-content max-content max-content max-content;
+  grid-template-columns: max-content max-content max-content max-content max-content max-content;
   grid-gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
 #trail-selection form label {
-  width: 6rem;
+  width: 5rem;
   text-align: right;
-  padding: 0.2rem;
+  padding: 0;
   font-weight: bold;
 }
 

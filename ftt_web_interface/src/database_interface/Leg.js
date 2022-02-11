@@ -99,4 +99,9 @@ export class LegInterface {
     );
     await this.serverInterface.sendPutRequest("leg", data);
   }
+
+  async delete(id) {
+    //Delete entry in server table.
+    await this.serverInterface.sendDeleteRequest("leg", "id=" + id);
+  }
 }
