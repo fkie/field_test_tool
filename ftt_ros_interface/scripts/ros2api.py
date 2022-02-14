@@ -11,6 +11,7 @@ import sys
 import rospy
 import tf2_ros
 from sensor_msgs.msg import NavSatFix, Image, CompressedImage
+from geometry_msgs.msg import Pose
 from std_msgs.msg import Int32
 from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
 from industrial_msgs.msg import RobotMode
@@ -72,6 +73,7 @@ class Ros2api:
         self.last_ts = None
         self.last_lat = None
         self.last_lng = None
+        self.last_position = None
         self.last_map = None
         self.map_sent = False
 
@@ -106,6 +108,7 @@ class Ros2api:
 
     def get_params(self):
         # Read parameters
+        self.use_tf = self.read_param("~params/use_tf", True)
         self.map_frame = self.read_param("~params/map_frame", "map")
         self.robot_frame = self.read_param("~params/robot_frame", "base_link")
         self.server_address = self.read_param("~params/server_address", "localhost:5000")
@@ -115,7 +118,8 @@ class Ros2api:
         self.image_buffer_step = self.read_param("~params/image_buffer_step", 1.0)
         
         self.robot_mode_topic = self.read_param("~topics/robot_mode", "robot_mode")
-        self.gps_position_topic = self.read_param("~topics/gps_position", "robot_position")
+        self.gps_fix_topic = self.read_param("~topics/gps_fix", "gps_fix")
+        self.local_pose_topic = self.read_param("~topics/local_pose", "local_pose")
         self.map_topic = self.read_param("~topics/map", "map")
         self.image_topic = self.read_param("~topics/image", "image_raw")
         self.image_compressed_topic = self.read_param("~topics/image_compressed", "image_compressed")
@@ -133,13 +137,15 @@ class Ros2api:
         # Create robot data subscribers
         self.robot_data_subscribers = []
         self.robot_data_subscribers.append(rospy.Subscriber(self.robot_mode_topic, RobotMode, self.robot_mode_callback))
-        self.robot_data_subscribers.append(rospy.Subscriber(self.gps_position_topic, NavSatFix, self.navsatfix_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.gps_fix_topic, NavSatFix, self.navsatfix_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.local_pose_topic, Pose, self.pose_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.map_topic, OccupancyGrid, self.map_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_topic, Image, self.image_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_compressed_topic, CompressedImage, self.compressed_image_callback))
-        # Create tf listener for local position
-        self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_period))
-        self.listener = tf2_ros.TransformListener(self.tfBuffer)
+        # If using tf, create tf listener for local position
+        if self.use_tf:
+            self.tfBuffer = tf2_ros.Buffer(rospy.Duration(self.send_pose_period))
+            self.listener = tf2_ros.TransformListener(self.tfBuffer)
         pass
 
     def unsubscribe_robot_data(self):
@@ -223,7 +229,8 @@ class Ros2api:
             # Error
             return TriggerResponse(False, "Error while opening config file.")
         
-        # Overwrite "params" and "topics" configs with current values 
+        # Overwrite "params" and "topics" configs with current values
+        config["params"]["use_tf"] = self.use_tf
         config["params"]["map_frame"] = self.map_frame
         config["params"]["robot_frame"] = self.robot_frame
         config["params"]["server_address"] = self.server_address
@@ -233,7 +240,8 @@ class Ros2api:
         config["params"]["image_buffer_step"] = self.image_buffer_step
         
         config["topics"]["robot_mode"] = self.robot_mode_topic
-        config["topics"]["gps_position"] = self.gps_position_topic
+        config["topics"]["gps_fix"] = self.gps_fix_topic
+        config["topics"]["local_pose"] = self.local_pose_topic
         config["topics"]["map"] = self.map_topic
         config["topics"]["image"] = self.image_topic
         config["topics"]["image_compressed"] = self.image_compressed_topic
@@ -249,6 +257,7 @@ class Ros2api:
             return TriggerResponse(False, "Error while saving parameters to file.")
 
     def robot_mode_callback(self, mode):
+        # Check robot mode change
         if self.last_robot_mode != mode.val:
             if (mode.val == mode.MANUAL):
                 vehicle_mode = self.SEGMENT_TYPE_ITO
@@ -259,16 +268,27 @@ class Ros2api:
                     rospy.logwarn("Unknown robot mode. Supported modes are MANUAL (%d) and AUTO (%d). Please check your system.", mode.MANUAL, mode.AUTO)
                     return
             rospy.loginfo("Reported vehicle mode changed to %s", "MANUAL" if vehicle_mode == self.SEGMENT_TYPE_ITO else "AUTO")
+            # Get local position data
             local_x = None
             local_y = None
-            try:
-                trans = self.tfBuffer.lookup_transform(self.map_frame, self.robot_frame, rospy.Time())
-                local_x = trans.transform.translation.x
-                local_y = trans.transform.translation.y
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rospy.logwarn("Posting new segment without local position data.")
-            except:
-                rospy.logerr("Exception: %s", sys.exc_info()[0])
+            if self.use_tf:
+                try:
+                    trans = self.tfBuffer.lookup_transform(self.map_frame, self.robot_frame, rospy.Time())
+                    local_x = trans.transform.translation.x
+                    local_y = trans.transform.translation.y
+                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                    rospy.logwarn("Posting new segment without local position data.")
+                except:
+                    rospy.logerr("Exception: %s", sys.exc_info()[0])
+            else:
+                if self.last_position:
+                    local_x = self.last_position.x
+                    local_y = self.last_position.y
+                else:
+                    rospy.logwarn("Posting new segment without local position data.")
+            # Check gps position data
+            if not (self.last_lat and self.last_lng):
+                rospy.logwarn("Posting new segment without gps position data.")
             data = {"leg_id":"Current Leg", "segment_type_id": vehicle_mode, "ito_reason_id": self.ITO_REASON_UNASSIGNED, "lng":self.last_lng, "lat": self.last_lat, "local_x": local_x, "local_y": local_y, "orig_starttime_secs": rospy.get_time()}
             try:
                 resp = requests.post('http://%s/segment' % self.server_address, json=data)
@@ -284,6 +304,10 @@ class Ros2api:
         self.last_ts = data.header.stamp.secs+(data.header.stamp.nsecs / 1000000000.0)
         self.last_lat = data.latitude
         self.last_lng = data.longitude
+        pass
+
+    def pose_callback(self, data):
+        self.last_position = data.position
         pass
 
     def image_callback(self, img_msg):
@@ -331,18 +355,29 @@ class Ros2api:
 
     def send_last_local_pose(self):
         if self.map_sent:
-            try:
-                trans = self.tfBuffer.lookup_transform(self.map_frame, self.robot_frame, rospy.Time())
-                data = {"segment_id": "Current Segment", "frame_id": self.map_frame, "x": trans.transform.translation.x, "y": trans.transform.translation.y, "orig_secs": rospy.get_time()}
+            local_x = None
+            local_y = None
+            if self.use_tf:
+                try:
+                    trans = self.tfBuffer.lookup_transform(self.map_frame, self.robot_frame, rospy.Time())
+                    local_x = trans.transform.translation.x
+                    local_y = trans.transform.translation.y
+                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                    rospy.logerr("Unable to get transfrom from %s to %s within the last %s seconds", self.map_frame, self.robot_frame, self.send_pose_period)
+                except:
+                    print("Exception: " + sys.exc_info()[0])
+            elif self.last_position:
+                local_x = self.last_position.x
+                local_y = self.last_position.y
+            if local_x and local_y:
+                data = {"segment_id": "Current Segment", "frame_id": self.map_frame, "x": local_x, "y": local_y, "orig_secs": rospy.get_time()}
                 try:
                     resp = requests.post('http://%s/local_pose' % self.server_address, json=data)
+                    if resp.status_code == 200:
+                        self.last_position = None
                     self.print_resp_json(resp)
                 except:
                     rospy.logerr("Server unavailable!")
-            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-                rospy.logerr("Unable to get transfrom from %s to %s within the last %s seconds", self.map_frame, self.robot_frame, self.send_pose_period)
-            except:
-                print("Exception: " + sys.exc_info()[0])
         pass
 
     def send_image_buffer(self):
@@ -427,7 +462,7 @@ class Ros2api:
                 self.map_sent = True
                 self.last_map = None
             else:
-                if "IntegrityError" in resp_json:
+                if "IntegrityError" in resp_json or "UniqueViolation" in resp_json:
                     self.update_map(map_msg)
         except:
             rospy.logerr("Server unavailable!")

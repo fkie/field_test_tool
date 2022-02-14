@@ -15,7 +15,8 @@ export class RosTopicsInterface extends RosParamsInterface {
     super(ros, prefix);
     this.supportedTopics = {
       robot_mode: "industrial_msgs/RobotMode",
-      gps_position: "sensor_msgs/NavSatFix",
+      gps_fix: "sensor_msgs/NavSatFix",
+      local_pose: "geometry_msgs/Pose",
       map: "nav_msgs/OccupancyGrid",
       image: "sensor_msgs/Image",
       image_compressed: "sensor_msgs/CompressedImage",

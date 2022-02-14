@@ -5,6 +5,7 @@
 
 # Relative params
 params:
+  use_tf: true
   map_frame: map
   robot_frame: base_link
   server_address: localhost:5000
@@ -15,7 +16,8 @@ params:
 
 topics:
   robot_mode: robot_mode
-  gps_position: robot_position
+  gps_fix: gps_fix
+  local_pose: local_pose
   map: map
   image: image_raw
   image_compressed: image_compressed
