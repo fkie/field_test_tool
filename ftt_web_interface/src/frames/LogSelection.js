@@ -216,7 +216,9 @@ class Log {
     //Prompt confirmation.
     const modal = new ConfirmationModal(
       `<strong>This operation cannot be undone!</strong>
-      Are you sure you want to delete <b>${this.name.replace(/-/g, " ")} ${this.select.value}</b> and all its children?`,
+      Are you sure you want to delete <b>${this.name.replace(/-/g, " ")} ${
+        this.select.value
+      }</b> and all its children?`,
       "Your browser does't support this feature! - Please change to a more modern one.",
       this.deleteLogEntry.bind(this) //Delete the entry if confirmed.
     );
@@ -525,13 +527,8 @@ export class LogSelection {
   }
 
   updateLogging() {
-    //Enable the start logging button if all logs are open and ros is connected.
-    if (
-      this.testEventLog.open &&
-      this.shiftLog.open &&
-      this.legLog.open &&
-      this.ros.isConnected
-    ) {
+    //If ROS is connected
+    if (this.ros.isConnected) {
       //Check current logging status in ros.
       const request = new ROSLIB.ServiceRequest();
       this.getLoggingClient.callService(request, (result) => {
@@ -539,8 +536,16 @@ export class LogSelection {
           //Toggle logging to match status in ros.
           this.toggleLogging();
         }
+        //Enable the logging button if all logs are open or if the logging status is active.
+        if (
+          (this.testEventLog.open && this.shiftLog.open && this.legLog.open) ||
+          this.isLogging
+        ) {
+          this.startLoggingBtn.disabled = false;
+        } else {
+          this.startLoggingBtn.disabled = true;
+        }
       });
-      this.startLoggingBtn.disabled = false;
     } else {
       this.startLoggingBtn.disabled = true;
     }
@@ -553,12 +558,13 @@ export class LogSelection {
     });
     this.setLoggingClient.callService(request, (result) => {
       if (result.success) {
-        //Toggle logging status and display.
-        this.toggleLogging();
+        //Update the logging status
+        this.updateLogging();
       } else {
         alert(result.message);
       }
     });
+    
   }
 
   checkSelectedLogs() {
