@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """api.py: Runs a web server to expose a JSON API to the FTT backend."""
 
@@ -43,7 +43,7 @@ You can find the corresponding endpoints at the bottom of the code.
 def print_and_return(print_string):
     # Global function. 
     # Prints the time and string argument then returns the argument.
-    print("["+datetime.now().strftime("%H:%M:%S")+"]"+print_string)
+    print(("["+datetime.now().strftime("%H:%M:%S")+"]"+print_string))
     return print_string
 
 def info_msg(msg):
@@ -232,7 +232,7 @@ class ApiCommon:
         # param_name = %s
         # OR
         # param_name IS %s (in the case the value is None)
-        names = param_dict.keys()
+        names = list(param_dict.keys())
         conditions = []
         for name in names:
             if param_dict[name] is not None:
@@ -245,8 +245,8 @@ class ApiCommon:
     def insert_table_data(table_name, param_dict):
         # SQL insert wrapper method to create a database entry in the specified table 
         # with the parameters from a dictionary passed in the arguments.
-        names = param_dict.keys()
-        values = param_dict.values()
+        names = list(param_dict.keys())
+        values = list(param_dict.values())
         sql_stmt = sql.SQL(
             """
             INSERT INTO {} ({})
@@ -265,11 +265,11 @@ class ApiCommon:
     @staticmethod
     def insert_table_data_with_position(table_name, param_dict, position_param_dict):
         # Extension of the insert_table_data method to insert postgis specific position data.
-        names = param_dict.keys()
-        position_names = position_param_dict.keys()
-        values = param_dict.values()
+        names = list(param_dict.keys())
+        position_names = list(position_param_dict.keys())
+        values = list(param_dict.values())
         position_values = []
-        for value in position_param_dict.values():
+        for value in list(position_param_dict.values()):
             position_values.append(value["pos_x"])
             position_values.append(value["pos_y"])
             position_values.append(value["srid"])
@@ -299,11 +299,11 @@ class ApiCommon:
             """
             ).format(
                 sql.Identifier(table_name),
-                sql.SQL(', ').join((sql.SQL(' = ').join([s, sql.Placeholder()]) for s in map(sql.Identifier, param_dict.keys()))),
+                sql.SQL(', ').join((sql.SQL(' = ').join([s, sql.Placeholder()]) for s in map(sql.Identifier, list(param_dict.keys())))),
                 sql.SQL(' AND ').join(ApiCommon.get_sql_conditions(conditions))
             )
         # Combine values from table columns and query conditions.
-        sql_values = param_dict.values() + conditions.values()
+        sql_values = list(param_dict.values()) + list(conditions.values())
         # Execute query.
         DBInterface.execute(sql_stmt, sql_values)
         return info_msg("Updated %s table." % table_name)
@@ -311,8 +311,8 @@ class ApiCommon:
     @staticmethod
     def update_table_data_with_position(table_name, param_dict, conditions, position_param_name, pos_x, pos_y, srid = 0):
         # Extension of the update_table_data method to update postgis specific position data.
-        names = param_dict.keys()
-        values = param_dict.values() + [pos_x, pos_y, srid]
+        names = list(param_dict.keys())
+        values = list(param_dict.values()) + [pos_x, pos_y, srid]
         # Form query.
         sql_stmt = sql.SQL(
             """
@@ -327,7 +327,7 @@ class ApiCommon:
                 sql.SQL(' AND ').join(ApiCommon.get_sql_conditions(conditions))
             )
         # Combine values from table columns and query conditions.
-        sql_values = values + conditions.values()
+        sql_values = values + list(conditions.values())
         # Execute query.
         DBInterface.execute(sql_stmt, sql_values)
         return info_msg("Updated %s table." % table_name)
@@ -352,7 +352,7 @@ class ApiCommon:
             )
         if conditions:
             # Add condition values to query values.
-            sql_values += conditions.values()
+            sql_values += list(conditions.values())
             # Add conditions to SQL query.
             sql_stmt += sql.SQL(
                 """
@@ -415,7 +415,7 @@ class ApiCommon:
             if limit == 1:
                 return entry[0]
             else:
-                return list(map(lambda x: x[0], entry))
+                return list([x[0] for x in entry])
         else:
             msg = error_msg("LogError","No open %s entry in the DB. Aborted." % table_name)
             raise ApiError(msg, status_code=400)

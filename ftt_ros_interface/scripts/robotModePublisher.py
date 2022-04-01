@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """robotModePublisher.py: Publishes the robot mode according to the received command messages from joystick and navigation stack."""
 
 __author__ = "Carlos Tampier Cotoras"

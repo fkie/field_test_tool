@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ros2api.py: ROS message interface to store relevant data in the FTT database."""
 
 __author__ = "Johannes Pellenz, Lucas Dimartino, Carlos Tampier Cotoras"
@@ -23,7 +23,7 @@ import ruamel.yaml
 import rospkg
 from PIL import Image as PilImage
 from cv_bridge import CvBridge, CvBridgeError
-from StringIO import StringIO
+from io import StringIO
 
 class Ros2api:
     SEGMENT_TYPE_ITO = 1
@@ -365,7 +365,7 @@ class Ros2api:
                 except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                     rospy.logerr("Unable to get transfrom from %s to %s within the last %s seconds", self.map_frame, self.robot_frame, self.send_pose_period)
                 except:
-                    print("Exception: " + sys.exc_info()[0])
+                    print(("Exception: " + sys.exc_info()[0]))
             elif self.last_position:
                 local_x = self.last_position.x
                 local_y = self.last_position.y
@@ -493,7 +493,7 @@ class Ros2api:
         r = requests.get('http://%s/map_image' % self.server_address, json=data)
         r_json = r.json()
         if r.status_code == 200:
-            print("Saving requested map image to %s" % self.save_image_dir)
+            print(("Saving requested map image to %s" % self.save_image_dir))
             encoded_image = r_json[7]
             b64_decoded_img = encoded_image.decode("base64")
             image = base64.decodestring(b64_decoded_img)

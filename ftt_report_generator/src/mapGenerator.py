@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """mapGenerator.py: class to retrieve the environment's map and draw the vehicle's trajectory."""
 
 __author__ = "Johannes Pellenz, Carlos Tampier Cotoras"
@@ -13,7 +13,7 @@ import base64
 import requests
 import pyproj
 from PIL import Image, ImageDraw
-from StringIO import StringIO
+from io import StringIO
 
 EQUATOR_PERIMETER = 40075016.68557849
 TILE_FIX_SIZE = 1024
@@ -68,7 +68,7 @@ class MapGenerator:
                         # Construct URL string.
                         url_format = r"http://{0}/{1}/{2}/{3}.png"
                         imgurl=url_format.format(self.tile_server, zoom, xtile, ytile)
-                        print("Opening: " + imgurl)
+                        print(("Opening: " + imgurl))
                         # Read response.
                         response = requests.get(imgurl, headers={"user-agent":"Custom user agent"})
                         imgstr = response.content
@@ -78,8 +78,8 @@ class MapGenerator:
                         f_image.close()
                     except:
                         e = sys.exc_info()[0] 
-                        print("Couldn't download tile %s/%s/%s" % (zoom, xtile, ytile))
-                        print("Error: %s" % e)
+                        print(("Couldn't download tile %s/%s/%s" % (zoom, xtile, ytile)))
+                        print(("Error: %s" % e))
         return
 
     def merge_map_tiles(self, xmin, ymin, xmax, ymax, zoom):
@@ -97,7 +97,7 @@ class MapGenerator:
                     # Paste it in the canvas.
                     map_images.paste(tile, box=((xtile-xmin)*TILE_FIX_SIZE ,  (ytile-ymin)*TILE_FIX_SIZE))
                 except:
-                    print("Tile not found: %s/%s/%s" % (zoom, xtile, ytile))
+                    print(("Tile not found: %s/%s/%s" % (zoom, xtile, ytile)))
         return map_images
 
     def draw_segment_points(self, seg_id, map_images, xmin, ymin, zoom):

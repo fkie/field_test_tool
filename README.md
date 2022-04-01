@@ -139,8 +139,8 @@ The following libraries and resources are needed for this project. They are show
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python-pyproj python-catkin-tools python-jinja2 python-parse python-lxml python-ruamel.yaml
-sudo python -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
+sudo apt-get install build-essential python3-pyproj python3-catkin-tools python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml
+sudo python3 -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
 ```
 
 ### **4.2. Installation of LaTeX and libraries**
@@ -352,7 +352,7 @@ The following commands starts the web server:
 ```bash
 cd <ros_workspace>/src/field_test_tool/ftt_server/scripts/
 
-python api.py
+python3 api.py
 ```
 
 ### **5.2. FTT ROS interface**
@@ -414,7 +414,7 @@ The following commands will run the report generator. The output PDF report will
 ```bash
 cd <ros_workspace>/src/field_test_tool/ftt_report_generator/src/
 
-python db2rep.py <path_to_config_file> (e.g. ../config/2021_fkie_test.xml)
+python3 db2rep.py <path_to_config_file> (e.g. ../config/2021_fkie_test.xml)
 ```
 <br/><br/>
 

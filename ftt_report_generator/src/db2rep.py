@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """db2rep.py: Automatic report generator out of the data stored in the FTT database."""
 
 __author__ = "Johannes Pellenz, Carlos Tampier Cotoras"
@@ -53,7 +53,7 @@ class FttReportGenerator:
     @staticmethod
     def get_bb_from_text(bb_str):
         bb = parse.parse("BOX({} {},{} {})", bb_str)
-        bb = map(float, bb)
+        bb = list(map(float, bb))
         return bb
 
     @staticmethod
@@ -201,7 +201,7 @@ class FttReportGenerator:
             latexf.write('\\newpage\n\n')
 
     def generate_latex_shift_header(self, latexf, shift):
-        print(" - Generating the Latex section for shift with id " + str(shift["id"]))
+        print((" - Generating the Latex section for shift with id " + str(shift["id"])))
         # Chapter title.
         latexf.write('\\section{Shift %s: %s -- %s (%s)}\n\n' % (shift["id"], shift['shift_start_datetime'],
                                                                  shift['shift_end_datetime'],
@@ -260,10 +260,10 @@ class FttReportGenerator:
         pattern = '%Y-%m-%d %H:%M:%S'
         shift_start_datetime = shift["shift_start_datetime"]
         shift_start_secs = int(time.mktime(time.strptime(shift_start_datetime, pattern)))
-        print("shift_start_secs : %s" % (shift_start_secs,))
+        print(("shift_start_secs : %s" % (shift_start_secs,)))
         shift_end_datetime = shift["shift_end_datetime"]
         shift_end_secs = int(time.mktime(time.strptime(shift_end_datetime, pattern)))
-        print("shift_end_secs : %s" % (shift_end_secs,))
+        print(("shift_end_secs : %s" % (shift_end_secs,)))
 
         # Make sure that the bar is at least n hours long
         t_min = float(min_dur) * 3600
@@ -297,16 +297,16 @@ class FttReportGenerator:
                 start_secs = (row['starttime'] - shift["shift_start_datetime_raw"]).total_seconds()
             elif row['starttime'] is None:
                 start_secs = 0
-                print("Error Startitme is %s" % row['starttime'])
+                print(("Error Startitme is %s" % row['starttime']))
             else:
                 start_secs = 0
-                print("Error Datetime Raw is %s" % shift['shift_start_datetime_raw'])
+                print(("Error Datetime Raw is %s" % shift['shift_start_datetime_raw']))
 
-            print("start_datetime. %s" % (row['starttime'],))
-            print("start_datetime from shift. %s" % (start_secs,))
+            print(("start_datetime. %s" % (row['starttime'],)))
+            print(("start_datetime from shift. %s" % (start_secs,)))
             if row['duration'] is not None:
                 duration = row["duration"].total_seconds()
-                print("duration: %s" % (duration,))
+                print(("duration: %s" % (duration,)))
             else:
                 print("Error Duration is unavible")
 
@@ -453,7 +453,7 @@ class FttReportGenerator:
         latexf.write ('\\clearpage\n\n') # clearpage flushes all pending floats
 
     def generate_latex_header(self, latexf, report_info):
-        print(">>> Generating the Latex files for " + report_info["test_event_name"])
+        print((">>> Generating the Latex files for " + report_info["test_event_name"]))
         template = self.env.get_template(report_info["latex_template"])
         latexf.write(template.render(
             latexTestCampaignName = report_info["test_event_name"], 
@@ -477,7 +477,7 @@ class FttReportGenerator:
         filename = '%s/%s.tex' % (builddir, report_info["test_event_filename"])
         # Open the File in write Mode
         latex_f = open(filename, 'w')
-        print("Writing report %s" % (filename,))
+        print(("Writing report %s" % (filename,)))
         # Generate the Latex file header
         self.generate_latex_header(latex_f, report_info)
         # Get the Shift entries out of the DB
@@ -495,8 +495,8 @@ class FttReportGenerator:
             shift_end_datetime = shift["shift_end_datetime"]
             # Boundingbox of the Shift text
             bb_str = shift["shift_bb"]
-            print("============== New Shift %s ============" % shift_id)
-            print("Adding Shift %s (%s, %s)" % (shift_id, shift_start_datetime, shift_end_datetime))
+            print(("============== New Shift %s ============" % shift_id))
+            print(("Adding Shift %s (%s, %s)" % (shift_id, shift_start_datetime, shift_end_datetime)))
 
             if not (bb_str is None):
                 bb = self.get_bb_from_text(bb_str)

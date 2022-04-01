@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """plotsGenerator.py: class to compute statistics and generate plots for a complete test event."""
 
 __author__ = "Johannes Pellenz, Carlos Tampier Cotoras"
@@ -136,7 +136,7 @@ class PlotsGenerator:
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
         # Define ticks and labels for the x-axis.
-        xTicks = range(1,len(self.shifts)+1)
+        xTicks = list(range(1,len(self.shifts)+1))
         xLabels = self.get_x_labels ()
         # Iterate through the shifts' auto distances
         for i, auto_dist in enumerate(self.auto_dists):
@@ -196,7 +196,7 @@ class PlotsGenerator:
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
         # Define ticks and labels for the x-axis.
-        xTicks = range(1,len(self.shifts)+1)
+        xTicks = list(range(1,len(self.shifts)+1))
         xLabels = self.get_x_labels()
         # Compute the error bars.
         err = [[0]*len(self.shifts) for x in range(2)]
@@ -272,12 +272,12 @@ class PlotsGenerator:
     def override_count_distributed_plot(self):
         # Get all keys for the test event.
         ito_stats = self.db_adapter.get_test_event_ito_statistics(self.test_event_id)
-        keys = list(map(lambda x: x['ito_key'], ito_stats))
-        ito_reasons = list(map(lambda x: x['ito_reason'], ito_stats))
+        keys = list([x['ito_key'] for x in ito_stats])
+        ito_reasons = list([x['ito_reason'] for x in ito_stats])
         nkeys = len (keys)
         nshifts = len(self.shifts)
         # Set up the xTicks and labels.
-        xSpace = np.array(range(nshifts))
+        xSpace = np.array(list(range(nshifts)))
         xLines = [x for x in (2+nkeys)*xSpace if x > 1]
         xTicks = [x for x in (2+nkeys)*xSpace+(2+nkeys)/2]
         xLabels = [None]*nshifts
@@ -343,13 +343,13 @@ class PlotsGenerator:
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
         # Define ticks and labels for the x-axis.
-        xSpace = np.array(range(len(self.shifts)))
+        xSpace = np.array(list(range(len(self.shifts))))
         xTicks = (2*xSpace+1.5).tolist()
         xLabels = self.get_x_labels ()
         # Get all keys for the test event.
         ito_stats = self.db_adapter.get_test_event_ito_statistics(self.test_event_id)
-        keys = list(map(lambda x: x['ito_key'], ito_stats))
-        ito_reasons = list(map(lambda x: x['ito_reason'], ito_stats))
+        keys = list([x['ito_key'] for x in ito_stats])
+        ito_reasons = list([x['ito_reason'] for x in ito_stats])
         nkeys = len (keys)
         # Retrieve the counts.
         total = np.array([0]*len(self.shifts))
@@ -405,7 +405,7 @@ class PlotsGenerator:
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
         # Axis config.
-        xSpace = np.array(range(len(self.shifts)))
+        xSpace = np.array(list(range(len(self.shifts))))
         xTicks = (2*xSpace+1.5).tolist()
         MntTimeY = [0]*len(self.shifts)
         xLabels = self.get_x_labels()
