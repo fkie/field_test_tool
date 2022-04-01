@@ -57,7 +57,7 @@ A ROS node that fetches the following data to create database entries:
 | Camera Image    | sensor_msgs/Image or sensor_msgs/CompressedImage |
 
 
-Aditionally, the node advertises the following services to interact with the web user interface:
+Additionally, the node advertises the following services to interact with the web user interface:
 
 | Service          | Description                                          |
 | ---------------- | ---------------------------------------------------- |
@@ -217,7 +217,7 @@ Create the database schema and fill some tables with the required values:
 ```bash
 cd <ros_workspace>/src
 psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/ftt_schema.sql
-psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/setup_queries.pgsql
+psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/setup_queries.sql
 ```
 
 Alternative: If postgres server is on a different host:
@@ -469,8 +469,8 @@ The report generator script requires an XML file with the following structure:
 
   <report name="<report_name>" version="<version>">
     <test_event id="<test_event_id>" min_dur="<min_duration_in_hours>" local="<true/false>"/>
-    <recipient name="<name>" address_l1="<address_line_1>" address_l2="<address_line_2>"/>
-    <creator name="<name>" address_l1="<address_line_1>" address_l2="<address_line_2>"/>
+    <recipient name="<name>" address="<address>"/>
+    <creator name="<name>" address="<address>"/>
     <logos top_logo_path = "<path_to_front_page_top_logo>" bottom_logo_path = "<path_to_front_page_bottom_logo>"/>
   </report>
 

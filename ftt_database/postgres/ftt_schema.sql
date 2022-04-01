@@ -996,7 +996,7 @@ ALTER TABLE ONLY public.leg
 --
 
 ALTER TABLE ONLY public.local_pose
-    ADD CONSTRAINT local_pose_segment_id_fkey FOREIGN KEY (segment_id) REFERENCES public.segment(id);
+    ADD CONSTRAINT local_pose_segment_id_fkey FOREIGN KEY (segment_id) REFERENCES public.segment(id) ON DELETE CASCADE;
 
 
 --
@@ -1004,7 +1004,7 @@ ALTER TABLE ONLY public.local_pose
 --
 
 ALTER TABLE ONLY public.map_image
-    ADD CONSTRAINT map_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES public.shift(id);
+    ADD CONSTRAINT map_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES public.shift(id) ON DELETE CASCADE;
 
 
 --
@@ -1116,7 +1116,7 @@ ALTER TABLE ONLY public.shift
 --
 
 ALTER TABLE ONLY public.shift
-    ADD CONSTRAINT shift_test_event_id_fkey FOREIGN KEY (test_event_id) REFERENCES public.test_event(id);
+    ADD CONSTRAINT shift_test_event_id_fkey FOREIGN KEY (test_event_id) REFERENCES public.test_event(id) ON DELETE CASCADE;
 
 
 --

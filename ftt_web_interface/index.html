@@ -78,12 +78,11 @@
             <button type="button" id="end-test-event-btn" class="styled-button">
               End
             </button>
-            <button
-              type="button"
-              id="edit-test-event-btn"
-              class="styled-button"
-            >
+            <button type="button" id="edit-test-event-btn" class="styled-button">
               Edit
+            </button>
+            <button type="button" id="delete-test-event-btn" class="styled-button red-button">
+              Del.
             </button>
           </form>
           <form>
@@ -98,6 +97,9 @@
             <button type="button" id="edit-shift-btn" class="styled-button">
               Edit
             </button>
+            <button type="button" id="delete-shift-btn" class="styled-button red-button">
+              Del.
+            </button>
           </form>
           <form>
             <label for="leg-id">Leg</label>
@@ -110,6 +112,9 @@
             </button>
             <button type="button" id="edit-leg-btn" class="styled-button">
               Edit
+            </button>
+            <button type="button" id="delete-leg-btn" class="styled-button red-button">
+              Del.
             </button>
           </form>
         </div>
@@ -234,6 +239,24 @@
       </div>
     </template>
 
+    <template id="confirmation-modal-template">
+      <div class="backdrop"></div>
+      <div class="modal">
+        <header class="modal__title" style="text-align: center;">
+          <h2>Warning!</h2>
+        </header>
+        <p style="white-space: pre-line; text-align: center;"></p>
+        <div class="modal__end">
+          <button id="modal-confirm-btn" class="styled-button">
+            Confirm
+          </button>
+          <button id="modal-cancel-btn" class="styled-button">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </template>
+
     <template id="select-user-template">
       <header class="modal__title">
         <h2>Select User:</h2>
@@ -265,6 +288,10 @@
           <hr />
           <div class="form-row">
             <div class="form-col-33">
+              <label for="report-test-event-id">Test Event ID</label>
+              <select id="report-test-event-id" name="report-test-event-id" required></select>
+            </div>
+            <div class="form-col-33">
               <label for="report-name">Report Name</label>
               <input type="text" id="report-name" name="report-name" pattern="[\x00-\x7F]+" title="Special characters not allowed." required></input>
             </div>
@@ -274,10 +301,6 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-col-33">
-              <label for="report-test-event-id">Test Event ID</label>
-              <select id="report-test-event-id" name="report-test-event-id" required></select>
-            </div>
             <div class="form-col-33">
               <label for="report-min-duration">Min. Duration</label>
               <input type="text" id="report-min-duration" name="report-min-duration" value="0.1" pattern="[0-9.]+" title="Only numbers and point allowed." required></input>
@@ -291,36 +314,28 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-col-33">
+            <div class="form-col-50">
               <label for="report-recipient-name">Recipient Name</label>
               <input type="text" id="report-recipient-name" name="report-recipient-name" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
             </div>
-            <div class="form-col-33">
-              <label for="report-recipient-address-1">Recipient Adr. L1</label>
-              <input type="text" id="report-recipient-address-1" name="report-recipient-address-1" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
-            </div>
-            <div class="form-col-33">
-              <label for="report-recipient-address-2">Recipient Adr. L2</label>
-              <input type="text" id="report-recipient-address-2" name="report-recipient-address-2" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-col-33">
+            <div class="form-col-50">
               <label for="report-creator-name">Creator Name</label>
               <input type="text" id="report-creator-name" name="report-creator-name" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
             </div>
-            <div class="form-col-33">
-              <label for="report-creator-address-1">Creator Adr. L1</label>
-              <input type="text" id="report-creator-address-1" name="report-creator-address-1" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
+          </div>
+          <div class="form-row">
+            <div class="form-col-50">
+              <label for="report-recipient-address">Recipient Address</label>
+              <textarea id="report-recipient-address" name="report-recipient-address" title="Special characters not allowed." required></textarea>
             </div>
-            <div class="form-col-33">
-              <label for="report-creator-address-2">Creator Adr. L2</label>
-              <input type="text" id="report-creator-address-2" name="report-creator-address-2" pattern="[\x00-\x7F]+" title="Special characters not allowed." required/>
+            <div class="form-col-50">
+              <label for="report-creator-address">Creator Address</label>
+              <textarea id="report-creator-address" name="report-creator-address" title="Special characters not allowed." required></textarea>
             </div>
           </div>
           <hr />
           <div class="btn-bar">
-            <button type="submit" class="styled-button">
+            <button type="submit" class="styled-button" disabled>
               Generate Report
             </button>
             <button type="submit" class="styled-button" disabled>

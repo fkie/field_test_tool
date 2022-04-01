@@ -2,11 +2,9 @@
 	--	latexTestCampaignName
 	--	version
   --  recipientName
-  --  recipientAddress1
-  --  recipientAddress2
+  --  recipientAddress
   --  creatorName
-  --  creatorAddress1
-  --  creatorAddress2
+  --  creatorAddress
   --  topLogoPath
   --  bottomLogoPath
 #}
@@ -24,11 +22,12 @@
 \usepackage{wasysym}
 \usepackage{tikz}
 \usepackage{epstopdf}
-\usetikzlibrary{snakes}
 \usepackage{lipsum}
 \usepackage{colortbl} % Farben in Tabellen
 \usepackage{microtype}
 \usepackage{graphicx}
+\usepackage[font=small,skip=0pt]{caption}
+\usepackage{float}
 
 % Remove the boxes around the hyperlinks
 \hypersetup{
@@ -64,15 +63,13 @@
 Prepared for: \\
   \vspace{0.3cm}
   \VAR{ recipientName }\\
-  \VAR{ recipientAddress1 }\\
-  \VAR{ recipientAddress2 }\\
+  \VAR{ recipientAddress }\\
 
 \vspace{1cm}
 Prepared by: \\
   \vspace{0.3cm}
   \VAR{ creatorName }\\
-  \VAR{ creatorAddress1 }\\
-  \VAR{ creatorAddress2 }\\
+  \VAR{ creatorAddress }\\
 \vspace{1cm}
 \today \\
 \vspace{1cm}
@@ -94,16 +91,16 @@ Prepared by: \\
 \includegraphics[height=0.4cm]{../src/logos/cloudy19}\texttt{(cloudy19)} and 
 \includegraphics[height=0.4cm]{../src/logos/rain27}\texttt{(rain27)} and 
 made by Rami McMin \\
-from \url{http://www.flaticon.com} \\
+from \url{http://www.flaticon.com}
 
 \noindent Icons 
 \includegraphics[height=0.4cm]{../src/logos/snowing}\texttt{(snowing)} and 
 \includegraphics[height=0.4cm]{../src/logos/two183}\texttt{(two183)}
 made by \url{http://www.freepik.com} \\
-from \url{www.flaticon.com}  \\
+from \url{www.flaticon.com}
 
 \noindent \textcopyright OpenStreetMap contributors. \url{https://www.openstreetmap.org/copyright}. \\
-Base map and data from OpenStreetMap and OpenStreetMap Foundation.  \\
+Base map and data from OpenStreetMap and OpenStreetMap Foundation.
 
 \newpage
 

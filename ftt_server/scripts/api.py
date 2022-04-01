@@ -530,6 +530,11 @@ class TestEvent(Resource):
             return TestEvent.close(test_event_id)
         pass
 
+    def delete(self):
+        # This method deletes an entry in the test_event table.
+        # The entry id is retrieved from the json data using the table name.
+        return ApiCommon.delete_by_id("test_event")
+
 
 class Shift(Resource):
 
@@ -599,6 +604,11 @@ class Shift(Resource):
             return Shift.close(shift_id)
         pass
 
+    def delete(self):
+        # This method deletes an entry in the shift table.
+        # The entry id is retrieved from the json data using the table name.
+        return ApiCommon.delete_by_id("shift")
+
 
 class Leg(Resource):
 
@@ -667,6 +677,11 @@ class Leg(Resource):
             # Close table entry.
             return Leg.close(leg_id)
         pass
+
+    def delete(self):
+        # This method deletes an entry in the leg table.
+        # The entry id is retrieved from the json data using the table name.
+        return ApiCommon.delete_by_id("leg")
 
 
 class Segment(Resource):
@@ -1289,6 +1304,10 @@ class LocalPose(Resource):
 class GenerateReport(Resource):
 
     @staticmethod
+    def reformat_multi_string(multi_string):
+        return multi_string.replace("\n", "\\\\")
+
+    @staticmethod
     def edit_xml(data):
         # Open and parse XML.
         server_path = os.path.dirname(os.path.realpath(__file__))
@@ -1315,12 +1334,10 @@ class GenerateReport(Resource):
                         k.set("local", data["use_local_poses"])
                     if k.tag == "recipient":
                         k.set("name", data["recipient_name"])
-                        k.set("address_l1", data["recipient_address_l1"])
-                        k.set("address_l2", data["recipient_address_l2"])
+                        k.set("address", GenerateReport.reformat_multi_string(data["recipient_address"]))
                     if k.tag == "creator":
                         k.set("name", data["creator_name"])
-                        k.set("address_l1", data["creator_address_l1"])
-                        k.set("address_l2", data["creator_address_l2"])
+                        k.set("address", GenerateReport.reformat_multi_string(data["creator_address"]))
 
         # Save file.
         with open(config_file_path, 'wb') as xml_file:
@@ -1340,7 +1357,7 @@ class GenerateReport(Resource):
     def post(self):
         # This method calls a report generating script with the user requested parameter values.
         # Get parameter values.
-        param_names = ["tile_server", "zoom_level", "report_name", "report_version", "test_event_id", "min_duration", "use_local_poses", "recipient_name", "recipient_address_l1", "recipient_address_l2", "creator_name", "creator_address_l1", "creator_address_l2"]
+        param_names = ["tile_server", "zoom_level", "report_name", "report_version", "test_event_id", "min_duration", "use_local_poses", "recipient_name", "recipient_address", "creator_name", "creator_address"]
         data = ApiCommon.get_all_params_from_json(param_names)
         # Check that the test event id is a number.
         ApiCommon.check_id(data[param_names[4]])

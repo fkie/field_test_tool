@@ -1,5 +1,7 @@
 FROM ubuntu:18.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # install requirements
 RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
@@ -12,6 +14,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     python-jinja2 \
     python-parse \
     python-lxml \
+    python-matplotlib \
+    python-numpy \
+    python-tk \
     texlive \
     texlive-lang-german \
     texlive-latex-extra \

@@ -14,7 +14,7 @@ export class UserSelect {
     //Set arguments as properties.
     this.currentUser = currentUser;
     this.personnelList = personnelList;
-    //Import and build leg edition node.
+    //Import and build user select node.
     const templateEl = document.getElementById("select-user-template");
     this.element = document.importNode(templateEl.content, true);
 

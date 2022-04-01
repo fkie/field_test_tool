@@ -86,4 +86,9 @@ export class TestEventInterface {
     );
     await this.serverInterface.sendPutRequest("test_event", data);
   }
+
+  async delete(id) {
+    //Delete entry in server table.
+    await this.serverInterface.sendDeleteRequest("test_event", "id=" + id);
+  }
 }

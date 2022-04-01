@@ -7,6 +7,7 @@
 
 import { DOMGeneric } from "../utility/DOMGeneric.js";
 import { Modal } from "../utility/Modal.js";
+import { ConfirmationModal } from "../utility/ConfirmationModal.js";
 import { TestEventInterface } from "../database_interface/TestEvent.js";
 import { ShiftInterface } from "../database_interface/Shift.js";
 import { LegInterface } from "../database_interface/Leg.js";
@@ -39,15 +40,20 @@ class Log {
     this.newBtn = document.getElementById(`new-${name}-btn`);
     this.endBtn = document.getElementById(`end-${name}-btn`);
     this.editBtn = document.getElementById(`edit-${name}-btn`);
+    this.deleteBtn = document.getElementById(`delete-${name}-btn`);
     //Initialize variables.
     this.postData = null; //To be redefined by child class.
     this.dataList = [];
     this.open = false;
-    //Add event listeners
+    //Add event listeners.
     this.select.addEventListener("change", this.selectChangeHandler.bind(this));
     this.newBtn.addEventListener("click", this.newBtnClickHandler.bind(this));
     this.endBtn.addEventListener("click", this.endBtnClickHandler.bind(this));
     this.editBtn.addEventListener("click", this.editBtnClickHandler.bind(this));
+    this.deleteBtn.addEventListener(
+      "click",
+      this.deleteBtnClickHandler.bind(this)
+    );
   }
 
   clearSelectData() {
@@ -101,7 +107,7 @@ class Log {
     if (this.childClass) {
       await this.childClass.updateSelect();
     }
-    //Check log IDs, hide segments and map
+    //Check log IDs, hide segments and map.
     this.checkSelectionCallback();
   }
 
@@ -115,11 +121,11 @@ class Log {
       DOMGeneric.removeFirstEmptyOption(this.select);
       //Choose the newly created log entry from the select.
       this.select.value = Math.max(...this.dataList.map((entry) => entry.id));
-      //Update open log status
+      //Update open log status.
       this.open = true;
       //Trigger the edit behavior.
       await this.editBtnClickHandler();
-      //Check log IDs, hide segments and map
+      //Check log IDs, hide segments and map.
       this.checkSelectionCallback();
     } catch (error) {
       alert(error.message);
@@ -137,8 +143,11 @@ class Log {
       //Update this dataList:
       await this.updateData();
       //Update open log status
-      this.open = !this.dataList.find((entry) => entry.id == this.select.value)
-        .endTime;
+      if (this.select.value) {
+        this.open = !this.dataList.find(
+          (entry) => entry.id == this.select.value
+        ).endTime;
+      }
       //Change the select option html class for the all closed logs.
       Array.from(this.select.children).forEach((option) => {
         if (option.value) {
@@ -166,7 +175,7 @@ class Log {
       await this.dataInterface.put(this.select.value, "close");
       //Update dataList and select options' status for this and all the children classes.
       await this.recursiveUpdate();
-      //Check log IDs, hide segments and map
+      //Check log IDs, hide segments and map.
       this.checkSelectionCallback();
     } catch (error) {
       alert(error.message);
@@ -174,11 +183,44 @@ class Log {
   }
 
   async editBtnClickHandler() {
-    //Display the edit window build in the child function.
+    //Display the edit window built in the child function.
     const modal = new Modal(
       this.editContainer,
       "Your browser does't support this feature! - Please change to a more modern one.",
       this.updateData.bind(this)
+    );
+    modal.show();
+  }
+
+  async deleteLogEntry() {
+    try {
+      //Send request for the deletion of the current log entry.
+      await this.dataInterface.delete(this.select.value);
+      //Update the select options.
+      await this.updateSelect();
+      //Reset log status.
+      this.open = false;
+      //Check log IDs, hide segments and map.
+      this.checkSelectionCallback();
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  async deleteBtnClickHandler() {
+    //Make sure an id selected.
+    if (!this.select.value) {
+      alert("Please select an ID to delete!");
+      return;
+    }
+    //Prompt confirmation.
+    const modal = new ConfirmationModal(
+      `<strong>This operation cannot be undone!</strong>
+      Are you sure you want to delete <b>${this.name.replace(/-/g, " ")} ${
+        this.select.value
+      }</b> and all its children?`,
+      "Your browser does't support this feature! - Please change to a more modern one.",
+      this.deleteLogEntry.bind(this) //Delete the entry if confirmed.
     );
     modal.show();
   }
@@ -255,7 +297,7 @@ class ShiftLog extends Log {
     }
     //Make sure a user is selected from the interface.
     if (!this.currentUser.id) {
-      alert("Please select a user to add a new shift!");
+      document.getElementById("user-icon").click();
       return;
     }
     //Fetch performer and vehicle data from server.
@@ -485,13 +527,8 @@ export class LogSelection {
   }
 
   updateLogging() {
-    //Enable the start logging button if all logs are open and ros is connected.
-    if (
-      this.testEventLog.open &&
-      this.shiftLog.open &&
-      this.legLog.open &&
-      this.ros.isConnected
-    ) {
+    //If ROS is connected
+    if (this.ros.isConnected) {
       //Check current logging status in ros.
       const request = new ROSLIB.ServiceRequest();
       this.getLoggingClient.callService(request, (result) => {
@@ -499,8 +536,16 @@ export class LogSelection {
           //Toggle logging to match status in ros.
           this.toggleLogging();
         }
+        //Enable the logging button if all logs are open or if the logging status is active.
+        if (
+          (this.testEventLog.open && this.shiftLog.open && this.legLog.open) ||
+          this.isLogging
+        ) {
+          this.startLoggingBtn.disabled = false;
+        } else {
+          this.startLoggingBtn.disabled = true;
+        }
       });
-      this.startLoggingBtn.disabled = false;
     } else {
       this.startLoggingBtn.disabled = true;
     }
@@ -513,12 +558,13 @@ export class LogSelection {
     });
     this.setLoggingClient.callService(request, (result) => {
       if (result.success) {
-        //Toggle logging status and display.
-        this.toggleLogging();
+        //Update the logging status
+        this.updateLogging();
       } else {
         alert(result.message);
       }
     });
+    
   }
 
   checkSelectedLogs() {
