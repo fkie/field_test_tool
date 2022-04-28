@@ -236,13 +236,9 @@ Texmaker is an editor of LaTeX files.
 sudo apt-get install texmaker
 ```
 
-### **4.7. Installation pgAdmin III (optional)**
+### **4.7. Installation pgAdmin 4 (optional)**
 
-PgAdmin is a management software for the PostgreSQL-database.
-
-```bash
-sudo apt-get install pgadmin3
-```
+PgAdmin is a management software for the PostgreSQL-database. Follow the installation instruction from the [pgAdmin's website](https://www.pgadmin.org/download/pgadmin-4-apt/)
 
 ### **4.8. Installation of the FTT Web GUI**
 
