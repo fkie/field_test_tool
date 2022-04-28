@@ -1352,7 +1352,7 @@ class GenerateReport(Resource):
         server_path = os.path.dirname(os.path.realpath(__file__))
         report_generator_path = server_path+"/../../ftt_report_generator/src/db2rep.py"
         # Execute script.
-        return os.system("python %s ../config/auto_config.xml" % report_generator_path)  
+        return os.system("python3 %s ../config/auto_config.xml" % report_generator_path)  
 
     def post(self):
         # This method calls a report generating script with the user requested parameter values.

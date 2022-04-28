@@ -10,7 +10,7 @@ __email__ = "carlos.tampier.cotoras@fkie.fraunhofer.de"
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib.path import Path
-from matplotlib._png import read_png
+from matplotlib.pyplot import imread
 import matplotlib.patches as patches
 import numpy as np
 import os.path
@@ -95,7 +95,7 @@ class PlotsGenerator:
             weather_icon_filename = row['weather_icon_filename']
             if (last_weather_icon_filename is None) or (last_weather_icon_filename != weather_icon_filename):
                 weather_icon_path = self.logos_dir + '/%s.png' % (weather_icon_filename,)
-                arr_weather = read_png(open(weather_icon_path))
+                arr_weather = imread(weather_icon_path)
                 icon_zoom = 0.15
                 if (num_shifts > 6):
                     icon_zoom = 0.10;           
