@@ -558,6 +558,8 @@ export class LogSelection {
     });
     this.setLoggingClient.callService(request, (result) => {
       if (result.success) {
+        //Update the table.
+        this.doneCallback();
         //Update the logging status
         this.updateLogging();
       } else {
@@ -588,12 +590,12 @@ export class LogSelection {
     if (autoRefreshBox.checked) {
       autoRefreshBox.click();
     }
-    //Guarantee the gps map disabled.
+    //Guarantee the gps map is disabled.
     const gpsBox = document.getElementById("gps-map-box");
     if (gpsBox.checked) {
       gpsBox.click();
     }
-    //Guarantee the gps map disabled.
+    //Guarantee the local map is disabled.
     const localBox = document.getElementById("local-map-box");
     if (localBox.checked) {
       localBox.click();

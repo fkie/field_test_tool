@@ -283,9 +283,9 @@ class FttReportGenerator:
         t = 0
         last_weather_icon_filename = ""
         while t <= shift_duration_sec:
-            abs_time = str(datetime.timedelta(seconds=t))
+            abs_time = str(datetime.timedelta(seconds=t)) # H:MM:SS
             if shift_duration_sec < 3600:
-                abs_time = abs_time[3:] + 's' # [3:] to remove the hours
+                abs_time = abs_time[2:] + 's' # [2:] to remove the hours
             else:
                 abs_time = abs_time[:-3] + 'm' # [:-3] to remove the seconds
             latexf.write('\\draw (%f,-0.1) -- (%f,0) node[anchor=south] {%s};\n' % (t * cm_p_s, t * cm_p_s, abs_time))
