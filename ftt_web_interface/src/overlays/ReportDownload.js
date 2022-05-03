@@ -66,6 +66,8 @@ export class ReportDownload {
   }
 
   formChangedHandler() {
+    // Disable the get report button upon changes.
+    this.element.querySelector("form button:last-of-type").disabled = true;
     // Get the hook to the generate button
     const generateBtn = this.element.querySelector("form button:first-of-type");
     // Check if all fields have values and update generate button status
