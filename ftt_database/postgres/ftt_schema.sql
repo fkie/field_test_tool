@@ -1004,7 +1004,7 @@ ALTER TABLE ONLY public.local_pose
 --
 
 ALTER TABLE ONLY public.map_image
-    ADD CONSTRAINT map_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES public.shift(id) ON DELETE CASCADE;
+    ADD CONSTRAINT map_image_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES public.shift(id) ON DELETE CASCADE;
 
 
 --
