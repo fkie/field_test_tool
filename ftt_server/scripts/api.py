@@ -71,7 +71,7 @@ class DBInterface:
             DBInterface.conn.commit()
         except Exception as err:
             DBInterface.conn.rollback()
-            msg = error_msg(type(err).__name__, err.message)
+            msg = error_msg(type(err).__name__, str(err))
             raise ApiError(msg, status_code=400)
         pass
 

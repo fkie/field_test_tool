@@ -23,7 +23,7 @@ import ruamel.yaml
 import rospkg
 from PIL import Image as PilImage
 from cv_bridge import CvBridge, CvBridgeError
-from io import StringIO
+from io import BytesIO
 
 class Ros2api:
     SEGMENT_TYPE_ITO = 1
@@ -396,7 +396,7 @@ class Ros2api:
         try:
             cv_image = self.bridge.imgmsg_to_cv2(image, 'rgb8')
             pil_img = PilImage.fromarray(cv_image)
-            image_string = StringIO()
+            image_string = BytesIO()
             pil_img.save(image_string, 'JPEG')
             return image_string.getvalue()
         except CvBridgeError as e:
@@ -429,7 +429,7 @@ class Ros2api:
             encoded_image = image_data[4]
             b64_decoded_img = encoded_image.decode("base64")
             image = base64.decodestring(b64_decoded_img)
-            pil_img = PilImage.open(StringIO(image))
+            pil_img = PilImage.open(BytesIO(image))
             with open(image_filename.rstrip()+"."+pil_img.format.lower(), "wb") as image_file:
                 image_file.write(image)
         pass
@@ -437,8 +437,8 @@ class Ros2api:
     def create_map_jpg(self, map_msg):
         pil_img = PilImage.new("L", (map_msg.info.width, map_msg.info.height))
         pil_img.putdata([255 - point/100*255 if point >= 0 else 127 for point in map_msg.data])
-        pil_img = pil_img.transpose(PilImage.FLIP_TOP_BOTTOM)
-        image_string = StringIO()
+        pil_img = pil_img.transpose(PilImage.Transpose.FLIP_TOP_BOTTOM)
+        image_string = BytesIO()
         pil_img.save(image_string, 'JPEG')
         return image_string.getvalue()
 
@@ -497,7 +497,7 @@ class Ros2api:
             encoded_image = r_json[7]
             b64_decoded_img = encoded_image.decode("base64")
             image = base64.decodestring(b64_decoded_img)
-            pil_img = PilImage.open(StringIO(image))
+            pil_img = PilImage.open(BytesIO(image))
             with open(self.save_image_dir + "/map_" + str(int_msg.data) + "."+pil_img.format.lower(), "wb") as image_file:
                 image_file.write(image)
         else:
