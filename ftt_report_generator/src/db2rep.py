@@ -180,9 +180,9 @@ class FttReportGenerator:
             # Attach images and write description text to tex file.
             for count, row2 in enumerate(data):
                 jpg_image_data = base64.standard_b64decode(row2['image'])
-                if not (jpg_image_data.startswith('Error 404: Not Found')):
+                if not (jpg_image_data.startswith(b'Error 404: Not Found')):
                     tmp_file = "%s/%s/%s_%s_cam.jpeg" % (builddir, imagedir, row2['image_segment_id'], count)
-                    f = open(tmp_file, 'w')
+                    f = open(tmp_file, 'wb')
                     f.write(jpg_image_data)
                     f.close()
                     latexf.write('\\vspace{0.2cm}\n')

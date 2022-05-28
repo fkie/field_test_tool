@@ -13,7 +13,7 @@ import base64
 import requests
 import pyproj
 from PIL import Image, ImageDraw
-from io import StringIO
+from io import BytesIO
 
 EQUATOR_PERIMETER = 40075016.68557849
 TILE_FIX_SIZE = 1024
@@ -249,7 +249,7 @@ class MapGenerator:
         resolution = map_data["resolution"]
         origin_x = map_data["origin_x"]
         origin_y = map_data["origin_y"]
-        map_image = Image.open(StringIO(base64.standard_b64decode(map_data["image"]))).convert("RGB")
+        map_image = Image.open(BytesIO(base64.standard_b64decode(map_data["image"]))).convert("RGB")
         # Make sure this image has a width of at least 4*TILE_FIX_SIZE
         map_image_width, map_image_height = map_image.size
         if map_image_width < 4*TILE_FIX_SIZE:
@@ -264,7 +264,7 @@ class MapGenerator:
             self.draw_segment_local_points(seg_id, map_image, origin_x, origin_y, resolution)
         else:
             # Get all master segment ids for the shift
-            segment_ids = self.db_adapter.get_master_segment_ids()
+            segment_ids = self.db_adapter.get_master_segment_ids(shift_id)
             # Draw points on image for all the segments.
             for segment_id in segment_ids:
                 self.draw_segment_local_points(segment_id, map_image, origin_x, origin_y, resolution)
