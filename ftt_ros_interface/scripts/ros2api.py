@@ -152,6 +152,8 @@ class Ros2api:
         rospy.loginfo("Unsubscribing from robot data.")
         for subscriber in self.robot_data_subscribers:
             subscriber.unregister()
+        if self.use_tf:
+            self.listener.unregister()
         pass
 
     def create_post_timers(self):
