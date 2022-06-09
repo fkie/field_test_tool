@@ -72,7 +72,7 @@ class MapGenerator:
                         response = requests.get(imgurl, headers={"user-agent":"Custom user agent"})
                         imgstr = response.content
                         # Save to file.
-                        f_image = open(filename, 'w')
+                        f_image = open(filename, 'wb')
                         f_image.write(imgstr)
                         f_image.close()
                     except:
