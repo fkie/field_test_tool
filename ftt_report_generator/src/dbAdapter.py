@@ -68,7 +68,7 @@ class FttAdapter(PgAdapter):
                    LEFT OUTER JOIN segment_type on segment.segment_type_id = segment_type.id \
                    LEFT OUTER JOIN weather on leg.weather_id = weather.id \
                    WHERE segment.leg_id = leg.id and leg.shift_id = %s and segment.parent_id is null \
-                   ORDER BY segment.starttime_secs"
+                   ORDER BY segment.id"
         self.dictcursor.execute(sel_stmt, (shift_id,))
         return self.dictcursor.fetchall()
 
@@ -389,7 +389,10 @@ class FttAdapter(PgAdapter):
                     FROM segment \
                     INNER JOIN leg ON segment.leg_id = leg.id \
                     LEFT OUTER JOIN segment_type ON segment.segment_type_id = segment_type.id \
-                    WHERE segment_type.key = 'ito' AND segment.leg_id = leg.id AND leg.shift_id = %s"
+                    WHERE segment_type.key = 'ito' \
+                        AND segment.leg_id = leg.id \
+                        AND segment.parent_id IS NULL \
+                        AND leg.shift_id = %s"
         self.dictcursor.execute(select_stmt, (shift_id,))
         return self.dictcursor.fetchone()[0]
 

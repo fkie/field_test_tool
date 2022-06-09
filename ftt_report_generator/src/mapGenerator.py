@@ -66,8 +66,7 @@ class MapGenerator:
                 if not os.path.isfile(filename):
                     try:
                         # Construct URL string.
-                        url_format = r"http://{0}/{1}/{2}/{3}.png"
-                        imgurl=url_format.format(self.tile_server, zoom, xtile, ytile)
+                        imgurl=self.tile_server.format(z=zoom, x=xtile, y=ytile)
                         print(("Opening: " + imgurl))
                         # Read response.
                         response = requests.get(imgurl, headers={"user-agent":"Custom user agent"})
