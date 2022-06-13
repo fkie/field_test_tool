@@ -75,6 +75,7 @@ class Ros2api:
         self.last_lng = None
         self.last_position = None
         self.last_map = None
+        self.last_map_jpeg = None
         self.map_sent = False
 
     def print_resp_json(self, resp):
@@ -121,6 +122,7 @@ class Ros2api:
         self.gps_fix_topic = self.read_param("~topics/gps_fix", "gps_fix")
         self.local_pose_topic = self.read_param("~topics/local_pose", "local_pose")
         self.map_topic = self.read_param("~topics/map", "map")
+        self.map_jpeg_topic = self.read_param("~topics/map_jpeg", "map_jpeg")
         self.image_topic = self.read_param("~topics/image", "image_raw")
         self.image_compressed_topic = self.read_param("~topics/image_compressed", "image_compressed")
         pass
@@ -140,6 +142,7 @@ class Ros2api:
         self.robot_data_subscribers.append(rospy.Subscriber(self.gps_fix_topic, NavSatFix, self.navsatfix_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.local_pose_topic, Pose, self.pose_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.map_topic, OccupancyGrid, self.map_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.map_jpeg_topic, CompressedImage, self.map_jpeg_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_topic, Image, self.image_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_compressed_topic, CompressedImage, self.compressed_image_callback))
         # If using tf, create tf listener for local position
@@ -245,6 +248,7 @@ class Ros2api:
         config["topics"]["gps_fix"] = self.gps_fix_topic
         config["topics"]["local_pose"] = self.local_pose_topic
         config["topics"]["map"] = self.map_topic
+        config["topics"]["map_jpeg"] = self.map_jpeg_topic
         config["topics"]["image"] = self.image_topic
         config["topics"]["image_compressed"] = self.image_compressed_topic
 
@@ -328,6 +332,10 @@ class Ros2api:
         self.last_map = map_msg
         pass
 
+    def map_jpeg_callback (self, map_jpeg_msg):
+        self.last_map_jpeg = map_jpeg_msg
+        pass
+
     def send_pose_timer_callback(self, event):
         if self.last_robot_mode:
             self.send_last_gps_pose()
@@ -336,10 +344,15 @@ class Ros2api:
 
     def send_map_timer_callback(self, event):
         if self.last_map:
-            if self.map_sent:
-                self.update_map(self.last_map)
+            map_msg = self.last_map
+            if self.last_map_jpeg:
+                map_jpeg = self.last_map_jpeg.data
             else:
-                self.send_new_map(self.last_map)
+                map_jpeg = self.create_map_jpg(map_msg)
+            if self.map_sent:
+                self.update_map(map_msg, map_jpeg)
+            else:
+                self.send_new_map(map_msg, map_jpeg)
         pass
 
     def send_last_gps_pose(self):
@@ -444,8 +457,8 @@ class Ros2api:
         pil_img.save(image_string, 'JPEG')
         return image_string.getvalue()
 
-    def send_new_map(self, map_msg):
-        map_img_encoded = base64.b64encode(self.create_map_jpg(map_msg))
+    def send_new_map(self, map_msg, map_jpeg):
+        map_img_encoded = base64.b64encode(map_jpeg)
         data = {
             "shift_id": "Current Shift",
             "frame_id": map_msg.header.frame_id,
@@ -463,15 +476,16 @@ class Ros2api:
             if resp.status_code == 200:
                 self.map_sent = True
                 self.last_map = None
+                self.last_map_jpeg = None
             else:
                 if "IntegrityError" in resp_json or "UniqueViolation" in resp_json:
-                    self.update_map(map_msg)
+                    self.update_map(map_msg, map_jpeg)
         except:
             rospy.logerr("Server unavailable!")
         pass
 
-    def update_map(self, map_msg):
-        map_img_encoded = base64.b64encode(self.create_map_jpg(map_msg))
+    def update_map(self, map_msg, map_jpeg):
+        map_img_encoded = base64.b64encode(map_jpeg)
         data = {
             "shift_id": "Current Shift",
             "image_data": map_img_encoded,
@@ -487,6 +501,7 @@ class Ros2api:
         if resp.status_code == 200:
             self.map_sent = True
             self.last_map = None
+            self.last_map_jpeg = None
         self.print_resp_json(resp)
         pass
 

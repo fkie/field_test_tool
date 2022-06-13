@@ -19,5 +19,6 @@ topics:
   gps_fix: gps_fix
   local_pose: local_pose
   map: map
+  map_jpeg: map_jpeg
   image: image_raw
   image_compressed: image_compressed
