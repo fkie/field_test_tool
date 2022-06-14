@@ -145,6 +145,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/ftt_ros_interface_node.cpp)
 add_executable(robot_pose_publisher src/robot_pose_publisher.cpp)
 add_executable(map_to_jpeg src/map_to_jpeg.cpp)
+add_executable(ros2api src/ros2api.cpp src/base64.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -162,6 +163,7 @@ add_executable(map_to_jpeg src/map_to_jpeg.cpp)
 # )
 target_link_libraries(robot_pose_publisher ${catkin_LIBRARIES})
 target_link_libraries(map_to_jpeg ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(ros2api ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############
 ## Install ##
@@ -192,6 +194,7 @@ install(
   TARGETS 
     robot_pose_publisher
     map_to_jpeg
+    ros2api
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
