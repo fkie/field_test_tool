@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.11)
 project(ftt_ros_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -24,6 +24,14 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenCV REQUIRED)
 
+include(FetchContent)
+FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
+                         GIT_TAG db351ffbbadc6c4e9239daaa26e9aefa9f0ec82d) # The commit hash for 1.8.3. Replace with the latest from: https://github.com/libcpr/cpr/releases
+FetchContent_MakeAvailable(cpr)
+
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -163,7 +171,9 @@ add_executable(ros2api src/ros2api.cpp src/base64.cpp)
 # )
 target_link_libraries(robot_pose_publisher ${catkin_LIBRARIES})
 target_link_libraries(map_to_jpeg ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-target_link_libraries(ros2api ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(ros2api PRIVATE ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(ros2api PRIVATE cpr::cpr)
+target_link_libraries(ros2api PRIVATE nlohmann_json::nlohmann_json)
 
 #############
 ## Install ##

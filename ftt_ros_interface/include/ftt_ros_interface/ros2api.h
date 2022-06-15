@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 
 #include <industrial_msgs/RobotMode.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <std_srvs/SetBool.h>
@@ -12,6 +12,7 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 class Ros2api {
@@ -20,18 +21,19 @@ public:
 	virtual ~Ros2api();
 protected:
   void resetVariables();
+  std::string printRespJson(std::string resp);
   void getParams();
   void subscribeData();
   void unsubscribeData();
   void createPostTimers();
   void stopPostTimers();
-  bool closeCurrentSegment();
+  std::pair<bool,std::string> closeCurrentSegment();
   bool setLogging(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
   bool getLogging(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
   bool saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
   void robotModeCallback(const industrial_msgs::RobotMode &msg);
   void navSatFixCallback(const sensor_msgs::NavSatFix &msg);
-  void poseCallback(const geometry_msgs::Pose &msg);
+  void poseCallback(const geometry_msgs::PoseStamped &msg);
   void mapCallback(const nav_msgs::OccupancyGrid &msg);
 	void sendPoseTimerCb(const ros::TimerEvent& event);
   void sendMapTimerCb(const ros::TimerEvent& event);
@@ -52,7 +54,7 @@ private:
   double last_ts;
   double last_lat;
   double last_lng;
-  geometry_msgs::Pose last_position;
+  geometry_msgs::PoseStamped last_pose_stamped;
   nav_msgs::OccupancyGrid last_map;
   bool map_sent;
 
