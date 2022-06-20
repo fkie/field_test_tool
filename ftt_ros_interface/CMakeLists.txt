@@ -18,11 +18,15 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   tf2_ros
   cv_bridge
+  roslib
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenCV REQUIRED)
+
+# yaml-cpp  
+find_package(yaml-cpp REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
@@ -121,7 +125,7 @@ catkin_python_setup()
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES ftt_ros_interface
-  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs std_srvs geometry_msgs tf2_ros cv_bridge
+  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs std_srvs geometry_msgs tf2_ros cv_bridge roslib
 #  DEPENDS system_lib
 )
 
@@ -135,6 +139,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -171,7 +176,7 @@ add_executable(ros2api src/ros2api.cpp src/base64.cpp)
 # )
 target_link_libraries(robot_pose_publisher ${catkin_LIBRARIES})
 target_link_libraries(map_to_jpeg ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-target_link_libraries(ros2api PRIVATE ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(ros2api PRIVATE ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${YAML_CPP_LIBRARIES})
 target_link_libraries(ros2api PRIVATE cpr::cpr)
 target_link_libraries(ros2api PRIVATE nlohmann_json::nlohmann_json)
 

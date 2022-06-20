@@ -1,12 +1,15 @@
 #include <ftt_ros_interface/ros2api.h>
 #include <ftt_ros_interface/base64.h>
 
+#include <ros/package.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <std_msgs/Header.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
+#include <yaml-cpp/yaml.h>
+#include <fstream>
 
 using json = nlohmann::json;
 
@@ -49,33 +52,16 @@ std::string Ros2api::printRespJson(std::string resp)
 {
   std::string print_msg("");
   std::string resp_message;
-  if(resp.length() >= 2)
+  try
   {
-    try
+    json resp_json = json::parse(resp);
+    if (resp_json.contains("message"))
     {
-      json resp_json = json::parse(resp);
-      if (resp_json.contains("message"))
-      {
-        resp_message = resp_json["message"];
-      }
+      resp_message = resp_json["message"];
     }
-    catch (const std::exception& e)
+    else
     {
-      size_t json_lim_ini = resp.find("{");
-      size_t json_lim_end = resp.find("}");
-      if (json_lim_ini != std::string::npos && json_lim_end != std::string::npos)
-      {
-        resp_message = resp.substr(json_lim_ini+1, json_lim_end-1);
-        size_t msg_ini = resp_message.find("\"");
-        if (msg_ini != std::string::npos)
-        {
-          size_t msg_end = resp_message.find("\"", msg_ini+1);
-          if (msg_end != std::string::npos)
-          {
-            resp_message = resp_message.substr(msg_ini+1, msg_end-2);
-          }
-        }
-      }
+      resp_message = resp_json.get<std::string>();
     }
     size_t tag_pos;
     if ((tag_pos = resp_message.find("[ERROR]")) != std::string::npos)
@@ -93,13 +79,13 @@ std::string Ros2api::printRespJson(std::string resp)
       print_msg = resp_message.substr(tag_pos+7);
       ROS_INFO_STREAM(print_msg);
     }
-    else if (resp_message.length() > 0)
+    else
     {
       print_msg = resp_message;
       ROS_INFO_STREAM(print_msg);
     }
   }
-  if (print_msg.length() == 0)
+  catch (const json::parse_error& e)
   {
     print_msg = "Server internal error.";
     ROS_ERROR_STREAM(print_msg);
@@ -144,7 +130,7 @@ void Ros2api::subscribeData()
 void Ros2api::unsubscribeData()
 {
   ROS_INFO_STREAM("Unsubscribing from robot data.");
-  // for (auto & subscriber: data_subscribers)
+  // for (auto& subscriber: data_subscribers)
   // {
   //   subscriber.shutdown();
   // }
@@ -166,7 +152,7 @@ void Ros2api::createPostTimers()
 
 void Ros2api::stopPostTimers()
 {
-  // for (auto const& timer: post_timers)
+  // for (auto& timer: post_timers)
   // {
   //   timer.stop();
   // }
@@ -255,7 +241,53 @@ bool Ros2api::getLogging(std_srvs::Trigger::Request &req, std_srvs::Trigger::Res
 
 bool Ros2api::saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
-  // TODO
+  // Update params
+  getParams();
+  // Get the config file's path
+  std::string package_path = ros::package::getPath("ftt_ros_interface");
+  std::string file_path = package_path + std::string("/config/ros2api_config.yaml");
+  // Load the config file
+  YAML::Node config;
+  try
+  {
+    config = YAML::LoadFile(file_path);
+  }
+  catch (const YAML::BadFile & e)
+  {
+    res.success = false;
+    res.message = "Error while opening config file.";
+    return true;
+  }
+  // Overwrite "params" and "topics" configs with current values
+  config["params"]["use_tf"] = use_tf;
+  config["params"]["map_frame"] = map_frame;
+  config["params"]["robot_frame"] = robot_frame;
+  config["params"]["server_address"] = server_address;
+  config["params"]["send_pose_period"] = send_pose_period;
+  config["params"]["send_map_period"] = send_map_period;
+  
+  config["topics"]["robot_mode"] = robot_mode_topic;
+  config["topics"]["gps_fix"] = gps_fix_topic;
+  config["topics"]["local_pose"] = local_pose_topic;
+  config["topics"]["map"] = map_topic;
+
+  // Save the updated config to file
+  try
+  {
+    std::ofstream fout(file_path);
+    fout << config;
+    // Return successfully
+    res.success = true;
+    res.message = std::string("FTT parameters saved to ") + file_path;
+    return true;
+  }
+  catch (const std::exception & e)
+  {
+    // Error
+    res.success = false;
+    res.message = "Error while saving parameters to file.";
+    return true;
+  }
 }
 
 void Ros2api::robotModeCallback(const industrial_msgs::RobotMode &msg)
@@ -395,7 +427,7 @@ void Ros2api::sendPoseTimerCb(const ros::TimerEvent& event)
 
 void Ros2api::sendMapTimerCb(const ros::TimerEvent& event)
 {
-  if (last_map.header.stamp.isValid())
+  if (!last_map.header.stamp.isZero())
   {
     if (map_sent)
     {
