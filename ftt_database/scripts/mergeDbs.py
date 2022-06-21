@@ -183,7 +183,7 @@ def check_columns (source_cursor, dest_cursor, table_name):
 ################################################################
 
 def find_duplicated_config (source_cursor, dest_cursor, table_name):
-    dupl_id_pairs = []
+    dupl_pairs = []
     # Get table data
     source_id_data = get_entries (source_cursor, table_name)
     dest_id_data = get_entries (dest_cursor, table_name)
@@ -194,10 +194,10 @@ def find_duplicated_config (source_cursor, dest_cursor, table_name):
     duplicated = list(set(source_data) - (set(source_data) - set(dest_data)))
     # Extract the ids of the duplicated entries
     for dupl_config in duplicated:
-        dupl_id_pairs.append(
+        dupl_pairs.append(
             ( source_id_data[source_data.index(dupl_config)][0], dest_id_data[dest_data.index(dupl_config)][0] )
         )
-    return dupl_id_pairs # [(source_id, dest_id), ...]
+    return dupl_pairs # [(source_id, dest_id), ...]
 
 ################################################################
 # Check the databases
@@ -223,8 +223,14 @@ def merge_dbs (source_conn, dest_conn):
     dest_cursor = dest_conn.cursor()
     print(">>> Merging the databases...")
 
-    dest_max_id_reg = {} # dict to hold the max ids from the destination db tables
+    # Storage for duplicated config entries between source and dest database
+    dupl_id_pairs = {} # {'table_name':[(source_id, dest_id), ...], ...}
 
+    dest_max_id_reg = {} # dict to hold the original max ids from the destination db tables
+    safe_max_id_reg = {} # dict to hold the original safe max ids from the source db tables
+    source_id_offset_reg = {} # dict to hold the original id offset from the source db tables
+
+    # Modify table constraints to allow "id inconsistencies" during intermediate updates (before a "commit")
     for table_name in data_tables + config_tables:
         if tableExists (source_cursor, table_name):
             table_col = key_columns [table_name]
@@ -241,6 +247,7 @@ def merge_dbs (source_conn, dest_conn):
     
     source_conn.commit()
 
+    # Modify table ids to avoid collisions with ids in the destination database tables
     set_stmt = "SET CONSTRAINTS ALL DEFERRED"
     source_cursor.execute(set_stmt)
 
@@ -268,14 +275,16 @@ def merge_dbs (source_conn, dest_conn):
             else:
                 source_id_offset = source_max_id + 1
             print(" / source_id_offset is", source_id_offset, "(will be removed later)")
+            source_id_offset_reg[table_name] = source_id_offset
+
             safe_max_id = dest_id_offest + source_id_offset # avoid problem with PK in source table
+            safe_max_id_reg[table_name] = safe_max_id
 
             # For config tables, check if the config data is already in the target db
-            dupl_id_pairs = []
             if table_name in config_tables:
-                dupl_id_pairs = find_duplicated_config(source_cursor, dest_cursor, table_name)
-                if dupl_id_pairs:
-                    print(bcolors.WARNING + "      - Duplicated config entries found. Source -> Target id mappings are: %s" % dupl_id_pairs +  bcolors.ENDC)
+                dupl_id_pairs[table_name] = find_duplicated_config(source_cursor, dest_cursor, table_name)
+                if dupl_id_pairs[table_name]:
+                    print(bcolors.WARNING + "      - Duplicated config entries found. Source -> Target id mappings are: %s" % dupl_id_pairs[table_name] +  bcolors.ENDC)
 
             key_col_dict = key_columns [table_name]
             for key_col in key_col_dict:
@@ -296,8 +305,8 @@ def merge_dbs (source_conn, dest_conn):
 
                     # If there are duplicated configs, set source id to target id.
                     # Copying of the entry in the main config table will later be ignored.
-                    if dupl_id_pairs:
-                        for id_pair in dupl_id_pairs:
+                    if table_name in config_tables and dupl_id_pairs[table_name]:
+                        for id_pair in dupl_id_pairs[table_name]:
                             # Set the duplicated entries to target id
                             update_stmt = psycopg2.sql.SQL(
                                 "UPDATE {} \
@@ -331,9 +340,10 @@ def merge_dbs (source_conn, dest_conn):
                             psycopg2.sql.Identifier(mod_column)
                         )
                         source_cursor.execute(update_stmt, (source_id_offset, ))
-    
+
     source_conn.commit()
 
+    # Copy source table data to destination database
     for table_name in config_tables + data_tables:
         if tableExists (source_cursor, table_name):
             print("    * Copying contents of table", table_name, "to target db")
@@ -356,8 +366,74 @@ def merge_dbs (source_conn, dest_conn):
                     psycopg2.sql.SQL(', ').join(psycopg2.sql.Placeholder() * len(col_names))
                 )
                 dest_cursor.execute (insert_stmt, row) 
+            # Set auto increment counter to the new max id of the table
+            # (The manual insertion with id broke the sequence)
+            set_stmt = "SELECT setval('{0}_id_seq', (SELECT MAX(id) FROM {0}))".format(table_name)
+            dest_cursor.execute(set_stmt)
             
     dest_conn.commit()
+
+    # Restore original source database ids
+    set_stmt = "SET CONSTRAINTS ALL DEFERRED"
+    source_cursor.execute(set_stmt)
+
+    for table_name in config_tables + data_tables:
+        if tableExists (source_cursor, table_name):
+            print("    * Restoring ID of table", table_name, "in all tables of source db")
+
+            key_col_dict = key_columns [table_name]
+            for key_col in key_col_dict:
+                mod_table = key_col [0]
+                mod_column = key_col [1]
+                if tableExists (source_cursor, mod_table):
+                    print("      - Restoring table", mod_table, "column", mod_column)
+                    
+                    # If there are duplicated configs, set the id to what was stored in the dupl_id_pairs.
+                    if table_name in config_tables and dupl_id_pairs[table_name]:
+                        # Reset the non-duplicated ids according to the stored offset
+                        update_stmt = psycopg2.sql.SQL(
+                            "UPDATE {table} \
+                            SET {col} = {col} + %s \
+                            WHERE {col} > %s"
+                        ).format(
+                            table=psycopg2.sql.Identifier(mod_table),
+                            col=psycopg2.sql.Identifier(mod_column)
+                        )
+                        source_cursor.execute(update_stmt, (source_id_offset_reg[table_name], dest_max_id_reg[table_name]))
+                        # Set the duplicated entries to the stored source id (plus stored safe_max_id, substracted later)
+                        for id_pair in dupl_id_pairs[table_name]:
+                            update_stmt = psycopg2.sql.SQL(
+                                "UPDATE {table} \
+                                SET {col} = %s \
+                                WHERE {col} = %s"
+                            ).format(
+                                table=psycopg2.sql.Identifier(mod_table),
+                                col=psycopg2.sql.Identifier(mod_column)
+                            )
+                            source_cursor.execute(update_stmt, (id_pair[0] + safe_max_id_reg[table_name], id_pair[1]))
+                    else:
+                        update_stmt = psycopg2.sql.SQL(
+                            "UPDATE {table} \
+                            SET {col} = {col} + %s"
+                        ).format(
+                            table=psycopg2.sql.Identifier(mod_table),
+                            col=psycopg2.sql.Identifier(mod_column)
+                        )
+                        source_cursor.execute(update_stmt, (source_id_offset_reg[table_name], ))
+
+                    # Substract the initially added safe_max_id to obtain the original id
+                    update_stmt = psycopg2.sql.SQL(
+                        "UPDATE {table} \
+                        SET {col} = {col} - %s"
+                    ).format(
+                        table=psycopg2.sql.Identifier(mod_table),
+                        col=psycopg2.sql.Identifier(mod_column)
+                    )
+                    source_cursor.execute(update_stmt, (safe_max_id_reg[table_name], ))
+
+                    
+
+    source_conn.commit()
 
     print(bcolors.OKBLUE + "Done." +  bcolors.ENDC)
         
