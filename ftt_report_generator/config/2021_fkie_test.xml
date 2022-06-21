@@ -5,7 +5,7 @@ Base map and data from OpenStreetMap and OpenStreetMap Foundation.
 -->
 <testevent>
 
-  <resource tile_server = "a.tile.openstreetmap.org" zoom_level = "19"/>
+  <resource tile_server = "http://a.tile.openstreetmap.org/{z}/{x}/{y}.png" zoom_level = "19"/>
   
   <postgis host = "localhost" dbname="ftt" user ="postgres" password = "postgres"/>
 

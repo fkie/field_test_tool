@@ -247,8 +247,8 @@ class FttReportGenerator:
             latexf.write(
                 template.render(segmentTypeShortDescription=row['segment_type_short_description'], Count=row['cnt'],
                                 Duration=tmp_dur, Distance="{:8.2f}".format(row['distance']),
-                                Speedm="{:3.1f}".format(speed_m_s), SpeedKm="{:3.1f}".format(speed_km_h),
-                                SpeedMi="{:3.1f}".format(speed_mi_h)))
+                                Speedm="{:3.2f}".format(speed_m_s), SpeedKm="{:3.2f}".format(speed_km_h),
+                                SpeedMi="{:3.2f}".format(speed_mi_h)))
         latexf.write('\\end{longtable}\n')
         latexf.write('\n')
 
@@ -283,7 +283,7 @@ class FttReportGenerator:
         t = 0
         last_weather_icon_filename = ""
         while t <= shift_duration_sec:
-            abs_time = str(datetime.timedelta(seconds=t)) # H:MM:SS
+            abs_time = str(datetime.timedelta(seconds=t)).split('.', 2)[0] # H:MM:SS
             if shift_duration_sec < 3600:
                 abs_time = abs_time[2:] + 's' # [2:] to remove the hours
             else:
