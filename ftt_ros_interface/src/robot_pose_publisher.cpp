@@ -1,5 +1,7 @@
 #include <ftt_ros_interface/robot_pose_publisher.h>
 
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Pose.h>
 
 RobotPosePublisher::RobotPosePublisher()
 {

@@ -1,5 +1,10 @@
 #include <ftt_ros_interface/map_to_jpeg.h>
 
+#include <opencv2/core.hpp>
+#include <std_msgs/Header.h>
+#include <sensor_msgs/CompressedImage.h>
+#include <sensor_msgs/image_encodings.h>
+#include <vector>
 
 MapToJpeg::MapToJpeg()
 {

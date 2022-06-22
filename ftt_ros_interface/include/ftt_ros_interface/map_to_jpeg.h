@@ -2,13 +2,8 @@
 #define MAP_TO_JPEG_H
 
 #include <ros/ros.h>
-#include <opencv2/core.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <std_msgs/Header.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <sensor_msgs/CompressedImage.h>
-#include <sensor_msgs/image_encodings.h>
-#include <vector>
 
 class MapToJpeg {
 public:
