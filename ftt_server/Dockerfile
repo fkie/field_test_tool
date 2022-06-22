@@ -1,22 +1,22 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install requirements
 RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
-    python2.7 \
-    python-dev \
-    python-wheel \
-    python-pip \
-    python-setuptools \
-    python-pyproj \
-    python-jinja2 \
-    python-parse \
-    python-lxml \
-    python-matplotlib \
-    python-numpy \
-    python-tk \
+    python3 \
+    python3-dev \
+    python3-wheel \
+    python3-pip \
+    python3-setuptools \
+    python3-pyproj \
+    python3-jinja2 \
+    python3-parse \
+    python3-lxml \
+    python3-matplotlib \
+    python3-numpy \
+    python3-tk \
     texlive \
     texlive-lang-german \
     texlive-latex-extra \
@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     texlive-fonts-extra \
     texlive-xetex \
     libpq-dev \
-  && python -m pip install -U \
+  && python3 -m pip install -U \
     requests \
     Pillow \
     Flask \
@@ -43,4 +43,4 @@ RUN mkdir /ftt_web_interface
 RUN mkdir /ftt_report_generator
 
 # run the web server
-CMD ["/bin/bash", "-c", "cd ftt_server/scripts; python api.py --database_ip=ftt-database;"]
+CMD ["/bin/bash", "-c", "cd ftt_server/scripts; python3 api.py --database_ip=ftt-database;"]

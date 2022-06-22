@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """mapGenerator.py: class to retrieve the environment's map and draw the vehicle's trajectory."""
 
 __author__ = "Johannes Pellenz, Carlos Tampier Cotoras"
@@ -13,7 +13,7 @@ import base64
 import requests
 import pyproj
 from PIL import Image, ImageDraw
-from StringIO import StringIO
+from io import BytesIO
 
 EQUATOR_PERIMETER = 40075016.68557849
 TILE_FIX_SIZE = 1024
@@ -67,18 +67,18 @@ class MapGenerator:
                     try:
                         # Construct URL string.
                         imgurl=self.tile_server.format(z=zoom, x=xtile, y=ytile)
-                        print("Opening: " + imgurl)
+                        print(("Opening: " + imgurl))
                         # Read response.
                         response = requests.get(imgurl, headers={"user-agent":"Custom user agent"})
                         imgstr = response.content
                         # Save to file.
-                        f_image = open(filename, 'w')
+                        f_image = open(filename, 'wb')
                         f_image.write(imgstr)
                         f_image.close()
                     except:
                         e = sys.exc_info()[0] 
-                        print("Couldn't download tile %s/%s/%s" % (zoom, xtile, ytile))
-                        print("Error: %s" % e)
+                        print(("Couldn't download tile %s/%s/%s" % (zoom, xtile, ytile)))
+                        print(("Error: %s" % e))
         return
 
     def merge_map_tiles(self, xmin, ymin, xmax, ymax, zoom):
@@ -96,7 +96,7 @@ class MapGenerator:
                     # Paste it in the canvas.
                     map_images.paste(tile, box=((xtile-xmin)*TILE_FIX_SIZE ,  (ytile-ymin)*TILE_FIX_SIZE))
                 except:
-                    print("Tile not found: %s/%s/%s" % (zoom, xtile, ytile))
+                    print(("Tile not found: %s/%s/%s" % (zoom, xtile, ytile)))
         return map_images
 
     def draw_segment_points(self, seg_id, map_images, xmin, ymin, zoom):
@@ -248,7 +248,7 @@ class MapGenerator:
         resolution = map_data["resolution"]
         origin_x = map_data["origin_x"]
         origin_y = map_data["origin_y"]
-        map_image = Image.open(StringIO(base64.standard_b64decode(map_data["image"]))).convert("RGB")
+        map_image = Image.open(BytesIO(base64.standard_b64decode(map_data["image"]))).convert("RGB")
         # Make sure this image has a width of at least 4*TILE_FIX_SIZE
         map_image_width, map_image_height = map_image.size
         if map_image_width < 4*TILE_FIX_SIZE:
@@ -263,7 +263,7 @@ class MapGenerator:
             self.draw_segment_local_points(seg_id, map_image, origin_x, origin_y, resolution)
         else:
             # Get all master segment ids for the shift
-            segment_ids = self.db_adapter.get_master_segment_ids()
+            segment_ids = self.db_adapter.get_master_segment_ids(shift_id)
             # Draw points on image for all the segments.
             for segment_id in segment_ids:
                 self.draw_segment_local_points(segment_id, map_image, origin_x, origin_y, resolution)

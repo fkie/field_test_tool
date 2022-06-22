@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """dbAdapter.py: classes to access the FTT database."""
 
 __author__ = "Johannes Pellenz, Carlos Tampier Cotoras"
@@ -23,7 +23,7 @@ class PgAdapter:
     def connect(self):
         conn_string = "host='%s' dbname='%s' user='%s' password='%s'" % (
             self.host, self.dbname, self.user, self.password)
-        print ("Connecting to db: %s" % (self.dbname,))
+        print(("Connecting to db: %s" % (self.dbname,)))
         self.conn = psycopg2.connect(conn_string)
         self.cursor = self.conn.cursor()
         self.dictcursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
