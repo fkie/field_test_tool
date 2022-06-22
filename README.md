@@ -3,7 +3,7 @@
 The purpose of this tool is to monitor and analyze the switching events between autonomous mode and manual mode on autonomous ground vehicles. This is done by collecting relevant data from the robot's ROS environment, alongside context data provided by users.
 The collected data is processed by an automatic report generator, which aims to help the manufacturer, the project manager and the customer to analyze software issues in certain enviroments.
 
-<span style="font-size:smaller">Note: The FTT currently runs with Python 3. Python 2 support ended with version 2.1.</span>
+**Note**: The FTT currently runs with Python 3. Python 2 support ended with version 2.1.
 <br/><br/>
 
 ## _1. Description_
@@ -92,11 +92,13 @@ The following libraries and resources are needed for this project. They are show
 
 | Name                       | License                                 | URL                                                                |
 | -------------------------- | --------------------------------------- | ------------------------------------------------------------------ |
-| Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                             |
 | rospy                      | BSD License                             | https://wiki.ros.org/rospy                                         |
-| common_msgs                | BSD License                             | http://wiki.ros.org/common_msgs                                    |
-| industrial_msgs            | BSD License                             | http://wiki.ros.org/industrial_msgs                                |
-| cv_bridge                  | BSD License                             | http://wiki.ros.org/cv_bridge                                      |
+| roscpp                     | BSD License                             | https://wiki.ros.org/roscpp                                        |
+| common_msgs                | BSD License                             | https://wiki.ros.org/common_msgs                                   |
+| industrial_msgs            | BSD License                             | https://wiki.ros.org/industrial_msgs                               |
+| cv_bridge                  | BSD License                             | https://wiki.ros.org/cv_bridge                                     |
+| tf2_ros                    | BSD License                             | https://wiki.ros.org/tf2_ros                                       |
+| Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                             |
 | requests                   | Apache License Version 2.0              | https://github.com/psf/requests/blob/master/LICENSE                |
 | ruamel.yaml                | MIT License                             | https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/LICENSE |
 | Pillow                     | HPND License                            | https://github.com/python-pillow/Pillow/blob/master/LICENSE        |
@@ -108,9 +110,16 @@ The following libraries and resources are needed for this project. They are show
 | jinja2                     | BSD-3-Clause License                    | https://github.com/pallets/jinja/blob/master/LICENSE.rst           |
 | parse                      | MIT License                             | https://github.com/r1chardj0n3s/parse/blob/master/LICENSE          |
 | pyproj                     | MIT License                             | https://github.com/pyproj4/pyproj/blob/master/LICENSE              |
+| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE |
+| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                          |
+| GNU C++ Standard Library   | GPLv3 License                           | https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html       |
+| OpenCV                     | BSD-3-Clause or Apache 2.0 License      | https://opencv.org/license                                         |
+| cpr                        | MIT License                             | https://github.com/libcpr/cpr/blob/master/LICENSE                  |
+| nlohmann json              | MIT License                             | https://github.com/nlohmann/json/blob/develop/LICENSE.MIT          |
+| yaml-cpp                   | MIT License                             | https://github.com/jbeder/yaml-cpp/blob/master/LICENSE             |
 | Leaflet                    | 2-clause BSD License                    | https://github.com/Leaflet/Leaflet/blob/master/LICENSE             |
 | OpenStreetMap<sup>\*</sup> | Open Data Commons Open Database License | https://www.openstreetmap.org/copyright                            |
-| Google Material Icons      | Apache License Version 2.0              | http://www.apache.org/licenses/LICENSE-2.0.txt                     |
+| Google Material Icons      | Apache License Version 2.0              | https://www.apache.org/licenses/LICENSE-2.0.txt                    |
 | Webpack                    | MIT License                             | https://github.com/webpack/webpack/blob/master/LICENSE             |
 | Webpack CLI                | MIT License                             | https://github.com/webpack/webpack-cli/blob/master/LICENSE         |
 | Webpack Dev Server         | MIT License                             | https://github.com/webpack/webpack-dev-server/blob/master/LICENSE  |
@@ -118,8 +127,6 @@ The following libraries and resources are needed for this project. They are show
 | Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt        |
 | Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE     |
 | Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE      |
-| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE |
-| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                          |
 
 <span style="font-size:smaller">\* © OpenStreetMap contributors. Base map and data from OpenStreetMap and OpenStreetMap Foundation.</span>
 
@@ -127,7 +134,7 @@ The following libraries and resources are needed for this project. They are show
 
 ## _3. System requirements_
 
-- Ubuntu 18.04 and ROS Melodic.
+- Ubuntu 20.04 and ROS Noetic.
 - Current version of a web browser, at least<sup>\*</sup>:
   - Chrome 89+
   - Firefox 86+
@@ -143,7 +150,7 @@ The following libraries and resources are needed for this project. They are show
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python3-pyproj python3-catkin-tools python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk
+sudo apt-get install build-essential python3-pyproj python3-catkin-tools python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk python3-opencv libopencv-dev libyaml-cpp-dev
 sudo python3 -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
 ```
 

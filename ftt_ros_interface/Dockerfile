@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     ros-noetic-tf2-ros \
     ros-noetic-cv-bridge \
     ros-noetic-rosbridge-server \
+    python3-opencv \
+    libopencv-dev \
+    libyaml-cpp-dev \
+    git \
   && python3 -m pip install -U \
     requests \
     Pillow \
