@@ -2,6 +2,8 @@
 
 The purpose of this tool is to monitor and analyze the switching events between autonomous mode and manual mode on autonomous ground vehicles. This is done by collecting relevant data from the robot's ROS environment, alongside context data provided by users.
 The collected data is processed by an automatic report generator, which aims to help the manufacturer, the project manager and the customer to analyze software issues in certain enviroments.
+
+<span style="font-size:smaller">Note: The FTT currently runs with Python 3. Python 2 support ended with version 2.1.</span>
 <br/><br/>
 
 ## _1. Description_
@@ -92,7 +94,7 @@ The following libraries and resources are needed for this project. They are show
 | -------------------------- | --------------------------------------- | ------------------------------------------------------------------ |
 | Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                             |
 | rospy                      | BSD License                             | https://wiki.ros.org/rospy                                         |
-| sensor_msgs                | BSD License                             | http://wiki.ros.org/sensor_msgs                                    |
+| common_msgs                | BSD License                             | http://wiki.ros.org/common_msgs                                    |
 | industrial_msgs            | BSD License                             | http://wiki.ros.org/industrial_msgs                                |
 | cv_bridge                  | BSD License                             | http://wiki.ros.org/cv_bridge                                      |
 | requests                   | Apache License Version 2.0              | https://github.com/psf/requests/blob/master/LICENSE                |
@@ -116,6 +118,8 @@ The following libraries and resources are needed for this project. They are show
 | Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt        |
 | Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE     |
 | Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE      |
+| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE |
+| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                          |
 
 <span style="font-size:smaller">\* © OpenStreetMap contributors. Base map and data from OpenStreetMap and OpenStreetMap Foundation.</span>
 
@@ -139,7 +143,7 @@ The following libraries and resources are needed for this project. They are show
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python3-pyproj python3-catkin-tools python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml
+sudo apt-get install build-essential python3-pyproj python3-catkin-tools python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk
 sudo python3 -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
 ```
 
@@ -475,7 +479,7 @@ The report generator script requires an XML file with the following structure:
 
 Most of the parameters are self-explanatory, but the following should be noted:
 
-- The **_server_dir_** parameter expects either an IP or a name that can be converted to one through the DNS. The tile server must provide an API with the URL format **server_dir/{zoom}/{xtile}/{ytile}** to retrieve map tiles. An example would be _<span>a.tile.openstreetmap.org</span>_.
+- The **_server_dir_** parameter expects a URL to a tile server with an API that considers the _x_ and _y_ coordinates, and _zoom_ (z) of the requested tile. The URL should be parameterized as follows: **http://your.tile.server/{z}/{x}/{y}**. An example would be _<span>http://a.tile.openstreetmap.org/{z}/{x}/{y}.png</span>_.
 - The **_zoom_level_** parameter sets the zoom level used for fetching the tiles from the tile server.
 - The **_report_name_** and **_version_** parameters are simply for the text to be displayed on the front page of the report.
 - The **_test_event_id_** parameter specifies the test event for which the information will be processed and written to the report.

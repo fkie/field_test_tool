@@ -1000,7 +1000,7 @@ ALTER TABLE ONLY public.local_pose
 
 
 --
--- Name: map_image map_shift_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: map_image map_image_shift_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.map_image
