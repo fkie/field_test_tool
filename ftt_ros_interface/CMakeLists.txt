@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.11)
 project(ftt_ros_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -14,11 +14,28 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  std_srvs
+  geometry_msgs
+  tf2_ros
+  cv_bridge
+  roslib
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(OpenCV REQUIRED)
 
+# yaml-cpp  
+find_package(yaml-cpp REQUIRED)
+
+include(FetchContent)
+FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
+                         GIT_TAG db351ffbbadc6c4e9239daaa26e9aefa9f0ec82d) # The commit hash for 1.8.3. Replace with the latest from: https://github.com/libcpr/cpr/releases
+FetchContent_MakeAvailable(cpr)
+
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -106,9 +123,9 @@ catkin_python_setup()
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES ftt_ros_interface
-  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs
+  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs std_srvs geometry_msgs tf2_ros cv_bridge roslib
 #  DEPENDS system_lib
 )
 
@@ -119,8 +136,10 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -137,6 +156,9 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/ftt_ros_interface_node.cpp)
+add_executable(robot_pose_publisher src/robot_pose_publisher.cpp)
+add_executable(map_to_jpeg src/map_to_jpeg.cpp)
+add_executable(ros2api src/ros2api.cpp src/base64.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -152,6 +174,11 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(robot_pose_publisher ${catkin_LIBRARIES})
+target_link_libraries(map_to_jpeg ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(ros2api PRIVATE ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${YAML_CPP_LIBRARIES})
+target_link_libraries(ros2api PRIVATE cpr::cpr)
+target_link_libraries(ros2api PRIVATE nlohmann_json::nlohmann_json)
 
 #############
 ## Install ##
@@ -166,12 +193,25 @@ include_directories(
 #   scripts/my_python_script
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+catkin_install_python(
+  PROGRAMS 
+    scripts/robotModePublisher.py
+    scripts/ros2api.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 # install(TARGETS ${PROJECT_NAME}_node
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+install(
+  TARGETS 
+    robot_pose_publisher
+    map_to_jpeg
+    ros2api
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
@@ -187,6 +227,11 @@ include_directories(
 #   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
 # )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
