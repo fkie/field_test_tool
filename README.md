@@ -48,16 +48,19 @@ A python script implements a JSON API with the common requests (POST, PUT, GET) 
 
 ### **1.4. ROS interface**
 
-A ROS node that fetches the following data to create database entries:
+A ROS node that fetches the robot data to create database entries. It can be run either as a Python or a C++ node. The following data are subscribed:
 
-| Data            | Type                                             |
-| --------------- | ------------------------------------------------ |
-| Operation mode  | industrial_msgs/RobotMode                        |
-| GPS position    | sensor_msgs/NavSatFix                            |
-| Local position  | TF (map_frame -> robot_frame)                    |
-| Environment map | nav_msgs/OccupancyGrid                           |
-| Camera Image    | sensor_msgs/Image or sensor_msgs/CompressedImage |
+| Data                      | Type                                                 |
+| ------------------------- | ---------------------------------------------------- |
+| Operation mode            | industrial_msgs/RobotMode                            |
+| GPS position              | sensor_msgs/NavSatFix                                |
+| Local position            | TF (map -> robot frame) or geometry_msgs/PoseStamped |
+| Environment map           | nav_msgs/OccupancyGrid                               |
+| Map image<sup>\*</sup>    | sensor_msgs/CompressedImage                          |
+| Camera Image<sup>\*</sup> | sensor_msgs/Image or sensor_msgs/CompressedImage     |
 
+<span style="font-size:smaller">\* Only in the Python implementation.</span>
+<br/><br/>
 
 Additionally, the node advertises the following services to interact with the web user interface:
 
@@ -364,13 +367,15 @@ python3 api.py
 
 ### **5.2. FTT ROS interface**
 
-The following command launches the ROS data collector for sending the operation mode, ros images, GPS position, local map and base link position data. Additionally, the rosbridge_server's rosbrige_websocket launcher file will be executed, allowing direct communication between the ROS environment and the web application.
+The FTT ROS node was originally implemented in Python and then ported to C++ in order to improve the processing performance. In particular, the processing of map messages and TFs was found to be very computationally intensive for the Python script. The decision was made to keep both nodes, because the Python node still offers some extra functionality that was not considered useful enough to transfer to the new implementation.
+
+The following command launches the ROS data collector (C++ implementation by default) for sending the operation mode, GPS position, local map and base link position data. Additionally, the rosbridge_server's rosbrige_websocket launcher file will be executed, allowing direct communication between the ROS environment and the web application.
 
 ```bash
 roslaunch ftt_ros_interface ftt_ros.launch
 ```
 The launch file will load the parameters in the YAML file of the package's configuration folder (details below) and then run the ROS node.
-This node will initially only advertise three configuration services (_/set_ftt_logging_, _/get_ftt_logging_, _/save_ftt_params_) and subscribe to two debug topics (_download_image_, _download_map_).
+This node will initially only advertise three configuration services (_/set_ftt_logging_, _/get_ftt_logging_, _/save_ftt_params_). If the Python implementation is used, it will also subscribe to two debug topics (_download_image_, _download_map_).
 
 The service "/set_ftt_logging" is used to start or stop the POSTing of data to the FTT server/database, the service "/get_ftt_logging" returns the current state of logging activity (active: true or inactive: false), and "/save_ftt_params" can be used to store the - potentially updated - node's parameters in the ROS parameters server, back to the YAML configuration file.
 
@@ -380,19 +385,26 @@ The service "/set_ftt_logging" is used to start or stop the POSTing of data to t
 | /get_ftt_logging | std_srvs/Trigger |
 | /save_ftt_params | std_srvs/Trigger |
 
-Once the logging is activated, the node's parameters are read, the subscribers for the robot data are created and the POSTing to the FTT server starts executing. Specifically, the following topics are subscribed (**Note**: the topic names are specified in the node's parameters).
+Once the logging is activated, the node's parameters are read, the subscribers for the robot data are created and the POSTing to the FTT server starts executing. Specifically, the following topics are subscribed (**Note**: the topic names are specified in the node's parameters, which can also be modified via the FTT web GUI, as explained in the specific documentation).
 
-| Topic            | Type                        |
-| ---------------- | --------------------------- |
-| robot_mode       | industrial_msgs/RobotMode   |
-| robot_position   | sensor_msgs/NavSatFix       |
-| Environment map  | nav_msgs/OccupancyGrid      |
-| image_raw        | sensor_msgs/Image           |
-| image_compressed | sensor_msgs/CompressedImage |
+| Topic                         | Type                        |
+| ----------------------------- | --------------------------- |
+| robot_mode                    | industrial_msgs/RobotMode   |
+| robot_position                | sensor_msgs/NavSatFix       |
+| Environment map               | nav_msgs/OccupancyGrid      |
+| Map image<sup>\*</sup>        | sensor_msgs/CompressedImage |
+| image_raw<sup>\*</sup>        | sensor_msgs/Image           |
+| image_compressed<sup>\*</sup> | sensor_msgs/CompressedImage |
 
-Additionally, a TF listener is started to get the robot's position (_robot_frame_) in the local coordinate frame (_map_frame_).
+<span style="font-size:smaller">\* Only in the Python implementation.</span>
+<br/><br/>
 
-As for the aforementioned debug topics, "download_image" triggers a GET request to the server for all images stored under the segment ID specified in the message data, then downloads them to the "Pictures" folder of the home directoy. Similarly, "download_map" fetches the stored map for the given shift ID in the message data.
+Additionally, a TF listener is started to get the robot's position (_robot_frame_ parameter) in the local coordinate frame (_map_frame_ parameter). 
+
+**Note**: For system with limited resources, it is recommended to prevent the execution of the TF listener if the logging of the local robot position is not required. This is done by setting the node's _use_tf_ parameter to _false_.
+<br/><br/>
+
+As for the aforementioned debug topics (only in the Python implementation), "download_image" triggers a GET request to the server for all images stored under the segment ID specified in the message data, then downloads them to the "Pictures" folder of the home directoy. Similarly, "download_map" fetches the stored map for the given shift ID in the message data.
 
 | Debug Topic    | Type           |
 | -------------- | -------------- |
@@ -402,12 +414,28 @@ As for the aforementioned debug topics, "download_image" triggers a GET request 
 
 #### **5.2.1 FTT ROS interface extras**
 
-A second utility ROS node is provided, called robotModePublisher. This node subscribes to two velocity command topics (of type _geometry_msgs/TwistStamped_), one expected to come from the autonomous navigation stack and the other from a joystick interpreter. It then identifies the operation mode and publishes messages of type indutrial_msgs/RobotMode accordingly. The autonomous mode is flagged at the arrival of autonomous command messages. The publised message switches to manual mode the moment a non-zero joystick command message arrives. After joystick messages stop, a fixed time (parameter) must elapse before returning to the autonomous mode if navigation commands keep being received. This timeout routine is implemented in order to prevent unwanted switching between modes.
+Some extra utility ROS nodes are provided:
 
-To launch the robotModePublisher, the following command can be used:
-```bash
-roslaunch ftt_ros_interface robot_mode_publisher.launch <args>
-```
+- robotModePublisher (Python): This node subscribes to two velocity command topics (of type _geometry_msgs/TwistStamped_), one expected to come from the autonomous navigation stack and the other from a joystick interpreter. It then identifies the operation mode and publishes messages of type indutrial_msgs/RobotMode accordingly. The autonomous mode is flagged at the arrival of autonomous command messages. The publised message switches to manual mode the moment a non-zero joystick command message arrives. After joystick messages stop, a fixed time (parameter) must elapse before returning to the autonomous mode if navigation commands are still being received. This timeout routine is implemented in order to prevent unwanted switching between modes.
+
+  To launch the robotModePublisher, the following command can be used (parameters in the launch file):
+  ```bash
+  roslaunch ftt_ros_interface robot_mode_publisher.launch <args>
+  ```
+
+- robot_pose_publisher (C++): This node subscribes the robot's TFs and publishes the robot position (as a _geometry_msgs/PoseStamped_ message). It was introduced to be used together with the Python implementation of the FTT interface node, due to the fact that TF processing is more efficient in C++.
+
+  To launch the robot_pose_publisher, the following command can be used (parameters in the launch file):
+  ```bash
+  roslaunch ftt_ros_interface robot_pose_publisher.launch <args>
+  ```
+
+- map_to_jpeg (C++): This node subscribes the robot's map (of type _nav_msgs/OccupancyGrid_) and publishes it as an image (as a _sensor_msgs/CompressedImage_ message). It was introduced to be used together with the Python implementation of the FTT interface node, due to the fact that occupancy grid to image conversion is more efficient in C++. It's important to note that for this to work properly, FTT interface node must subscribe to both the occupancy grid map and map image topics, as the former includes resolution and origin information, which the latter doesn't.
+
+  To launch the map_to_jpeg, the following command can be used (parameters in the launch file):
+  ```bash
+  roslaunch ftt_ros_interface map_to_jpeg.launch <args>
+  ```
 
 ### **5.3. FTT web GUI**
 
@@ -423,11 +451,19 @@ cd <ros_workspace>/src/field_test_tool/ftt_report_generator/src/
 
 python3 db2rep.py <path_to_config_file> (e.g. ../config/2021_fkie_test.xml)
 ```
+
+### **5.5. FTT database**
+
+Usually, you won't need to directly interact with the database after its initial setup, but the ```ftt_database``` folder of the repository does include a utility Python script called ```mergeDbs.py```. This script can be used to copy the data stored in a souce ftt database (e.g. running in your robot) to a target ftt database (e.g. running in your development pc). To run it, just specify the connection information for both databases as arguments to the program:
+```bash
+cd <ros_workspace>/src/field_test_tool/ftt_database/scripts/
+python3 mergeDbs.py "host=<source_system_ip> dbname=ftt user=postgres password=postgres" "host=<target_system_ip> dbname=ftt user=postgres password=postgres"
+```
 <br/><br/>
 
 ## _6. FTT ROS node parameters_
 
-The FTT ROS interface node has its parameters loaded from a YAML file in the package's configuration folder. These parameters are explained below.
+The FTT ROS interface node has its parameters loaded from a YAML file in the package's configuration folder. These parameters are explained below. Please note that some parameters are only used in the Python implementation of the node.
 
 | Parameter Name           | Default Value    | Description                                                              |
 | ------------------------ | ---------------- | ------------------------------------------------------------------------ |
@@ -437,8 +473,10 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 | topics/robot_mode        | robot_mode       | Name of the topic for robot operating mode.                              |
 | topics/gps_position      | robot_position   | Name of the topic for GPS position data.                                 |
 | topics/map               | map              | Name of the topic for the map of the environment.                        |
+| topics/map_jpeg          | map_jpeg         | Name of the topic for the map image (must be the same map as the above). |
 | topics/image             | image_raw        | Name of the topic for robot frontal camera (raw) images.                 |
 | topics/image_compressed  | image_compressed | Name of the topic for robot frontal camera (compressed) images.          |
+| params/use_tf            | true             | Flag to create a TF listener to extract the robot's local position.      |
 | params/map_frame         | map              | Name of the map frame for the tf listener.                               |
 | params/robot_frame       | base_link        | Name of the base link frame for the tf listener.                         |  
 | params/server_address    | localhost:5000   | Database API server IP and port.                                         |
@@ -460,6 +498,27 @@ The robotModePublisher node also requires some parameters to be set when using i
 | ROBOT_MODE_TOPIC | ROS topic for robot operating mode of type _industrial_msgs/RobotMode_.                               |
 | JOY_CMD_TIMEOUT  | Parameter to set the mininum time to switch out of manual mode after joystick commands stop arriving. |
 | PUBLISH_PERIOD   | Parameter to set the interval time for publishing robot mode messages.                                |
+
+<br/><br/>
+
+The same holds true for the robot_pose_publisher node:
+
+| Parameter Name   | Description                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| robot_pose_topic | ROS topic for the published robot pose of type _geometry_msgs/PoseStamped_.               |
+| robot_frame      | Parameter to set the name of the robot frame (position of this frame relative to global). |
+| global_frame     | Parameter to set the name of the global frame.                                            |
+| publish_rate     | Parameter to set the frequency for publishing robot pose messages.                        |
+
+<br/><br/>
+
+And also for the map_to_jpeg node:
+
+| Parameter Name | Description                                                                  |
+| -------------- | ---------------------------------------------------------------------------- |
+| map_topic      | ROS topic for the subscribed map of type _nav_msgs/OccupancyGrid_.           |
+| map_jpeg_topic | ROS topic for the published map image of type _sensor_msgs/CompressedImage_. |
+| publish_rate   | Parameter to set the frequency for publishing robot pose messages.           |
 
 <br/><br/>
 

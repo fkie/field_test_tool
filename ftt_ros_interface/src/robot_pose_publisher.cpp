@@ -1,7 +1,7 @@
 #include <ftt_ros_interface/robot_pose_publisher.h>
 
 #include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 
 RobotPosePublisher::RobotPosePublisher()
 {
@@ -14,7 +14,7 @@ RobotPosePublisher::RobotPosePublisher()
   
 
   // Publisher
-  pub = nh.advertise<geometry_msgs::Pose>("robot_pose", 1);
+  pub = nh.advertise<geometry_msgs::PoseStamped>("robot_pose", 1);
 
   // TF listener
   tf2_listener = new tf2_ros::TransformListener(tf2_buffer);
@@ -28,10 +28,10 @@ RobotPosePublisher::~RobotPosePublisher() {}
 void RobotPosePublisher::publishTimerCb(const ros::TimerEvent& event)
 {
   // Get the transformation between robot and global frame
-  geometry_msgs::TransformStamped transformStamped;
+  geometry_msgs::TransformStamped transform_stamped;
   try
   {
-    transformStamped = tf2_buffer.lookupTransform(global_frame, robot_frame, ros::Time(0));
+    transform_stamped = tf2_buffer.lookupTransform(global_frame, robot_frame, ros::Time(0));
   }
   catch (tf2::TransformException &ex)
   {
@@ -40,11 +40,12 @@ void RobotPosePublisher::publishTimerCb(const ros::TimerEvent& event)
   }
   
   // Make robot pose message with the transformation data
-  geometry_msgs::Pose robot_pose;
-  robot_pose.position.x = transformStamped.transform.translation.x;
-  robot_pose.position.y = transformStamped.transform.translation.y;
-  robot_pose.position.z = transformStamped.transform.translation.z;
-  robot_pose.orientation = transformStamped.transform.rotation;
+  geometry_msgs::PoseStamped robot_pose;
+  robot_pose.header = transform_stamped.header;
+  robot_pose.pose.position.x = transform_stamped.transform.translation.x;
+  robot_pose.pose.position.y = transform_stamped.transform.translation.y;
+  robot_pose.pose.position.z = transform_stamped.transform.translation.z;
+  robot_pose.pose.orientation = transform_stamped.transform.rotation;
 
   // Publish robot pose
   pub.publish(robot_pose);

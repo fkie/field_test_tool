@@ -11,7 +11,7 @@ import sys
 import rospy
 import tf2_ros
 from sensor_msgs.msg import NavSatFix, Image, CompressedImage
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Int32
 from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
 from industrial_msgs.msg import RobotMode
@@ -140,7 +140,7 @@ class Ros2api:
         self.robot_data_subscribers = []
         self.robot_data_subscribers.append(rospy.Subscriber(self.robot_mode_topic, RobotMode, self.robot_mode_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.gps_fix_topic, NavSatFix, self.navsatfix_callback))
-        self.robot_data_subscribers.append(rospy.Subscriber(self.local_pose_topic, Pose, self.pose_callback))
+        self.robot_data_subscribers.append(rospy.Subscriber(self.local_pose_topic, PoseStamped, self.pose_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.map_topic, OccupancyGrid, self.map_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.map_jpeg_topic, CompressedImage, self.map_jpeg_callback))
         self.robot_data_subscribers.append(rospy.Subscriber(self.image_topic, Image, self.image_callback))
@@ -313,7 +313,7 @@ class Ros2api:
         pass
 
     def pose_callback(self, data):
-        self.last_position = data.position
+        self.last_position = data.pose.position
         pass
 
     def image_callback(self, img_msg):
