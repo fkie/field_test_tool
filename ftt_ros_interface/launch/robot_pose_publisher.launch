@@ -1,0 +1,14 @@
+<launch>
+  <arg name="robot_pose_topic" default="local_pose"/>
+  <arg name="robot_frame" default="base_link"/>
+  <arg name="global_frame" default="map"/>
+  <arg name="publish_rate" default="0.5"/>
+
+  <node pkg="ftt_ros_interface" type="robot_pose_publisher" name="robot_pose_publisher" output="screen">
+    <remap from="robot_pose" to="$(arg robot_pose_topic)"/>
+
+    <param name="robot_frame" value="$(arg robot_frame)"/>
+    <param name="global_frame" value="$(arg global_frame)"/>
+    <param name="publish_rate" value="$(arg publish_rate)"/>
+  </node>
+</launch>

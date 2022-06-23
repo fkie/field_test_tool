@@ -19,6 +19,11 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>yaml-cpp</build_depend>
 
   <run_depend>message_runtime</run_depend>
   <run_depend>industrial_msgs</run_depend>
@@ -27,6 +32,11 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>std_srvs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>yaml-cpp</run_depend>
   <run_depend>rosbridge_server</run_depend>
 
 </package>

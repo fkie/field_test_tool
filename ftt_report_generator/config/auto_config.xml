@@ -2,12 +2,12 @@
 
   <resource tile_server="http://a.tile.openstreetmap.org/{z}/{x}/{y}.png" zoom_level="19"/>
   
-  <postgis host="localhost" dbname="ftt" user="postgres" password="postgres"/>
+  <postgis host="ftt-database" dbname="ftt" user="postgres" password="postgres"/>
 
   <report name="Test Event 1 Report" version="1.0">
     <test_event id="1" min_dur="0.1" local="false"/>
-    <recipient name="Fraunhofer FKIE" address="Fraunhoferstra{\ss}e 20\\53343 Wachtberg"/>
-    <creator name="Fraunhofer FKIE" address="Fraunhoferstra{\ss}e 20\\53343 Wachtberg"/>
+    <recipient name="Fraunhofer FKIE" address="-"/>
+    <creator name="Fraunhofer FKIE" address="-"/>
     <logos top_logo_path="../src/logos/fkie_logo" bottom_logo_path="../src/logos/fkie_logo"/>
   </report>
 
