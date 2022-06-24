@@ -74,7 +74,7 @@ class FttAdapter(PgAdapter):
 
     def get_sub_segments(self, segment_id):
         # Get info from sub-segments for this master segment.
-        sel_stmt = "SELECT ito_reason.short_description, segment.obstacle, segment.lighting, segment.slope \
+        sel_stmt = "SELECT ito_reason.key as ito_key, ito_reason.short_description, segment.obstacle, segment.lighting, segment.slope \
                     FROM segment \
                     LEFT OUTER JOIN ito_reason on segment.ito_reason_id = ito_reason.id \
                     WHERE segment.id = %s or segment.parent_id = %s \
@@ -292,8 +292,10 @@ class FttAdapter(PgAdapter):
                 user_test_administrator.name as test_administrator_name, \
                 user_test_director.name as test_director_name, \
                 user_safety_officer.name as safety_officer_name, \
+                user_robot_operator.name as robot_operator_name, \
                 RTRIM(performer.institution) as performer_institution, \
                 RTRIM(shift.test_intent) as test_intent, \
+                vehicle.short_description as vehicle_short, \
                 shift.note as shift_note \
             FROM {} as pose \
             INNER JOIN segment ON pose.segment_id = segment.id \
@@ -302,9 +304,11 @@ class FttAdapter(PgAdapter):
             LEFT OUTER JOIN personnel as user_test_administrator on shift.test_administrator_id = user_test_administrator.id \
             LEFT OUTER JOIN personnel as user_test_director on shift.test_director_id = user_test_director.id \
             LEFT OUTER JOIN personnel as user_safety_officer on shift.safety_officer_id = user_safety_officer.id \
+            LEFT OUTER JOIN personnel as user_robot_operator on shift.robot_operator_id = user_robot_operator.id \
             LEFT OUTER JOIN performer on shift.performer_id = performer.id \
+            LEFT OUTER JOIN vehicle on shift.vehicle_id = vehicle.id \
             WHERE test_event_id = %s \
-            GROUP BY shift.id, test_administrator_name, test_director_name, safety_officer_name, performer_institution \
+            GROUP BY shift.id, test_administrator_name, test_director_name, safety_officer_name, robot_operator_name, performer_institution, vehicle_short \
             ORDER BY shift.id"
         ).format(psycopg2.sql.Identifier("local_pose" if local else "pose"))
         # NOTE: The retrieved bounding box does not consider the segment border points (segment start position)
@@ -386,16 +390,15 @@ class FttAdapter(PgAdapter):
         return self.dictcursor.fetchone()[0]
 
     def get_shift_ito_time(self, shift_id):
-        select_stmt = "SELECT sum(segment.endtime_secs-segment.starttime_secs) \
+        select_stmt = "SELECT ito_reason.key as ito_key, sum(segment.endtime_secs-segment.starttime_secs) as ito_time \
                     FROM segment \
                     INNER JOIN leg ON segment.leg_id = leg.id \
                     LEFT OUTER JOIN segment_type ON segment.segment_type_id = segment_type.id \
-                    WHERE segment_type.key = 'ito' \
-                        AND segment.leg_id = leg.id \
-                        AND segment.parent_id IS NULL \
-                        AND leg.shift_id = %s"
+                    LEFT OUTER JOIN ito_reason ON segment.ito_reason_id = ito_reason.id \
+                    WHERE leg.shift_id = %s AND segment_type.key = 'ito' AND segment.parent_id IS NOT NULL \
+                    GROUP BY ito_reason.key"
         self.dictcursor.execute(select_stmt, (shift_id,))
-        return self.dictcursor.fetchone()[0]
+        return self.dictcursor.fetchall()
 
     def get_shift_ito_count(self, shift_id, ito_key):
         select_stmt = "SELECT count (*) \

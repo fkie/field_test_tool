@@ -16,5 +16,17 @@ Base map and data from OpenStreetMap and OpenStreetMap Foundation.
     <logos top_logo_path = "../src/logos/fkie_logo" bottom_logo_path = "../src/logos/fkie_logo"/>
   </report>
 
+  <stop_count_keys>
+    <key name='safety'/>
+    <key name='maintenance'/>
+    <key name='planner'/>
+    <key name='apparatus'/>
+    <key name='stereo'/>
+    <key name='manual_transit'/>
+    <key name='other'/>
+    <key name='unassigned'/>
+    <key name='unexpected'/>
+  </stop_count_keys>
+
 </testevent>
 

@@ -224,8 +224,9 @@ class FttReportGenerator:
             template.render(shiftStartDatetime=shift['shift_start_datetime'],
                             shiftEndDatetime=shift['shift_end_datetime'], id=shift['id'],
                             admin=shift['test_administrator_name'], director=shift['test_director_name'],
-                            saftey=shift['safety_officer_name'], performer=shift['performer_institution'],
-                            testIntent=shift['test_intent'], note=self.text2latex(shift['shift_note'])))
+                            operator=shift['safety_officer_name'], saftey=shift['safety_officer_name'], 
+                            performer=shift['performer_institution'], testIntent=shift['test_intent'],
+                            vehicle=shift['vehicle_short'], note=self.text2latex(shift['shift_note'])))
         latexf.write('\n\n')
         return
 
@@ -237,6 +238,9 @@ class FttReportGenerator:
         latexf.write(
             template.render())
         for row in statistic:
+            seg_type = row['segment_type_short_description']
+            if seg_type == 'ITO':
+                seg_type = seg_type + '\(^*\)'
             speed_m_s = 0
             if row['distance'] is not None and row['duration'] > 0:
                 speed_m_s = row['distance'] / row['duration']
@@ -245,11 +249,12 @@ class FttReportGenerator:
             tmp_dur = FttReportGenerator.conv_time(row['duration'])
             template = self.env.get_template(DEFAULT_SHIFT_STATISTICS_DATA_TEMPLATE)
             latexf.write(
-                template.render(segmentTypeShortDescription=row['segment_type_short_description'], Count=row['cnt'],
+                template.render(segmentTypeShortDescription=seg_type, Count=row['cnt'],
                                 Duration=tmp_dur, Distance="{:8.2f}".format(row['distance']),
                                 Speedm="{:3.2f}".format(speed_m_s), SpeedKm="{:3.2f}".format(speed_km_h),
                                 SpeedMi="{:3.2f}".format(speed_mi_h)))
         latexf.write('\\end{longtable}\n')
+        latexf.write('\qquad* All main manual segments are considered. Segments holding multiple ito reasons are only counted once.')
         latexf.write('\n')
 
     def generate_latex_shift_timeline(self, latexf, shift, min_dur):
@@ -289,7 +294,10 @@ class FttReportGenerator:
             else:
                 abs_time = abs_time[:-3] + 'm' # [:-3] to remove the seconds
             latexf.write('\\draw (%f,-0.1) -- (%f,0) node[anchor=south] {%s};\n' % (t * cm_p_s, t * cm_p_s, abs_time))
-            t = t + shift_duration_sec / 10
+            if shift_duration_sec > 60:
+                t = t + int(shift_duration_sec / 10 / 60) * 60
+            else:
+                t = t + shift_duration_sec / 10
         for row in shift_timeline:
             print("============== New segment ============")
             segment_type_key = row['segment_type_key']
@@ -382,7 +390,7 @@ class FttReportGenerator:
         t = 0
         while t <= shift_duration_sec:
             abs_time = t + int(shift_start_secs)
-            abs_time_str = datetime.datetime.utcfromtimestamp(abs_time).strftime('%H:%M')
+            abs_time_str = datetime.datetime.fromtimestamp(abs_time).strftime('%H:%M')
             latexf.write('\\draw (%f,0) -- (%f,%f) node[anchor=north] {%s};\n' % (
                 t * cm_p_s, t * cm_p_s, (max_lines + 1) * line_sep - 0.1, abs_time_str))
             t = t + 900  # 900 sec = 15 min
@@ -398,7 +406,7 @@ class FttReportGenerator:
             latex_file.write('\\begin{figure}[H]\n')
             latex_file.write('\\begin{center}\n')
             # latex_file.write('\\vspace{-0.5cm}\n')
-            latex_file.write('\\includegraphics[height=9cm, trim = {0 0 0 1cm}, clip]{%s}\n' % latex_image_path_file)
+            latex_file.write('\\includegraphics[height=9cm, trim = {0 -2mm 0 1cm}, clip]{%s}\n' % latex_image_path_file)
             latex_file.write('\\setlength{\\belowcaptionskip}{-10pt}')
             latex_file.write('\\caption[%s]{%s}\n' % (short_caption, long_caption))
             latex_file.write('\\label{fig:%s}\n' % figure)
@@ -406,9 +414,18 @@ class FttReportGenerator:
             latex_file.write('\\end{figure}\n')
 
     # Generate the global plots for the test event and write them to the latex file.
-    def generate_latex_global_statistics(self, latexf, shifts, report_info):
+    def generate_latex_global_statistics(self, latexf, shifts, report_info, stop_count_keys):
         # Create the plots.
-        global_plots = PlotsGenerator(self.db_adapter, report_info['test_event_id'],shifts, report_info['local'], builddir, builddir+'/'+imagedir, logosdir, 'png')
+        global_plots = PlotsGenerator(
+            self.db_adapter,
+            report_info['test_event_id'],
+            shifts, report_info['local'],
+            stop_count_keys,
+            builddir,
+            builddir+'/'+imagedir,
+            logosdir,
+            'png'
+        )
         global_plots.generate_all_plots()
         # Define figure names.
         total_dist_figure = 'TotalAutoDist'
@@ -420,7 +437,7 @@ class FttReportGenerator:
         # Chapter title.
         latexf.write('\\section{Global statistics}\n\n')
         latexf.write('\\subsection{Autonomously travelled distance}\n\n')
-        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} summarize the performance of autonomous driving over the different test shifts.' % (total_dist_figure, mean_dist_figure))
+        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} summarize the performance of autonomous driving. Each bar corresponds to a shift.' % (total_dist_figure, mean_dist_figure))
         # Plots.
         short_caption = 'Total autonomous distance.'
         long_caption = 'Total distance driven autonomously. \
@@ -437,10 +454,11 @@ class FttReportGenerator:
         self.write_latex_figure(latexf, mean_dist_figure, short_caption, long_caption)
 
         latexf.write('\\subsection{Stop events and manual operation}\n\n')
-        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} summarize the occurrence of stops and the spent time in manual operation.' % (stop_counts_figure, manual_figure))
+        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} summarize the stops and time in manual operation. Each bar corresponds to a shift.\n' % (stop_counts_figure, manual_figure))
+        latexf.write('Only the configured stop keys %s are considered.\n' % [key_name.replace('_', ' ') for key_name in stop_count_keys])
 
         short_caption = 'Override counts.'
-        long_caption = 'Counts for the different ITO reasons (see legend). \
+        long_caption = 'Counts for the configured ITO reasons (see legend). \
             The number above each shift indicates the total manual drive distance in meters. \
             The icon(s) represents the weather condition during the shift.'
         self.write_latex_figure(latexf, stop_counts_figure, short_caption, long_caption)
@@ -472,7 +490,7 @@ class FttReportGenerator:
         latexf.write('''\\end{document}''')
         latexf.close()
 
-    def generate_latex_report(self, report_info):
+    def generate_latex_report(self, report_info, stop_count_keys):
         # Create the Filepath + Name of the .tex-File to be written
         filename = '%s/%s.tex' % (builddir, report_info["test_event_filename"])
         # Open the File in write Mode
@@ -483,7 +501,7 @@ class FttReportGenerator:
         # Get the Shift entries out of the DB
         shifts = self.db_adapter.get_shifts_by_test_event_id(report_info["test_event_id"], report_info["local"])
         # Generate the global statistics section
-        self.generate_latex_global_statistics(latex_f, shifts, report_info) # list(map(lambda x: x['id'], shifts))
+        self.generate_latex_global_statistics(latex_f, shifts, report_info, stop_count_keys) # list(map(lambda x: x['id'], shifts))
 
         # Iterate over each Shift
         for shift in shifts:
@@ -577,8 +595,13 @@ class ReportGenerator:
                         report_info['top_logo_path'] = k.get("top_logo_path")
                         report_info['bottom_logo_path'] = k.get("bottom_logo_path")
                 report_info_list.append(report_info)
+            stop_count_keys = []
+            if child.tag == "stop_count_keys":
+                for k in child:
+                    if k.tag == "key":
+                        stop_count_keys.append (k.get("name"))
 
-        return report_info_list, db_info, tile_server_info
+        return report_info_list, db_info, tile_server_info, stop_count_keys
 
     def generate(self, argv):
         abspath = os.path.abspath(__file__)
@@ -586,7 +609,7 @@ class ReportGenerator:
         os.chdir(dname)
         self.init_dirs()
         # Parse the XML-File and save the Values to corresponding Vars
-        (report_info_list, db_info, tile_server_info) = self.read_xml(argv[0])
+        (report_info_list, db_info, tile_server_info, stop_count_keys) = self.read_xml(argv[0])
 
         # Read connection details from the XML-File-Var and connect to the DB
         ftt_adapter = FttAdapter(db_info['host'], db_info['dbname'], db_info['user'], db_info['password'])
@@ -602,7 +625,7 @@ class ReportGenerator:
 
         for report_info in report_info_list:
             report_info["latex_template"] = DEFAULT_HEADER_LATEX_TEMPLATE
-            ftt_report_generator.generate_latex_report(report_info)
+            ftt_report_generator.generate_latex_report(report_info, stop_count_keys)
             call_str = '%s.tex' % (report_info['test_event_filename'])
             main_path = os.getcwd()
             os.chdir(builddir)

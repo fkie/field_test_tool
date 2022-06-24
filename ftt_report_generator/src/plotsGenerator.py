@@ -25,7 +25,7 @@ class PlotsGenerator:
     #---------------------------------------------------------------------------
     # Class constructor.
     #---------------------------------------------------------------------------
-    def __init__(self, db_adapter, test_event_id, shifts, local, built_dir, image_dir, logos_dir, image_ext):
+    def __init__(self, db_adapter, test_event_id, shifts, local, stop_count_keys, built_dir, image_dir, logos_dir, image_ext):
         
         # Initialize variables.
         self.fig = plt.figure()
@@ -34,6 +34,7 @@ class PlotsGenerator:
         self.test_event_id = test_event_id
         self.shifts = shifts
         self.local = local
+        self.stop_count_keys = stop_count_keys
         self.built_dir = built_dir
         self.image_dir = image_dir
         self.logos_dir = logos_dir
@@ -61,7 +62,13 @@ class PlotsGenerator:
                 # Get the segment distance
                 distance = self.db_adapter.get_segment_distance(row['segment_id'], self.local)
                 if row['segment_type_short_description'] == 'ITO':
-                    dist_manual.append(distance)
+                    # Get the sub-segments info
+                    sub_segments = self.db_adapter.get_sub_segments(row['segment_id'])
+                    # Skip the segment if it doesn't have sub-segments in the stop_count_keys
+                    for sub_segment in sub_segments:
+                        if sub_segment['ito_key'] in self.stop_count_keys:
+                            dist_manual.append(distance)
+                            break
                 elif row['segment_type_short_description'] == 'AUTO':
                     dist_auto.append(distance)
             # Compute auto distance statistics
@@ -120,10 +127,11 @@ class PlotsGenerator:
         for shift in self.shifts:
             shift_id = shift['id']
             performer = shift['performer_institution']
+            vehicle = shift['vehicle_short']
             # start_datetime = shift['shift_start_datetime_raw']
             # xLabels.append ('%s\n%s\n%s' % (start_datetime.strftime('%m-%d'), start_datetime.strftime('%H:%M'), performer)) # short date
             # xLabels.append ('%s\n%s\n%s' % (start_datetime.strftime('%Y-%m-%d'), start_datetime.strftime('%H:%M'), performer)) # long date
-            xLabels.append ('S.%s\n%s' % (shift_id, performer[0:8])) # shift and performer (only first 8 characters)
+            xLabels.append ('S.%s\n%s\n%s' % (shift_id, performer[0:8], vehicle[0:8])) # shift, performer and vehicle (only first 8 characters)
         return xLabels;    
 
     #---------------------------------------------------------------------------
@@ -272,8 +280,8 @@ class PlotsGenerator:
     def override_count_distributed_plot(self):
         # Get all keys for the test event.
         ito_stats = self.db_adapter.get_test_event_ito_statistics(self.test_event_id)
-        keys = list([x['ito_key'] for x in ito_stats])
-        ito_reasons = list([x['ito_reason'] for x in ito_stats])
+        keys = list([x['ito_key'] for x in ito_stats if x['ito_key'] in self.stop_count_keys])
+        ito_reasons = list([x['ito_reason'] for x in ito_stats if x['ito_key'] in self.stop_count_keys])
         nkeys = len (keys)
         nshifts = len(self.shifts)
         # Set up the xTicks and labels.
@@ -323,7 +331,7 @@ class PlotsGenerator:
         fontP.set_size('small')
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
-        self.ax.legend(p, legend_text, prop = fontP, loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=5, fancybox=False, shadow=False)
+        self.ax.legend(p, legend_text, prop = fontP, loc='upper center', bbox_to_anchor=(0.5, -0.16), ncol=5, fancybox=False, shadow=False)
 
         plt.ylabel('Count')
         plt.xticks(xTicks, xLabels, rotation=0, fontsize=10)
@@ -348,9 +356,8 @@ class PlotsGenerator:
         xLabels = self.get_x_labels ()
         # Get all keys for the test event.
         ito_stats = self.db_adapter.get_test_event_ito_statistics(self.test_event_id)
-        keys = list([x['ito_key'] for x in ito_stats])
-        ito_reasons = list([x['ito_reason'] for x in ito_stats])
-        nkeys = len (keys)
+        keys = list([x['ito_key'] for x in ito_stats if x['ito_key'] in self.stop_count_keys])
+        ito_reasons = list([x['ito_reason'] for x in ito_stats if x['ito_key'] in self.stop_count_keys])
         # Retrieve the counts.
         total = np.array([0]*len(self.shifts))
         legend_text = []        
@@ -381,7 +388,7 @@ class PlotsGenerator:
         fontP.set_size('small')
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
-        self.ax.legend(p, legend_text, prop = fontP, loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=5, fancybox=False, shadow=False)
+        self.ax.legend(p, legend_text, prop = fontP, loc='upper center', bbox_to_anchor=(0.5, -0.16), ncol=5, fancybox=False, shadow=False)
 
         plt.ylabel('Number of Stops')
         plt.xticks(xTicks, xLabels, rotation=0, fontsize=10)
@@ -411,7 +418,9 @@ class PlotsGenerator:
         xLabels = self.get_x_labels()
         # Get manual operation time in minutes.
         for i, shift in enumerate(self.shifts):
-            MntTimeY[i] = self.db_adapter.get_shift_ito_time(shift['id'])
+            ito_key_times = self.db_adapter.get_shift_ito_time(shift['id'])
+            ito_times_list = list([x['ito_time'] for x in ito_key_times if x['ito_key'] in self.stop_count_keys])
+            MntTimeY[i] = sum(ito_times_list)
             MntTimeY[i] = 0.0 if MntTimeY[i] is None else MntTimeY[i]/60.0
 
         # Draw the plot.
