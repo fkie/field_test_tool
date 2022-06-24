@@ -341,7 +341,6 @@ def merge_dbs (source_conn, dest_conn):
                         )
                         source_cursor.execute(update_stmt, (source_id_offset, ))
 
-    source_conn.commit()
 
     # Copy source table data to destination database
     for table_name in config_tables + data_tables:
@@ -371,7 +370,6 @@ def merge_dbs (source_conn, dest_conn):
             set_stmt = "SELECT setval('{0}_id_seq', (SELECT MAX(id) FROM {0}))".format(table_name)
             dest_cursor.execute(set_stmt)
             
-    dest_conn.commit()
 
     # Restore original source database ids
     set_stmt = "SET CONSTRAINTS ALL DEFERRED"
@@ -434,6 +432,7 @@ def merge_dbs (source_conn, dest_conn):
                     
 
     source_conn.commit()
+    dest_conn.commit()
 
     print(bcolors.OKBLUE + "Done." +  bcolors.ENDC)
         
