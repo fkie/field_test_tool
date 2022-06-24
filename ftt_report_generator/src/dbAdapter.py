@@ -89,7 +89,8 @@ class FttAdapter(PgAdapter):
                     INNER JOIN segment ON segment.id = note.segment_id \
                     LEFT OUTER JOIN personnel as p on note.personnel_id = p.id \
                     WHERE note.segment_id = %s \
-                        OR (note.segment_id = segment.id and segment.parent_id = %s)"
+                        OR (note.segment_id = segment.id and segment.parent_id = %s) \
+                    ORDER BY note.secs"
         self.dictcursor.execute(sel_stmt, (segment_id, segment_id))
         return self.dictcursor.fetchall()
             
