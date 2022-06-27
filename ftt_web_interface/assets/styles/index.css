@@ -38,7 +38,7 @@
 
 #trail-selection form {
   display: grid;
-  grid-template-columns: max-content max-content max-content max-content max-content max-content;
+  grid-template-columns: 5rem 4rem 3rem 3rem 3rem 3rem;
   grid-gap: 0.5rem;
   margin-bottom: 0.5rem;
 }

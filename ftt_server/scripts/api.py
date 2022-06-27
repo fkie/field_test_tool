@@ -437,6 +437,14 @@ class ApiCommon:
         pass
 
     @staticmethod
+    def open_log(table_name, entry_id):
+        # Specialization.
+        # Method to open the specified log entry.
+        ApiCommon.update_table_data(table_name, {"endtime_secs": None}, {"id": entry_id})
+        msg = info_msg("Opened %s %s." % (table_name, entry_id))
+        return print_and_return(msg)
+    
+    @staticmethod
     def close_log(table_name, entry_id):
         # Specialization.
         # Method to close the specified log entry.
@@ -473,6 +481,14 @@ class ApiCommon:
 
 class TestEvent(Resource):
 
+    @staticmethod
+    def open(entry_id):
+        # Close open log entries.
+        TestEvent.close()
+        # Open specified teset_event.
+        table_name = "test_event"
+        return ApiCommon.open_log(table_name, entry_id)
+    
     @staticmethod
     def close(entry_id = None):
         table_name = "test_event"
@@ -528,6 +544,9 @@ class TestEvent(Resource):
         if action == "close":
             # Close table entry.
             return TestEvent.close(test_event_id)
+        if action == "open":
+            # Open table entry.
+            return TestEvent.open(test_event_id)
         pass
 
     def delete(self):
