@@ -294,8 +294,12 @@ class FttReportGenerator:
             else:
                 abs_time = abs_time[:-3] + 'm' # [:-3] to remove the seconds
             latexf.write('\\draw (%f,-0.1) -- (%f,0) node[anchor=south] {%s};\n' % (t * cm_p_s, t * cm_p_s, abs_time))
-            if shift_duration_sec > 60:
+            if shift_duration_sec > 600:
                 t = t + int(shift_duration_sec / 10 / 60) * 60
+            elif shift_duration_sec > 300:
+                t = t + int(shift_duration_sec / 10 / 30) * 30
+            elif shift_duration_sec > 150:
+                t = t + int(shift_duration_sec / 10 / 15) * 15
             else:
                 t = t + shift_duration_sec / 10
         for row in shift_timeline:
