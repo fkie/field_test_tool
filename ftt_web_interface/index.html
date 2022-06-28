@@ -52,7 +52,7 @@
   <body>
     <header id="nav-bar">
       <div class="nav-left">
-        <a href="./config.html" target="_blank" style="text-decoration: none;">
+        <a id="config-icon" href="./config.html" target="FTTConfig" style="text-decoration: none;">
           <i class="material-icons header-icon">settings</i>
         </a>
         <i id="download-icon" class="material-icons header-icon">file_download</i>
@@ -246,7 +246,7 @@
       <div class="backdrop"></div>
       <div class="modal">
         <header class="modal__title" style="text-align: center;">
-          <h2>Warning!</h2>
+          <h2></h2>
         </header>
         <p style="white-space: pre-line; text-align: center;"></p>
         <div class="modal__end">
@@ -262,9 +262,10 @@
 
     <template id="select-user-template">
       <header class="modal__title">
-        <h2>Select User:</h2>
+        <h2>Select User</h2>
       </header>
       <section>
+        <p style="margin-top: 0;">A user is required to create new Shifts and append notes to individual Segments.<br>Select one from the configured users below.</p>
         <div>
           <label for="user">User</label>
           <select id="user" name="user"></select>

@@ -6,7 +6,7 @@
 
 //Common class for displaying overlays.
 export class ConfirmationModal {
-  constructor(htmlMessage, fallbackText, confirmCallbackFunction) {
+  constructor(title, htmlMessage, fallbackText, confirmCallbackFunction) {
     this.fallbackText = fallbackText;
     //Import and build modal node.
     const modalTemplateEl = document.getElementById(
@@ -15,6 +15,7 @@ export class ConfirmationModal {
     const modalElements = document.importNode(modalTemplateEl.content, true);
     //Write message to modal.
     this.modalElement = modalElements.querySelector(".modal");
+    this.modalElement.querySelector(".modal__title").firstElementChild.innerHTML = title;
     this.modalElement.querySelector("p").innerHTML = htmlMessage;
     //Select backdrop and assign click listener to close it.
     this.backdropElement = modalElements.querySelector(".backdrop");

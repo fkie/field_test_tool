@@ -217,6 +217,7 @@ class Log {
     }
     //Prompt confirmation.
     const modal = new ConfirmationModal(
+      "Warning!",
       `<strong>This operation cannot be undone!</strong>
       Are you sure you want to delete <b>${this.name.replace(/-/g, " ")} ${
         this.select.value
@@ -546,7 +547,24 @@ export class LogSelection {
   }
 
   async init() {
-    this.testEventLog.updateSelect();
+    await this.testEventLog.updateSelect();
+    const personnelList = await this.shiftLog.personnelInterface.get();
+    if (personnelList.length > 0) {
+      document.getElementById("user-icon").click();
+    } else {
+      //Prompt configuration notice.
+      const modal = new ConfirmationModal(
+        "Welcome!",
+        `It looks like you haven't configured any users yet. 
+        Please input at least one entry for each <strong>Database Configuration</strong> table. 
+        Clicking on the top left cogwheel of the main page or on the <i>confirm</i> button below will take you to the configuration page.`,
+        "Your browser does't support this feature! - Please change to a more modern one.",
+        () => {
+          document.getElementById("config-icon").click();
+        }
+      );
+      modal.show();
+    }
   }
 
   toggleLogging() {
