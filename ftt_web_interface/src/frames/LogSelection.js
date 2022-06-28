@@ -600,7 +600,6 @@ export class LogSelection {
         alert(result.message);
       }
     });
-    
   }
 
   checkSelectedLogs() {
