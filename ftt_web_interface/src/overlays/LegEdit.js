@@ -76,7 +76,7 @@ export class LegEdit {
       "change",
       this.legDataChangedHandler.bind(this)
     );
-    noteText.addEventListener("change", this.legDataChangedHandler.bind(this));
+    noteText.addEventListener("input", this.legDataChangedHandler.bind(this));
     //Register update button handler.
     this.element
       .querySelector("form button")

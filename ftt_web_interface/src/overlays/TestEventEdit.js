@@ -56,11 +56,11 @@ export class TestEventEdit {
     noteText.value = testEvent.note;
     //Set change event listeners.
     locationInput.addEventListener(
-      "change",
+      "input",
       this.testEventDataChangedHandler.bind(this)
     );
     versionInput.addEventListener(
-      "change",
+      "input",
       this.testEventDataChangedHandler.bind(this)
     );
     timeZoneSelect.addEventListener(
@@ -68,7 +68,7 @@ export class TestEventEdit {
       this.testEventDataChangedHandler.bind(this)
     );
     noteText.addEventListener(
-      "change",
+      "input",
       this.testEventDataChangedHandler.bind(this)
     );
     //Register update button handler.

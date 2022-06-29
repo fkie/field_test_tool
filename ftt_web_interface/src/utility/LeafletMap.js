@@ -25,15 +25,37 @@ export class LeafletMap {
     this.activeMarker = null;
     this.activePoses = null;
     this.leafletMap = L.map("gps-map");
-    L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      minZoom: 0,
-      maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.leafletMap);
+    this.changeTileLayer();
     //Reach to DOM elements.
     this.mapElementContainer = document.getElementById("map-viewer");
     this.mapElement = document.getElementById("gps-map");
+  }
+
+  changeTileLayer() {
+    //Get the stored config data.
+    let mapData = JSON.parse(localStorage.getItem("fttTileServerData"));
+    //Set default if not found.
+    if (!mapData) {
+      mapData = {
+        url: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        minZoom: 0,
+        maxZoom: 19,
+      };
+      //Store data.
+      localStorage.setItem("fttTileServerData", JSON.stringify(mapData));
+    }
+    //Create the tile layer.
+    L.tileLayer(mapData.url, {
+      minZoom: mapData.minZoom,
+      maxZoom: mapData.maxZoom,
+    }).addTo(this.leafletMap);
+    //Set attribution if using OpenStreetMap
+    if (mapData.url.indexOf("openstreetmap") > -1) {
+      this.leafletMap.attributionControl.addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
+    } else {
+      this.leafletMap.attributionControl.removeAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
+    }
+    
   }
 
   removePoses(segmentId) {

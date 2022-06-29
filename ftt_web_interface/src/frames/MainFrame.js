@@ -94,7 +94,6 @@ export class MainFrame {
     try {
       //Get the latest test event data from the server.
       const testEventList = await this.testEventInterface.get();
-      //Build a user selection overlay.
       //Build a report generator overlay.
       const reportDownload = new ReportDownload(
         this.serverInterface,

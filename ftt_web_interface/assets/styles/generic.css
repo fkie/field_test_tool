@@ -32,6 +32,20 @@ body > header {
   color: #0e4acc;
 }
 
+.small-icon {
+  font-size: 1rem;
+  color: #333333;
+  vertical-align: text-bottom;
+  cursor: pointer;
+}
+.small-icon:hover {
+  color: #3a6ddb;
+}
+
+.small-icon:active {
+  color: #0e4acc;
+}
+
 section {
   border-radius: 10px;
   padding: 1rem;
