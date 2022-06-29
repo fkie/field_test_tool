@@ -62,12 +62,33 @@ export class MainFrame {
     this.rosConnect();
   }
 
-  logSelectionDoneCallback() {
+  async logSelectionDoneCallback() {
     //Display segment and map sections.
     document.getElementById("segment-detail").style.display = "block";
     document.getElementById("map-viewer").style.display = "block";
+    //Get new segment data from DB.
+    const segmentList = await this.segmentDetail.segmentInterface.get(
+      this.segmentDetail.legSelectHook.value
+    );
+    //If any segment has GPS poses, activate the GPS map
+    for (const entry of segmentList) {
+      if (entry.lng && entry.lat && !this.segmentDetail.gpsMapBox.checked) {
+        this.segmentDetail.gpsMapBox.checked = true;
+        this.segmentDetail.mapInterface.mapElement.style.display = "block";
+        this.segmentDetail.mapInterface.leafletMap.invalidateSize(true);
+        break;
+      }
+    }
+    //If any segment has local poses, activate the local map
+    for (const entry of segmentList) {
+      if (entry.local_x && entry.local_y && !this.segmentDetail.localMapBox.checked) {
+        this.segmentDetail.localMapBox.checked = true;
+        this.segmentDetail.localMapInterface.mapElement.style.display = "block";
+        break;
+      }
+    }
     //Update segments table.
-    this.segmentDetail.updateSegments();
+    this.segmentDetail.updateSegments(segmentList);
   }
 
   async userIconClickHandler() {

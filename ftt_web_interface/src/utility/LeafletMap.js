@@ -14,12 +14,14 @@
 // Base map and data from OpenStreetMap and OpenStreetMap Foundation.
 
 import { PoseInterface } from "../database_interface/Pose.js";
+import { MapImageInterface } from "../database_interface/MapImage.js";
 
 //LeafletMap class to wrap map related variables and functions.
 export class LeafletMap {
   constructor(serverInterface) {
     //Set arguments as properties.
     this.poseInterface = new PoseInterface(serverInterface);
+    this.mapImageInterface = new MapImageInterface(serverInterface);
     //Initialize variables and objects.
     this.mapPointsLayers = [];
     this.activeMarker = null;
@@ -54,8 +56,7 @@ export class LeafletMap {
       this.leafletMap.attributionControl.addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
     } else {
       this.leafletMap.attributionControl.removeAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors');
-    }
-    
+    } 
   }
 
   removePoses(segmentId) {
