@@ -116,6 +116,23 @@ export class SegmentDetail {
       this.segmentList = await this.segmentInterface.get(
         this.legSelectHook.value
       );
+      //If any segment has GPS poses, activate the GPS map
+      for (const entry of this.segmentList) {
+        if (entry.lng && entry.lat && !this.gpsMapBox.checked) {
+          this.gpsMapBox.checked = true;
+          this.mapInterface.mapElement.style.display = "block";
+          this.mapInterface.leafletMap.invalidateSize(true);
+          break;
+        }
+      }
+      //If any segment has local poses, activate the local map
+      for (const entry of this.segmentList) {
+        if (entry.local_x && entry.local_y && !this.localMapBox.checked) {
+          this.localMapBox.checked = true;
+          this.localMapInterface.mapElement.style.display = "block";
+          break;
+        }
+      }
       //Remove old data from table.
       const tableRows = Array.from(this.segmentTable.querySelectorAll("tr"));
       for (const row of tableRows.reverse()) {
