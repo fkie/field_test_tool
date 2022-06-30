@@ -90,7 +90,9 @@ export class SegmentDetail {
       "click",
       this.editSegmentHandler.bind(this)
     );
-    this.refreshBtn.addEventListener("click", this.updateSegments.bind(this));
+    this.refreshBtn.addEventListener("click", () => {
+      this.updateSegments();
+    });
     this.autoRefreshBox.addEventListener(
       "change",
       this.autoRefreshBoxHandler.bind(this)
@@ -174,6 +176,7 @@ export class SegmentDetail {
               [firstLocEntry.lat, firstLocEntry.lng],
               17
             );
+            this.mapInterface.removeLocalMap();
           }
         }
       }
@@ -195,7 +198,25 @@ export class SegmentDetail {
         // Update local map:
         const shiftSelectValue = document.getElementById("shift-id").value;
         if (shiftSelectValue) {
-          await this.localMapInterface.getAndDrawMap(shiftSelectValue);
+          const mapImage = await this.localMapInterface.getAndDrawMap(
+            shiftSelectValue
+          );
+          //Also draw the local map over the GPS map (if active and gps poses available).
+          if (this.gpsMapBox.checked && mapImage) {
+            //Filter master segments that have both local and gps position.
+            let fSegs = this.segmentList.filter(
+              (entry) =>
+                entry.lat &&
+                entry.lng &&
+                entry.local_x &&
+                entry.local_y &&
+                entry.parentId === null
+            );
+            if (fSegs.length >= 2) {
+              fSegs.reverse();
+              await this.mapInterface.addLocalMap(mapImage, fSegs);
+            }
+          }
         } else {
           alert("No shift selected!");
         }
@@ -285,10 +306,9 @@ export class SegmentDetail {
     //Call updateSegments in regular intervals if the box is checked.
     if (this.autoRefreshBox.checked) {
       if (this.legSelectHook.value) {
-        this.autoRefreshIntervalId = setInterval(
-          this.updateSegments.bind(this),
-          2000
-        );
+        this.autoRefreshIntervalId = setInterval(() => {
+          this.updateSegments();
+        }, 2000);
       } else {
         this.autoRefreshBox.checked = false;
         alert("No leg selected!");
@@ -482,7 +502,9 @@ export class SegmentDetail {
       const segmentModal = new Modal(
         segmentEdit,
         "Your browser does't support this feature! - Please change to a more modern one.",
-        this.updateSegments.bind(this)
+        () => {
+          this.updateSegments();
+        }
       );
       segmentModal.show();
     } catch (error) {
@@ -518,6 +540,9 @@ export class SegmentDetail {
         this.mapInterface.leafletMap.removeLayer(mapLayers[idx].mapPosesPtr);
         mapLayers.splice(idx, 1);
       }
+      //Remove local map from GPS map.
+      this.mapInterface.removeLocalMap();
+      this.mapInterface.removeLayerControl();
     }
   }
 
@@ -532,6 +557,9 @@ export class SegmentDetail {
       const localMapLayers = this.localMapInterface.mapPointsLayers;
       for (let idx = localMapLayers.length - 1; idx >= 0; idx--) {
         this.localMapInterface.removePoses(localMapLayers[idx].segmentId);
+        //Remove local map from GPS map.
+        this.mapInterface.removeLocalMap();
+        this.mapInterface.removeLayerControl();
       }
     }
   }
