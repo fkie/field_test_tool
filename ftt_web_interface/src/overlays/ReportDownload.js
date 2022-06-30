@@ -138,6 +138,9 @@ export class ReportDownload {
     const creatorAddress = document
       .getElementById("report-creator-address")
       .value.replace(/[^\x00-\x7F]/g, "");
+    // Add a loading animation.
+    const generateBtnLoadIcon = this.element.querySelector("form button:first-of-type i");
+    generateBtnLoadIcon.style.display = "block";
     // Send post request.
     try {
       const data = {
@@ -158,5 +161,7 @@ export class ReportDownload {
     } catch (error) {
       alert(error.message);
     }
+    // Remove the loading animation.
+    generateBtnLoadIcon.style.display = "none";
   }
 }

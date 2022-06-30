@@ -33,8 +33,8 @@ export class UserSelect {
       (entry) => entry.id == currentUser.id
     );
     if (matchedUserIdx > -1) {
-      userSelect.value = userSelect.children[matchedUserIdx].value;
       DOMGeneric.removeFirstEmptyOption(userSelect);
+      userSelect.value = userSelect.children[matchedUserIdx].value;
     }
     //Set change event listeners.
     userSelect.addEventListener("change", this.userChangedHandler.bind(this));

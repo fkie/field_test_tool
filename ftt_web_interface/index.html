@@ -52,7 +52,7 @@
   <body>
     <header id="nav-bar">
       <div class="nav-left">
-        <a href="./config.html" target="_blank" style="text-decoration: none;">
+        <a id="config-icon" href="./config.html" target="FTTConfig" style="text-decoration: none;">
           <i class="material-icons header-icon">settings</i>
         </a>
         <i id="download-icon" class="material-icons header-icon">file_download</i>
@@ -77,6 +77,9 @@
             </button>
             <button type="button" id="end-test-event-btn" class="styled-button">
               End
+            </button>
+            <button type="button" id="open-test-event-btn" class="styled-button" style="display: none; justify-content: center;">
+              Open
             </button>
             <button type="button" id="edit-test-event-btn" class="styled-button">
               Edit
@@ -190,6 +193,7 @@
             <span class="slider round"></span>
           </label>
           <label>GPS Map</label>
+          <i id="gps-map-config-icon" class="material-icons small-icon">settings</i>
         </div>
         <div>
           <label class="switch">
@@ -243,7 +247,7 @@
       <div class="backdrop"></div>
       <div class="modal">
         <header class="modal__title" style="text-align: center;">
-          <h2>Warning!</h2>
+          <h2></h2>
         </header>
         <p style="white-space: pre-line; text-align: center;"></p>
         <div class="modal__end">
@@ -259,9 +263,10 @@
 
     <template id="select-user-template">
       <header class="modal__title">
-        <h2>Select User:</h2>
+        <h2>Select User</h2>
       </header>
       <section>
+        <p style="margin-top: 0;">A user is required to create new Shifts and append notes to individual Segments.<br>Select one from the configured users below.</p>
         <div>
           <label for="user">User</label>
           <select id="user" name="user"></select>
@@ -335,8 +340,8 @@
           </div>
           <hr />
           <div class="btn-bar">
-            <button type="submit" class="styled-button" disabled>
-              Generate Report
+            <button type="submit" class="styled-button" style="display: inline-flex;" disabled>
+              Generate Report<i class="load-spinner" style="display: none;"></i>
             </button>
             <button type="submit" class="styled-button" disabled>
               Get Report!
@@ -561,6 +566,41 @@
           <div class="btn-bar">
             <button type="submit" class="styled-button" disabled>
               Update Data
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="map-config-template">
+      <header class="modal__title">
+        <h2>Map Configuration</h2>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-100">
+              <label for="map-url">Tile Server URL</label>
+              <input type="text" id="map-url" name="map-url"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-col-50">
+              <label for="map-min-zoom">Min Zoom</label>
+              <input type="number" id="map-min-zoom" name="map-min-zoom"/>
+            </div>
+            <div class="form-col-50">
+              <label for="map-max-zoom">Max Zoom</label>
+              <input type="number" id="map-max-zoom" name="map-max-zoom"/>
+            </div>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+            <button type="submit" class="styled-button">
+              Reset Defaults
             </button>
           </div>
         </form>

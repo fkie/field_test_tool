@@ -34,7 +34,7 @@ class Log {
     this.dataInterface = dataInterface;
     this.parentSelect = parentSelect;
     this.childClass = childClass;
-    this.checkSelectionCallback = checkSelectionCallback;
+    this.checkSelectionFcn = checkSelectionCallback;
     //Get DOM element hooks.
     this.select = document.getElementById(`${name}-id`);
     this.newBtn = document.getElementById(`new-${name}-btn`);
@@ -54,6 +54,10 @@ class Log {
       "click",
       this.deleteBtnClickHandler.bind(this)
     );
+  }
+
+  checkSelectionCallback() {
+    this.checkSelectionFcn();
   }
 
   clearSelectData() {
@@ -148,17 +152,15 @@ class Log {
           (entry) => entry.id == this.select.value
         ).endTime;
       }
-      //Change the select option html class for the all closed logs.
+      //Change the select option html class for the logs.
       Array.from(this.select.children).forEach((option) => {
         if (option.value) {
           //Find the log entry for the option.
           const matchedEntry = this.dataList.find(
             (entry) => entry.id == option.value
           );
-          //Update option html class if the entry is closed.
-          if (matchedEntry.endTime) {
-            option.className = "closed-log";
-          }
+          //Update the option's html class.
+          option.className = matchedEntry.endTime ? "closed-log" : "open-log";
         }
       });
     }
@@ -215,6 +217,7 @@ class Log {
     }
     //Prompt confirmation.
     const modal = new ConfirmationModal(
+      "Warning!",
       `<strong>This operation cannot be undone!</strong>
       Are you sure you want to delete <b>${this.name.replace(/-/g, " ")} ${
         this.select.value
@@ -237,6 +240,20 @@ class TestEventLog extends Log {
       childClass,
       checkSelectionCallback
     );
+    //Add option to open the test event.
+    this.openBtn = document.getElementById("open-test-event-btn");
+    this.openBtn.addEventListener("click", this.openBtnClickHandler.bind(this));
+  }
+
+  checkSelectionCallback() {
+    super.checkSelectionCallback();
+    if (this.open) {
+      this.endBtn.style.display = "grid";
+      this.openBtn.style.display = "none";
+    } else {
+      this.endBtn.style.display = "none";
+      this.openBtn.style.display = "grid";
+    }
   }
 
   async newBtnClickHandler() {
@@ -244,6 +261,24 @@ class TestEventLog extends Log {
     this.postData = [null, null, null, null];
     //Call parent function.
     await super.newBtnClickHandler();
+  }
+
+  async openBtnClickHandler() {
+    //Check select value.
+    if (!this.select.value) {
+      alert("Please select an ID to open.");
+      return;
+    }
+    try {
+      //Open log entry.
+      await this.dataInterface.put(this.select.value, "open");
+      //Update dataList and select options' status for this and all the children classes.
+      await this.recursiveUpdate();
+      //Check log IDs, hide segments and map.
+      this.checkSelectionCallback();
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
   async editBtnClickHandler() {
@@ -512,7 +547,24 @@ export class LogSelection {
   }
 
   async init() {
-    this.testEventLog.updateSelect();
+    await this.testEventLog.updateSelect();
+    const personnelList = await this.shiftLog.personnelInterface.get();
+    if (personnelList.length > 0) {
+      document.getElementById("user-icon").click();
+    } else {
+      //Prompt configuration notice.
+      const modal = new ConfirmationModal(
+        "Welcome!",
+        `It looks like you haven't configured any users yet. 
+        Please input at least one entry for each <strong>Database Configuration</strong> table. 
+        Clicking on the top left cogwheel of the main page or on the <i>confirm</i> button below will take you to the configuration page.`,
+        "Your browser does't support this feature! - Please change to a more modern one.",
+        () => {
+          document.getElementById("config-icon").click();
+        }
+      );
+      modal.show();
+    }
   }
 
   toggleLogging() {
@@ -566,7 +618,6 @@ export class LogSelection {
         alert(result.message);
       }
     });
-    
   }
 
   checkSelectedLogs() {

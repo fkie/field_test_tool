@@ -32,6 +32,20 @@ body > header {
   color: #0e4acc;
 }
 
+.small-icon {
+  font-size: 1rem;
+  color: #333333;
+  vertical-align: text-bottom;
+  cursor: pointer;
+}
+.small-icon:hover {
+  color: #3a6ddb;
+}
+
+.small-icon:active {
+  color: #0e4acc;
+}
+
 section {
   border-radius: 10px;
   padding: 1rem;
@@ -220,4 +234,34 @@ input:checked + .slider:before {
 
 .disconnected {
   color: darkred;
+}
+
+.load-spinner {
+  border: 2px solid #cccccc;
+  border-radius: 50%;
+  border-top: 2px solid white;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  margin-right: -5px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(359deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

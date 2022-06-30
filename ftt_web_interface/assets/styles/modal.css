@@ -65,12 +65,19 @@
   margin-left: 2%;
 }
 
+.form-col-100 {
+  float: left;
+  width: 100%;
+}
+
 .form-col-25 select,
 .form-col-25 input,
 .form-col-33 select,
 .form-col-33 input,
 .form-col-50 select,
-.form-col-50 input {
+.form-col-50 input,
+.form-col-100 select,
+.form-col-100 input {
   width: 100%;
   height: 1.5rem;
 }

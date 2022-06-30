@@ -13,6 +13,7 @@ import { ItoReasonInterface } from "../database_interface/ItoReason.js";
 import { NoteInterface } from "../database_interface/Note.js";
 import { ImageInterface } from "../database_interface/Image.js";
 import { SegmentEdit } from "../overlays/SegmentEdit.js";
+import { MapConfig } from "../overlays/MapConfig.js";
 
 //Global variables for fixed and common database parameter values.
 const SEGMENT_TYPE_ITO = 1;
@@ -40,6 +41,7 @@ export class SegmentDetail {
     this.segmentEndBtn = document.getElementById("end-segment-btn");
     this.segmentEditBtn = document.getElementById("edit-segment-btn");
     this.refreshBtn = document.getElementById("refresh-btn");
+    this.gpsMapConfig = document.getElementById("gps-map-config-icon");
     this.gpsMapBox = document.getElementById("gps-map-box");
     this.localMapBox = document.getElementById("local-map-box");
     //Initialize variables.
@@ -93,6 +95,10 @@ export class SegmentDetail {
       "change",
       this.autoRefreshBoxHandler.bind(this)
     );
+    this.gpsMapConfig.addEventListener(
+      "click",
+      this.gpsMapConfigHandler.bind(this)
+    );
     this.gpsMapBox.addEventListener(
       "click",
       this.toggleGpsMapHandler.bind(this)
@@ -103,13 +109,18 @@ export class SegmentDetail {
     );
   }
 
-  async updateSegments() {
+  async updateSegments(newSegmentList = null) {
     //Update segment data table and map display.
     try {
-      //Get segment data from DB.
-      this.segmentList = await this.segmentInterface.get(
-        this.legSelectHook.value
-      );
+      if (newSegmentList) {
+        //Update segmentList with new values.
+        this.segmentList = newSegmentList;
+      } else {
+        //Get segment data from DB.
+        this.segmentList = await this.segmentInterface.get(
+          this.legSelectHook.value
+        );
+      }
       //Remove old data from table.
       const tableRows = Array.from(this.segmentTable.querySelectorAll("tr"));
       for (const row of tableRows.reverse()) {
@@ -477,6 +488,20 @@ export class SegmentDetail {
     } catch (error) {
       alert(error.messaje);
     }
+  }
+
+  gpsMapConfigHandler() {
+    //Build a map configuration overlay.
+    const mapConfig = new MapConfig();
+    //Display the overlay.
+    const userModal = new Modal(
+      mapConfig,
+      "Your browser doesn't support this feature! - Please change to a more modern one.",
+      () => {
+        this.mapInterface.changeTileLayer();
+      }
+    );
+    userModal.show();
   }
 
   toggleGpsMapHandler(event) {

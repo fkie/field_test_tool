@@ -79,15 +79,15 @@ export class SegmentEdit {
       this.segmentDataChangedHandler.bind(this)
     );
     obstacleInput.addEventListener(
-      "change",
+      "input",
       this.segmentDataChangedHandler.bind(this)
     );
     lightingInput.addEventListener(
-      "change",
+      "input",
       this.segmentDataChangedHandler.bind(this)
     );
     slopeInput.addEventListener(
-      "change",
+      "input",
       this.segmentDataChangedHandler.bind(this)
     );
     //Register update button handler.

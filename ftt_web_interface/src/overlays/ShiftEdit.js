@@ -146,11 +146,11 @@ export class ShiftEdit {
       this.shiftDataChangedHandler.bind(this)
     );
     testIntentInput.addEventListener(
-      "change",
+      "input",
       this.shiftDataChangedHandler.bind(this)
     );
     workspaceInput.addEventListener(
-      "change",
+      "input",
       this.shiftDataChangedHandler.bind(this)
     );
     vehicleSelect.addEventListener(
@@ -158,7 +158,7 @@ export class ShiftEdit {
       this.shiftDataChangedHandler.bind(this)
     );
     noteText.addEventListener(
-      "change",
+      "input",
       this.shiftDataChangedHandler.bind(this)
     );
     //Register update button handler.

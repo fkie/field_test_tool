@@ -437,6 +437,14 @@ class ApiCommon:
         pass
 
     @staticmethod
+    def open_log(table_name, entry_id):
+        # Specialization.
+        # Method to open the specified log entry.
+        ApiCommon.update_table_data(table_name, {"endtime_secs": None}, {"id": entry_id})
+        msg = info_msg("Opened %s %s." % (table_name, entry_id))
+        return print_and_return(msg)
+    
+    @staticmethod
     def close_log(table_name, entry_id):
         # Specialization.
         # Method to close the specified log entry.
@@ -473,6 +481,14 @@ class ApiCommon:
 
 class TestEvent(Resource):
 
+    @staticmethod
+    def open(entry_id):
+        # Close open log entries.
+        TestEvent.close()
+        # Open specified teset_event.
+        table_name = "test_event"
+        return ApiCommon.open_log(table_name, entry_id)
+    
     @staticmethod
     def close(entry_id = None):
         table_name = "test_event"
@@ -528,6 +544,9 @@ class TestEvent(Resource):
         if action == "close":
             # Close table entry.
             return TestEvent.close(test_event_id)
+        if action == "open":
+            # Open table entry.
+            return TestEvent.open(test_event_id)
         pass
 
     def delete(self):
@@ -1352,7 +1371,43 @@ class GenerateReport(Resource):
         server_path = os.path.dirname(os.path.realpath(__file__))
         report_generator_path = server_path+"/../../ftt_report_generator/src/db2rep.py"
         # Execute script.
-        return os.system("python3 %s ../config/auto_config.xml" % report_generator_path)  
+        return os.system("python3 %s ../config/auto_config.xml" % report_generator_path)
+
+    @staticmethod
+    def check_gps_poses(test_event_id):
+        sql_stmt = """
+            SELECT shift.id as id
+            FROM pose
+            INNER JOIN segment ON pose.segment_id = segment.id
+            INNER JOIN leg ON segment.leg_id = leg.id
+            INNER JOIN shift on leg.shift_id = shift.id
+            WHERE test_event_id = %s
+            GROUP BY shift.id
+            ORDER BY shift.id
+            """
+        DBInterface.execute(sql_stmt,(test_event_id,))
+        gps_shifts = DBInterface.fetchall()
+        if not gps_shifts:
+            msg = error_msg("UnsupportedError","Test event %s has no GPS data to generate a report." % test_event_id)
+            raise ApiError(msg, status_code=400)
+
+    @staticmethod
+    def check_local_poses(test_event_id):
+        sql_stmt = """
+            SELECT shift.id as id
+            FROM local_pose
+            INNER JOIN segment ON local_pose.segment_id = segment.id
+            INNER JOIN leg ON segment.leg_id = leg.id
+            INNER JOIN shift on leg.shift_id = shift.id
+            WHERE test_event_id = %s
+            GROUP BY shift.id
+            ORDER BY shift.id
+            """
+        DBInterface.execute(sql_stmt,(test_event_id,))
+        local_shifts = DBInterface.fetchall()
+        if not local_shifts:
+            msg = error_msg("UnsupportedError","Test event %s has no local data to generate a report." % test_event_id)
+            raise ApiError(msg, status_code=400)
 
     def post(self):
         # This method calls a report generating script with the user requested parameter values.
@@ -1361,6 +1416,11 @@ class GenerateReport(Resource):
         data = ApiCommon.get_all_params_from_json(param_names)
         # Check that the test event id is a number.
         ApiCommon.check_id(data[param_names[4]])
+        # Check that the test event has poses of the specified type (local or gps).
+        if data[param_names[6]] == "true":
+            GenerateReport.check_local_poses(data[param_names[4]])
+        else:
+            GenerateReport.check_gps_poses(data[param_names[4]])
         # Write input xml file.
         GenerateReport.edit_xml(data)
         # Call report generator.
