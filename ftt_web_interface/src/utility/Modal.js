@@ -9,6 +9,7 @@ export class Modal {
   constructor(contentObject, fallbackText, closeCallbackFunction) {
     this.fallbackText = fallbackText;
     this.closeCallbackFunction = closeCallbackFunction;
+    this.visible = false;
     //Import and build modal node.
     const modalTemplateEl = document.getElementById("modal-template");
     const modalElements = document.importNode(modalTemplateEl.content, true);
@@ -21,10 +22,12 @@ export class Modal {
     //Reassign element property of contentObject, since insertBefore erases it.
     //This is done to keep the content logic inside the content class
     contentObject.element = this.modalElement;
-    //Select backdrop and assign click listener to close it.
+    //Select modal element and assign transitionend listener to close it
+    this.modalElement.addEventListener("transitionend", this.close.bind(this));
+    //Select backdrop and assign click listener to trigger closing it.
     this.backdropElement = modalElements.querySelector(".backdrop");
     this.backdropElement.addEventListener("click", this.hide.bind(this));
-    //Select close button and assign click listener to close it.
+    //Select close button and assign click listener to trigger closing it.
     this.buttonElement = modalElements.getElementById("modal-close-btn");
     this.buttonElement.addEventListener("click", this.hide.bind(this));
   }
@@ -37,6 +40,10 @@ export class Modal {
       document.body.insertAdjacentElement("afterbegin", this.backdropElement);
       //scroll page to align with the top of the modal
       this.modalElement.scrollIntoView({ behavior: "smooth" });
+      //Record visibility status
+      this.visible = true;
+      //Add show class to make visible
+      this.modalElement.classList.add("show");
     } else {
       //Alert fallback text
       alert(this.fallbackText);
@@ -44,6 +51,17 @@ export class Modal {
   }
 
   hide() {
+    //Record visibility status
+    this.visible = false;
+    //Remove show class to make it disappear
+    this.modalElement.classList.remove("show");
+  }
+
+  close() {
+    //Workaround to prevent "transitionend" trigger when showing
+    if (this.visible) {
+      return;
+    }
     if (this.modalElement) {
       //Delete modal and backdrop
       document.body.removeChild(this.modalElement);

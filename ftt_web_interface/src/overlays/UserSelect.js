@@ -48,5 +48,6 @@ export class UserSelect {
       this.currentUser,
       this.personnelList.find((entry) => selectedUser.includes(entry.name))
     );
+    document.getElementById("modal-close-btn").click();
   }
 }
