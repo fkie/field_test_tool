@@ -3,8 +3,17 @@
 The purpose of this tool is to monitor and analyze the switching events between autonomous mode and manual mode on autonomous ground vehicles. This is done by collecting relevant data from the robot's ROS environment, alongside context data provided by users.
 The collected data is processed by an automatic report generator, which aims to help the manufacturer, the project manager and the customer to analyze software issues in certain enviroments.
 
-**Note**: The FTT currently runs with Python 3. Python 2 support ended with version 2.1.
-<br/><br/>
+If you use this code in an academic context, please cite the following work:
+```
+@inproceedings{9784813,
+  author={Tampier, Carlos and Tiderko, Alexander and Schneider, Frank E.},
+  booktitle={2022 IEEE International Conference on Autonomous Robot Systems and Competitions (ICARSC)}, 
+  title={Field Test Tool: automatic reporting and reliability evaluation for autonomous ground vehicles}, 
+  year={2022},
+  pages={73-78},
+  doi={10.1109/ICARSC55462.2022.9784813}}
+
+```
 
 ## _1. Description_
 
@@ -144,6 +153,9 @@ The following libraries and resources are needed for this project. They are show
   - Safari 14+
 
 <span style="font-size:smaller">\* Older destop versions might also work fine, but mobile ones probably won't.</span>
+<br/><br/>
+
+**Note**: The FTT currently runs with Python 3. Python 2 support ended with version 2.1.
 <br/><br/>
 
 ## _4. Installation_
