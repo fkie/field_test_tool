@@ -187,9 +187,11 @@ export class LocalMap {
               this.viewer.scene.scaleY
         );
       }
+      return mapImage;
     } catch (error) {
       //Log response.
       console.log(error.message);
+      return null;
     }
   }
 

@@ -1,12 +1,20 @@
 .modal {
   position: absolute;
-  top: 20vh;
+  /* top: 20vh; */
   left: 10%;
   width: 80%;
   background: white;
   z-index: 1200;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  top: -100%;
+  opacity: 0;
+  transition: top 0.4s, opacity 0.4s;
+}
+
+.modal.show {
+  top: 20vh;
+  opacity: 1;
 }
 
 .modal__title {
