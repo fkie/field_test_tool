@@ -1,6 +1,6 @@
 INSERT INTO ito_reason VALUES ( 1 , 'safety' , 'Safety' , 'Safety stop, initiated by an inhabitant of the vehicle.' , 'F' , '255,0,0' );
 INSERT INTO ito_reason VALUES ( 2 , 'maintenance' , 'Maintenance' , 'Maintenance stop, a stop initiated by the performer to fix code.' , 'T' , '255,240,0' ) ;
-INSERT INTO ito_reason VALUES ( 3 , 'planner' , 'Planner' , 'Planner stop, a stop caused by a timeout or error of the planer.' , 'F' , '255,120,0' ) ;
+INSERT INTO ito_reason VALUES ( 3 , 'planner' , 'Planner' , 'Planner stop, a stop caused by a timeout or error of the planner.' , 'F' , '255,120,0' ) ;
 INSERT INTO ito_reason VALUES ( 4 , 'apparatus' , 'Apparatus' , 'Apparatus stop, a stop that is initiated by the test admin to fix the test apparatus.' , 'T' , '70,0,255' ) ;
 INSERT INTO ito_reason VALUES ( 5 , 'non_stop' , 'Non-Stop' , 'Non-Stop, indicates that no stop was performed. Ignore this ITO.' , 'F' , '10,120,10' ) ;
 INSERT INTO ito_reason VALUES ( 6 , 'stereo' , 'Stereo test' , 'Stereo test stop, a stop initiated to perform a test of the stereo accuracy.' , 'F' , '0,170,255' ) ;
