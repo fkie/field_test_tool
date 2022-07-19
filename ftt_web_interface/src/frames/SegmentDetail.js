@@ -62,6 +62,12 @@ export class SegmentDetail {
       "click",
       this.segmentTableClickHandler.bind(this)
     );
+    this.segmentTable.addEventListener("dblclick", (event) => {
+      if (event.target.closest("tr") != this.selectedRow) {
+        this.segmentTableClickHandler(event);
+      }
+      this.editSegmentHandler();
+    });
     this.unexpectedBtn.addEventListener(
       "click",
       this.quickReasonEditBtnHandler.bind(this, ITO_REASON_UNEXPECTED)
