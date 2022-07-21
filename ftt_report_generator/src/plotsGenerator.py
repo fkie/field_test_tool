@@ -44,18 +44,22 @@ class PlotsGenerator:
         self.segment_type_color_dict = self.db_adapter.read_color_dict("segment_type")
 
         # Compute distances for the required statistics
-        self.auto_dists = [None]*len(self.shifts)
-        self.total_auto_dist = [None]*len(self.shifts)
-        self.mean_auto_dist = [None]*len(self.shifts)
-        self.std_auto_dist = [None]*len(self.shifts)
-        self.max_auto_dist = [None]*len(self.shifts)
-        self.total_manual_dist = [None]*len(self.shifts)
+        nshifts = len(self.shifts)
+        self.dist_seq = [None]*nshifts
+        self.auto_dists = [None]*nshifts
+        self.total_auto_dist = [None]*nshifts
+        self.mean_auto_dist = [None]*nshifts
+        # self.std_auto_dist = [None]*nshifts
+        self.max_auto_dist = [None]*nshifts
+        self.total_manual_dist = [None]*nshifts
+
         # Iterate through the shifts
         for i, shift in enumerate(self.shifts):
-            # Variables to hold distances for each segment.
+            # Variables to hold distances for each segment
             dist_manual = []
             dist_auto = []
-            # Extract main info from master segments of selected shift.
+            dist_seq = []
+            # Extract main info from master segments of selected shift
             segment_values = self.db_adapter.get_master_segments(shift['id'])
             # Iterate through the shifts
             for row in segment_values:
@@ -68,19 +72,26 @@ class PlotsGenerator:
                     for sub_segment in sub_segments:
                         if sub_segment['ito_key'] in self.stop_count_keys:
                             dist_manual.append(distance)
+                            dist_seq.append(['ito', distance])
                             break
                 elif row['segment_type_short_description'] == 'AUTO':
                     dist_auto.append(distance)
-            # Compute auto distance statistics
+                    dist_seq.append(['auto', distance])
+
+            # Store total distance sequence
+            self.dist_seq[i] = dist_seq
+
+            # Store auto distance data
             self.auto_dists[i] = dist_auto
             self.total_auto_dist[i] = sum(dist_auto)
             self.mean_auto_dist[i] = 0.0 if len(dist_auto) == 0 else self.total_auto_dist[i]/len(dist_auto)
-            self.std_auto_dist[i] = 0.0
-            for d in dist_auto:
-                self.std_auto_dist[i] += (d-self.mean_auto_dist[i])**2
-            self.std_auto_dist[i] = self.std_auto_dist[i]**0.5
+            # self.std_auto_dist[i] = 0.0
+            # for d in dist_auto:
+            #     self.std_auto_dist[i] += (d-self.mean_auto_dist[i])**2
+            # self.std_auto_dist[i] = self.std_auto_dist[i]**0.5
             self.max_auto_dist[i] = 0.0 if len(dist_auto) == 0 else max(dist_auto)
-            # Compute manual distance statistics
+
+            # Store manual distance data
             self.total_manual_dist[i] = sum(dist_manual)
 
     #---------------------------------------------------------------------------
@@ -135,6 +146,73 @@ class PlotsGenerator:
         return xLabels;    
 
     #---------------------------------------------------------------------------
+    # Total distance plot.
+    #---------------------------------------------------------------------------
+    def total_dist_seq_plot(self):
+        # Clear figure.
+        self.fig.delaxes(self.ax)
+        self.fig.clear()
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(111)
+        # Define ticks and labels for the x-axis.
+        xTicks = list(range(1,len(self.shifts)+1))
+        xLabels = self.get_x_labels ()
+        # Iterate through the shifts' distances
+        for i, auto_dist in enumerate(self.dist_seq):
+            cum_dist = 0.0
+            codes = [Path.MOVETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.CLOSEPOLY]
+            # Iterate through the segments' distances
+            for type, distance in auto_dist:
+                # plot the graph
+                verts = [(xTicks[i]-0.25, cum_dist),            # left, bottom
+                         (xTicks[i]-0.25, cum_dist+distance),   # left, top
+                         (xTicks[i]+0.25, cum_dist+distance),   # right,top
+                         (xTicks[i]+0.25, cum_dist),            # right, bottom
+                         (0.0, 0.0)]                            # ignored
+                cum_dist += distance
+                path = Path(verts, codes)
+                patch = patches.PathPatch(path, facecolor=self.plotColor(self.segment_type_color_dict[type]), lw=0.5)
+                self.ax.add_patch(patch)
+        self.ax.relim()
+        self.ax.autoscale_view()
+        ylim = max([sum(value) for value in zip(self.total_auto_dist, self.total_manual_dist)])
+        offset = (ylim)/18.0
+        for i, shift in enumerate(self.shifts):
+            # print weather icon on top of bar
+            self.print_weather_icon (shift['id'], xTicks[i], ylim+4*offset, len(self.shifts))
+            # print total autonomous and manual distance driven
+            total_dist = self.total_auto_dist[i] + self.total_manual_dist[i]
+            plt.annotate('%s m\n(%s%% Auto)' % (int(total_dist), int(100*self.total_auto_dist[i]/total_dist)),
+                xy=(xTicks[i], total_dist + 1*offset),
+                xycoords='data', 
+                xytext=(xTicks[i], total_dist + 1*offset),
+                textcoords='data',
+                size=10, 
+                va="center",
+                ha="center",
+                rotation=0
+            )
+        plt.xticks(xTicks, xLabels, rotation=0, fontsize=10)
+        plt.ylabel('Distance Log and Mode Changes [m]')
+        plt.xlim(0.5,len(self.shifts)+0.5)
+        plt.ylim(0,ylim+6*offset)
+        # Set legend
+        fontP = FontProperties()
+        fontP.set_size('small')
+        legend = [self.dist_seq[0][0][0], self.dist_seq[0][1][0]]
+        legend = [w.replace('ito', 'manual') for w in legend]
+        self.ax.legend(legend, prop = fontP, loc='upper right')
+
+        # Save the plot.
+        if not os.path.exists(self.image_dir):
+            os.makedirs(self.image_dir)
+        plt.savefig('%s/TotalDistSeq.%s' % (self.image_dir, self.image_ext), transparent=False)
+
+    #---------------------------------------------------------------------------
     # Total auto distance plot.
     #---------------------------------------------------------------------------
     def total_auto_dist_plot(self):
@@ -149,6 +227,11 @@ class PlotsGenerator:
         # Iterate through the shifts' auto distances
         for i, auto_dist in enumerate(self.auto_dists):
             cum_dist = 0.0
+            codes = [Path.MOVETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.LINETO,
+                     Path.CLOSEPOLY]
             # Iterate through the segments' auto distances
             for distance in auto_dist:
                 # plot the graph
@@ -158,13 +241,8 @@ class PlotsGenerator:
                          (xTicks[i]+0.25, cum_dist),            # right, bottom
                          (0.0, 0.0)]                            # ignored
                 cum_dist += distance
-                codes = [Path.MOVETO,
-                         Path.LINETO,
-                         Path.LINETO,
-                         Path.LINETO,
-                         Path.CLOSEPOLY]
                 path = Path(verts, codes)
-                patch = patches.PathPatch(path, facecolor=self.plotColor(self.segment_type_color_dict['auto']), lw=2)
+                patch = patches.PathPatch(path, facecolor=self.plotColor(self.segment_type_color_dict['auto']), lw=0.5)
                 self.ax.add_patch(patch)
         self.ax.relim()
         self.ax.autoscale_view()
@@ -173,8 +251,8 @@ class PlotsGenerator:
         for i, shift in enumerate(self.shifts):
             # print weather icon on top of bar
             self.print_weather_icon (shift['id'], xTicks[i], ylim+3*offset, len(self.shifts))
-            # print total distance driven
-            plt.annotate(int(self.total_auto_dist[i]),
+            # print total autonomous distance driven
+            plt.annotate('%s m' % int(self.total_auto_dist[i]),
                 xy=(xTicks[i], self.total_auto_dist[i]+offset),
                 xycoords='data', 
                 xytext=(xTicks[i], self.total_auto_dist[i]+offset),
@@ -252,19 +330,19 @@ class PlotsGenerator:
             dist_disp = self.ax.transData.transform(np.array([(0.0,self.mean_auto_dist[i])]))
             dist_disp[0][1] -= offset_disp
             y_label = inv.transform(dist_disp)[0][1]
-            plt.annotate(int(self.mean_auto_dist[i]), xy=(xTicks[i], y_label), 
+            plt.annotate('%s m' % int(self.mean_auto_dist[i]), xy=(xTicks[i], y_label), 
                          xycoords='data', xytext=(xTicks[i], y_label), 
                          textcoords='data', size=10, va="center", ha="center", rotation=0)
             dist_disp = self.ax.transData.transform(np.array([(0.0,self.max_auto_dist[i])]))
             dist_disp[0][1] += offset_disp
             y_label = inv.transform(dist_disp)[0][1]
-            plt.annotate(int(self.max_auto_dist[i]), xy=(xTicks[i], y_label), 
+            plt.annotate('%s m' % int(self.max_auto_dist[i]), xy=(xTicks[i], y_label), 
                          xycoords='data', xytext=(xTicks[i], y_label), 
                          textcoords='data', size=10, va="center", ha="center", rotation=0)
 
         self.ax.relim()
         self.ax.autoscale_view()
-        plt.ylabel('Mean Autonomous Distance [m]')
+        plt.ylabel('Mean and Max Autonomous Distance [m]')
         plt.xticks(xTicks, xLabels, rotation=0, fontsize=10)
         plt.xlim(0,len(self.shifts)+1)
         plt.ylim(min_dist, max_dist + 5 * offset)
@@ -289,7 +367,7 @@ class PlotsGenerator:
         xLines = [x for x in (2+nkeys)*xSpace if x > 1]
         xTicks = [x for x in (2+nkeys)*xSpace+(2+nkeys)/2]
         xLabels = [None]*nshifts
-        heights = [None]*nshifts
+        heights = [0]*nshifts
         # Clear figure
         self.fig.delaxes(self.ax)
         self.fig.clear()
@@ -301,9 +379,10 @@ class PlotsGenerator:
         legend_text = []        
         p = []
         xLabels = self.get_x_labels ()
+        # For each stop key:
         for i, key in enumerate(keys):
             countsX [key] = [x for x in (2+nkeys)*xSpace+i+1]
-            countsY [key] = [0]*len(self.shifts)
+            countsY [key] = np.zeros(nshifts)
             # Count entries for this key
             for j, shift in enumerate(self.shifts):
                 countsY [key][j] = self.db_adapter.get_shift_ito_count(shift['id'], key)
@@ -314,12 +393,15 @@ class PlotsGenerator:
             legend_text.append (ito_reasons[i])
         ylim = max(heights)
         offset = (ylim)/18.0
+        # Get the total number of stop per shift
+        total_counts = np.sum(np.array(list(countsY.values())), axis=0)
+        # For each shift:
         for i, shift in enumerate(self.shifts):
             # Print weather icon on top of bar
             self.print_weather_icon (shift['id'], xTicks[i], ylim+3*offset, len(self.shifts))
-            # Print total distance driven
-            plt.annotate(("%d m" % int(self.total_manual_dist[i])), xy=(xTicks[i], heights[i]+offset), 
-                         xycoords='data', xytext=(xTicks[i], heights[i]+offset), textcoords='data',
+            # Print total number of stops
+            plt.annotate('Stops: ' + str(int(total_counts[i])), xy=(xTicks[i], max(heights)+offset), 
+                         xycoords='data', xytext=(xTicks[i], max(heights)+offset), textcoords='data',
                          size=10, va="center", ha="center", rotation=0)
             if xLines != []:
                 plt.plot([xLines]*2, [0,ylim+10*offset], color='b', linestyle='--')
@@ -377,7 +459,7 @@ class PlotsGenerator:
             # Print weather icon on top of bar
             self.print_weather_icon (shift['id'], xTicks[i], ylim+3*offset, len(self.shifts))
             # Print total manual distance driven
-            plt.annotate(("%d m" % int(self.total_manual_dist[i])), xy=(xTicks[i], total[i]+offset), 
+            plt.annotate(int(total[i]), xy=(xTicks[i], total[i]+offset), 
                          xycoords='data', xytext=(xTicks[i], total[i]+offset), textcoords='data',
                          size=10, va="center", ha="center", rotation=0)
         self.ax.relim()
@@ -448,8 +530,9 @@ class PlotsGenerator:
     # Generate all plots.
     #---------------------------------------------------------------------------
     def generate_all_plots(self):
+        self.total_dist_seq_plot()
         self.total_auto_dist_plot()
         self.mean_auto_dist_plot()
-        # self.override_count_distributed_plot()
-        self.override_count_stacked_plot()
-        self.ito_time_plot()
+        self.override_count_distributed_plot()
+        # self.override_count_stacked_plot()
+        # self.ito_time_plot()

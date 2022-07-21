@@ -230,9 +230,9 @@ class FttReportGenerator:
         latexf.write('\n\n')
         return
 
-    def generate_latex_shift_statistic(self, latexf, shift_id, local):
+    def generate_latex_shift_statistic(self, latexf, shift_id, local, stop_count_keys):
         # Select the Shift statistics from the DB
-        statistic = self.db_adapter.get_shift_statistics(shift_id, local)
+        statistic = self.db_adapter.get_shift_statistics(shift_id, local, stop_count_keys)
         # Write ITO/AUTO statistics table.
         template = self.env.get_template(DEFAULT_SHIFT_STATISTICS_HEADER_TEMPLATE)
         latexf.write(
@@ -254,8 +254,9 @@ class FttReportGenerator:
                                 Speedm="{:3.2f}".format(speed_m_s), SpeedKm="{:3.2f}".format(speed_km_h),
                                 SpeedMi="{:3.2f}".format(speed_mi_h)))
         latexf.write('\\end{longtable}\n')
-        latexf.write('\qquad* All main manual segments are considered. Segments holding multiple ito reasons are only counted once.')
-        latexf.write('\n')
+        latexf.write('\\begin{quoting}')
+        latexf.write('* Only the configured stop keys %s are considered. Segments holding multiple ito reasons are only counted once.' % [key_name.replace('_', ' ') for key_name in stop_count_keys])
+        latexf.write('\\end{quoting}')
 
     def generate_latex_shift_timeline(self, latexf, shift, min_dur):
         # Get the shift timeline.
@@ -432,24 +433,38 @@ class FttReportGenerator:
         )
         global_plots.generate_all_plots()
         # Define figure names.
+        dist_seq_figure = 'TotalDistSeq'
         total_dist_figure = 'TotalAutoDist'
         mean_dist_figure = 'MeanAutoDist'
         stop_counts_figure = 'OverrideCounts'
-        manual_figure = 'ManualTimes'
         # Write to the Latex file.
         print(" - Generating the Latex section for global statistics")
         # Chapter title.
         latexf.write('\\section{Global statistics}\n\n')
-        latexf.write('\\subsection{Autonomously travelled distance}\n\n')
-        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} summarize the performance of autonomous driving. Each bar corresponds to a shift.' % (total_dist_figure, mean_dist_figure))
-        # Plots.
+        # Section for the first two figures.
+        latexf.write('\\subsection{Traveled distance logs}\n\n')
+        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} show the complete and autonomous traveled distance. Each bar corresponds to a shift.' % (dist_seq_figure, total_dist_figure))
+        # Plots 1 and 2.
+        short_caption = 'Complete distance log.'
+        long_caption = 'Total distance driven in each operation mode. \
+            The total distance and autonomous share are shown above each shift. \
+            The icon(s) represents the weather condition during the shift.'
+        self.write_latex_figure(latexf, dist_seq_figure, short_caption, long_caption)
+
         short_caption = 'Total autonomous distance.'
         long_caption = 'Total distance driven autonomously. \
-            Each bar section within a shift represents an autonomous segment. \
+            Each division of the bar chart of a shift represents an autonomous segment. \
             The total autonomous drive distance is shown above each shift. \
             The icon(s) represents the weather condition during the shift.'
         self.write_latex_figure(latexf, total_dist_figure, short_caption, long_caption)
+        
+        # Section for the second two figures.
+        latexf.write('\\subsection{Autonomous distance and manual intervention statistics}\n\n')
+        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} show the autonomous distance stop count statistics.' % (mean_dist_figure, stop_counts_figure))
+        latexf.write('Only the configured stop keys %s are considered.\n' % [key_name.replace('_', ' ') for key_name in stop_count_keys])
+        
 
+        # Plot 3 and 4.
         short_caption = 'Mean autonomous distance.'
         long_caption = 'Mean distance driven autonomously. \
             The circle at the bottom of each bar shows the mean autonomous drive distance. \
@@ -457,20 +472,11 @@ class FttReportGenerator:
             The icon(s) represents the weather condition during the shift.'
         self.write_latex_figure(latexf, mean_dist_figure, short_caption, long_caption)
 
-        latexf.write('\\subsection{Stop events and manual operation}\n\n')
-        latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} summarize the stops and time in manual operation. Each bar corresponds to a shift.\n' % (stop_counts_figure, manual_figure))
-        latexf.write('Only the configured stop keys %s are considered.\n' % [key_name.replace('_', ' ') for key_name in stop_count_keys])
-
         short_caption = 'Override counts.'
         long_caption = 'Counts for the configured ITO reasons (see legend). \
-            The number above each shift indicates the total manual drive distance in meters. \
+            The number above each shift indicates the total number of manual interventions. \
             The icon(s) represents the weather condition during the shift.'
         self.write_latex_figure(latexf, stop_counts_figure, short_caption, long_caption)
-
-        short_caption = 'Manual times.'
-        long_caption = 'Time spent in manual operation. \
-            The total manual time is shown above each shift.'
-        self.write_latex_figure(latexf, manual_figure, short_caption, long_caption)
         
         latexf.write ('\\clearpage\n\n') # clearpage flushes all pending floats
 
@@ -532,7 +538,7 @@ class FttReportGenerator:
             # Generate the Latex Shift header
             self.generate_latex_shift_header(latex_f, shift)
             # Generate the Shift statistics for a Latex file
-            self.generate_latex_shift_statistic(latex_f, shift_id, report_info["local"])
+            self.generate_latex_shift_statistic(latex_f, shift_id, report_info["local"], stop_count_keys)
             # Create the Timeline for the Shift
             self.generate_latex_shift_timeline(latex_f, shift, report_info['min_duration'])
             # Create the Segment sections

@@ -340,7 +340,7 @@ class FttAdapter(PgAdapter):
         shift_timeline = self.dictcursor.fetchall()
         return shift_timeline
 
-    def get_shift_statistics(self, shift_id, local):
+    def get_shift_statistics(self, shift_id, local, stop_count_keys):
         # Get segment types.
         select_stmt = "SELECT id, short_description \
             FROM segment_type"
@@ -351,15 +351,25 @@ class FttAdapter(PgAdapter):
         # Get statistics for each segment type.
         for segment_type_id, segment_type_short_description in segment_types:
             stats = {'segment_type_short_description': segment_type_short_description}
-            # Get master segment ids.
-            select_stmt = "SELECT segment.id, leg_id \
+            # Get master segment ids (manual segments filtered by stop_count_keys).
+            select_stmt = "SELECT segment.id, segment.leg_id \
                 FROM segment \
                 INNER JOIN leg ON segment.leg_id = leg.id \
+                LEFT OUTER JOIN segment AS child ON child.parent_id = segment.id \
+                LEFT OUTER JOIN ito_reason ON child.ito_reason_id = ito_reason.id \
                 WHERE leg.shift_id = %s \
                     AND segment.segment_type_id = %s \
-                    AND segment.parent_id IS NULL"
-            self.dictcursor.execute(select_stmt, (shift_id, segment_type_id))
+                    AND segment.parent_id IS NULL \
+                    AND ({})".format(
+                        ' OR '.join(
+                            ['ito_reason.key = %s'] * len(stop_count_keys)
+                        ) if segment_type_short_description == 'ITO' else '%s'
+                    )
+            values = [shift_id, segment_type_id] + (stop_count_keys if segment_type_short_description == 'ITO' else [True]) 
+            self.dictcursor.execute(select_stmt, tuple(values))
             data = self.dictcursor.fetchall()
+            # Remove potential duplicates (master segments having more than 1 child)
+            data = list(set(tuple(row) for row in data))
             # Get id count.
             stats['cnt'] = len(data)
             # Get total segment distance.
