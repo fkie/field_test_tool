@@ -111,8 +111,14 @@ class Log {
     if (this.childClass) {
       await this.childClass.updateSelect();
     }
-    //Check log IDs, hide segments and map.
-    this.checkSelectionCallback();
+    if (this.childClass && this.childClass.dataList.length === 1) {
+      //If the child only has one option, select it and call recursion.
+      this.childClass.select.value = this.childClass.dataList[0].id;
+      this.childClass.selectChangeHandler();
+    } else {
+      //Else finish: Check log IDs, hide segments and map.
+      this.checkSelectionCallback();
+    }
   }
 
   async newBtnClickHandler() {

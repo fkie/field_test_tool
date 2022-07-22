@@ -62,30 +62,27 @@ class DBInterface:
     def init(db_host):
         DBInterface.host = db_host or "localhost"
         DBInterface.conn = connect("host=%s dbname='ftt' user='postgres' password='postgres'" % DBInterface.host)
-        DBInterface.cur = DBInterface.conn.cursor()
 
     @staticmethod
-    def execute(sql_stmt, params=None):
+    def execute(sql_stmt, params=None, returning=False, once=False):
+        cursor = DBInterface.conn.cursor()
         try:
-            DBInterface.cur.execute(sql_stmt, params)
+            cursor.execute(sql_stmt, params)
+            result = None
+            if returning and once:
+                result = cursor.fetchone()
+            elif returning and not once:
+                result = cursor.fetchall()
             DBInterface.conn.commit()
+            cursor.close()
+            return result
         except Exception as err:
             DBInterface.conn.rollback()
             msg = error_msg(type(err).__name__, str(err))
             raise ApiError(msg, status_code=400)
-        pass
-
-    @staticmethod
-    def fetchone():
-        return DBInterface.cur.fetchone()
-
-    @staticmethod
-    def fetchall():
-        return DBInterface.cur.fetchall()
 
     @staticmethod
     def close():
-        DBInterface.cur.close()
         DBInterface.conn.close()
         pass
 
@@ -258,8 +255,7 @@ class ApiCommon:
                 sql.SQL(', ').join(map(sql.Identifier, names)),
                 sql.SQL(', ').join(sql.Placeholder() * len(names))
             )
-        DBInterface.execute(sql_stmt, values)
-        entry_id = DBInterface.fetchone()[0]
+        entry_id = DBInterface.execute(sql_stmt, values, True, True)[0]
         return info_msg("Created %s %s entry." % (table_name, entry_id))
 
     @staticmethod
@@ -377,15 +373,12 @@ class ApiCommon:
                 LIMIT %s
                 """
                 )
-        if conditions:
-            DBInterface.execute(sql_stmt, sql_values)
-        else:
-            DBInterface.execute(sql_stmt)
+        if not conditions and not limit:
+            sql_values = None
         if limit == 1:
-            return DBInterface.fetchone()
+            return DBInterface.execute(sql_stmt, sql_values, True, True)
         else:
-            return DBInterface.fetchall()
-        pass
+            return DBInterface.execute(sql_stmt, sql_values, True, False)
     
     @staticmethod
     def delete_by_id(table_name):
@@ -475,8 +468,7 @@ class ApiCommon:
             sql.Identifier(parent_id_name),
             sql.Identifier(table_name),
         )
-        DBInterface.execute(sql_stmt,(parent_id,))
-        row = DBInterface.fetchone()
+        row = DBInterface.execute(sql_stmt,(parent_id,), True, True)
         return row[0]
 
 class TestEvent(Resource):
@@ -778,8 +770,7 @@ class Segment(Resource):
             WHERE leg_id = %s
             ORDER BY segment.id DESC
             """
-        DBInterface.execute(sql_stmt,(leg_id,))
-        return DBInterface.fetchall()
+        return DBInterface.execute(sql_stmt,(leg_id,), True)
     
     @staticmethod
     def store_segment(leg_id, parent_id, ito_reason_id, segment_type_id, starttime_secs, orig_starttime_secs, start_lng = None, start_lat = None, local_x = None, local_y = None):
@@ -915,8 +906,7 @@ class Pose(Resource):
             FULL JOIN segment ON pose.segment_id = segment.id \
             FULL JOIN segment_type ON segment.segment_type_id = segment_type.id \
             WHERE segment_id = %s"
-        DBInterface.execute(sql_stmt,(segment_id,))
-        return DBInterface.fetchone()
+        return DBInterface.execute(sql_stmt,(segment_id,), True, True)
 
     def get(self):
         # This method gets all the position data of a specified segment in GeoJSON format.
@@ -959,8 +949,7 @@ class Image(Resource):
             WHERE segment_id = %s
             ORDER BY id
             """
-        DBInterface.execute(sql_stmt,(segment_id,))
-        return DBInterface.fetchall()
+        return DBInterface.execute(sql_stmt,(segment_id,), True)
 
     def get(self):
         # This method gets all the images of a specified segment.
@@ -1208,8 +1197,7 @@ class MapImage(Resource):
             FROM map_image
             WHERE shift_id = %s
             """
-        DBInterface.execute(sql_stmt,(shift_id,))
-        return DBInterface.fetchone()
+        return DBInterface.execute(sql_stmt,(shift_id,), True, True)
 
     def get(self):
         # This method gets the map image of a specified shift.
@@ -1288,8 +1276,7 @@ class LocalPose(Resource):
             WHERE segment_id = %s
             ORDER BY id
             """
-        DBInterface.execute(sql_stmt,(segment_id,))
-        return DBInterface.fetchall()
+        return DBInterface.execute(sql_stmt,(segment_id,), True)
 
     def get(self):
         # This method gets all the local position data of a specified segment.
@@ -1385,8 +1372,7 @@ class GenerateReport(Resource):
             GROUP BY shift.id
             ORDER BY shift.id
             """
-        DBInterface.execute(sql_stmt,(test_event_id,))
-        gps_shifts = DBInterface.fetchall()
+        gps_shifts = DBInterface.execute(sql_stmt,(test_event_id,), True)
         if not gps_shifts:
             msg = error_msg("UnsupportedError","Test event %s has no GPS data to generate a report." % test_event_id)
             raise ApiError(msg, status_code=400)
@@ -1403,8 +1389,7 @@ class GenerateReport(Resource):
             GROUP BY shift.id
             ORDER BY shift.id
             """
-        DBInterface.execute(sql_stmt,(test_event_id,))
-        local_shifts = DBInterface.fetchall()
+        local_shifts = DBInterface.execute(sql_stmt,(test_event_id,), True)
         if not local_shifts:
             msg = error_msg("UnsupportedError","Test event %s has no local data to generate a report." % test_event_id)
             raise ApiError(msg, status_code=400)
