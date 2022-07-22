@@ -227,16 +227,30 @@ export class SegmentDetail {
           alert("No shift selected!");
         }
       }
+      //Record if maps were empty.
+      const local_reset = localMapLayers.length === 0;
+      const gps_reset = mapLayers.length === 0;
       //Add or edit data from table and map:
       for (const entry of this.segmentList.reverse()) {
-        //Update table rows:
+        //Find if the entry was in the table before the update.
+        //For ito master segments, find if the child is in the table.
+        let targetId = entry.id;
+        if (entry.segmentType == "ITO" && !entry.parentId) {
+          const matchedChild = this.segmentList.find(
+            (segment) => segment.parentId === entry.id
+          );
+          if (matchedChild) {
+            targetId = matchedChild.id;
+          }
+        }
+        const matchedRow = tableRows.find(
+          (row) => row.firstChild.textContent == targetId
+        );
+        //Update table rows (only auto and ito-children):
         if (
           entry.segmentType == "AUTO" ||
           (entry.segmentType == "ITO" && entry.parentId)
         ) {
-          const matchedRow = tableRows.find(
-            (row) => row.firstChild.textContent == entry.id
-          );
           const entryState = entry.endTime == null ? "OPEN" : "CLOSED";
           const entryReason = entry.itoReason || "";
           if (matchedRow) {
@@ -267,7 +281,8 @@ export class SegmentDetail {
             const matchedMapLayer = mapLayers.find(
               (layer) => layer.segmentId == entry.id
             );
-            if (!matchedMapLayer || entry.endTime == null) {
+            //If the map was reset, the segment is new in the table or if it's open:
+            if (gps_reset || (!matchedMapLayer && !matchedRow) || entry.endTime == null) {
               //Create new or update points layer.
               await this.mapInterface.getAndDrawMapPoses(entry.id);
               if (
@@ -288,7 +303,8 @@ export class SegmentDetail {
             const matchedMapLayer = localMapLayers.find(
               (layer) => layer.segmentId == entry.id
             );
-            if (!matchedMapLayer || entry.endTime == null) {
+            //If the map was reset, the segment is new in the table or if it's open:
+            if (local_reset || (!matchedMapLayer && !matchedRow) || entry.endTime == null) {
               //Create new or update points layer.
               await this.localMapInterface.getAndDrawMapPoses(entry.id);
               if (
