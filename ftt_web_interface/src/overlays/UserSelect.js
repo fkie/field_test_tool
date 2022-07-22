@@ -46,7 +46,10 @@ export class UserSelect {
     //Find the entry in the personnel list and assign their values to the current user object.
     Object.assign(
       this.currentUser,
-      this.personnelList.find((entry) => selectedUser.includes(entry.name))
+      this.personnelList.find(
+        (entry) =>
+          selectedUser === `${entry.id}.- ${entry.name} - ${entry.institution}`
+      )
     );
     document.getElementById("modal-close-btn").click();
   }
