@@ -14,6 +14,7 @@ import { NoteInterface } from "../database_interface/Note.js";
 import { ImageInterface } from "../database_interface/Image.js";
 import { SegmentEdit } from "../overlays/SegmentEdit.js";
 import { MapConfig } from "../overlays/MapConfig.js";
+import { AutoRefreshConfig } from "../overlays/AutoRefreshConfig.js";
 
 //Global variables for fixed and common database parameter values.
 const SEGMENT_TYPE_ITO = 1;
@@ -36,6 +37,8 @@ export class SegmentDetail {
     this.safetyBtn = document.getElementById("safety-btn");
     this.transitBtn = document.getElementById("transit-btn");
     this.autoRefreshBox = document.getElementById("auto-refresh");
+    this.autoRefreshCfg = document.getElementById("auto-refresh-config-icon");
+    this.showItoOnlyBox = document.getElementById("show-ito-only");
     this.segmentTable = document.getElementById("segment-table-body");
     this.segmentNewBtn = document.getElementById("new-segment-btn");
     this.segmentEndBtn = document.getElementById("end-segment-btn");
@@ -57,6 +60,22 @@ export class SegmentDetail {
     this.selectedRow = null;
     this.selectedRowId = null;
     this.selectedRowParentId = null;
+    this.autoRefreshTimer = 2000;
+    //Check stored configuration.
+    let autoRefreshData = JSON.parse(
+      localStorage.getItem("fttAutoRefreshData")
+    );
+    if (autoRefreshData) {
+      //Update variable.
+      this.autoRefreshTimer = autoRefreshData.timer;
+    } else {
+      //Store default.
+      autoRefreshData = { timer: this.autoRefreshTimer };
+      localStorage.setItem(
+        "fttAutoRefreshData",
+        JSON.stringify(autoRefreshData)
+      );
+    }
     //Add event listeners.
     this.segmentTable.addEventListener(
       "click",
@@ -102,6 +121,14 @@ export class SegmentDetail {
     this.autoRefreshBox.addEventListener(
       "change",
       this.autoRefreshBoxHandler.bind(this)
+    );
+    this.autoRefreshCfg.addEventListener(
+      "click",
+      this.autoRefreshConfigHandler.bind(this)
+    );
+    this.showItoOnlyBox.addEventListener(
+      "change",
+      this.showItoOnlyBoxHandler.bind(this)
     );
     this.gpsMapConfig.addEventListener(
       "click",
@@ -282,7 +309,11 @@ export class SegmentDetail {
               (layer) => layer.segmentId == entry.id
             );
             //If the map was reset, the segment is new in the table or if it's open:
-            if (gps_reset || (!matchedMapLayer && !matchedRow) || entry.endTime == null) {
+            if (
+              gps_reset ||
+              (!matchedMapLayer && !matchedRow) ||
+              entry.endTime == null
+            ) {
               //Create new or update points layer.
               await this.mapInterface.getAndDrawMapPoses(entry.id);
               if (
@@ -304,7 +335,11 @@ export class SegmentDetail {
               (layer) => layer.segmentId == entry.id
             );
             //If the map was reset, the segment is new in the table or if it's open:
-            if (local_reset || (!matchedMapLayer && !matchedRow) || entry.endTime == null) {
+            if (
+              local_reset ||
+              (!matchedMapLayer && !matchedRow) ||
+              entry.endTime == null
+            ) {
               //Create new or update points layer.
               await this.localMapInterface.getAndDrawMapPoses(entry.id);
               if (
@@ -330,13 +365,54 @@ export class SegmentDetail {
       if (this.legSelectHook.value) {
         this.autoRefreshIntervalId = setInterval(() => {
           this.updateSegments();
-        }, 2000);
+        }, this.autoRefreshTimer);
       } else {
         this.autoRefreshBox.checked = false;
         alert("No leg selected!");
       }
     } else {
       clearInterval(this.autoRefreshIntervalId);
+    }
+  }
+
+  autoRefreshConfigHandler() {
+    //Build a map configuration overlay.
+    const autoRefreshConfig = new AutoRefreshConfig();
+    //Display the overlay.
+    const userModal = new Modal(
+      autoRefreshConfig,
+      "Your browser doesn't support this feature! - Please change to a more modern one.",
+      () => {
+        const autoRefreshData = JSON.parse(
+          localStorage.getItem("fttAutoRefreshData")
+        );
+        if (autoRefreshData) {
+          this.autoRefreshTimer = autoRefreshData.timer;
+          clearInterval(this.autoRefreshIntervalId);
+          this.autoRefreshBoxHandler();
+        } else {
+          alert("No autoRefresh configuration data in local storage.");
+        }
+      }
+    );
+    userModal.show();
+  }
+
+  showItoOnlyBoxHandler() {
+    //Hide auto segments if the box is checked.
+    let showAuto = true;
+    if (this.showItoOnlyBox.checked) {
+      showAuto = false;
+    }
+    const tableRows = Array.from(this.segmentTable.querySelectorAll("tr"));
+    for (const row of tableRows) {
+      if (row.children[1].textContent === "AUTO") {
+        if (showAuto) {
+          row.style.removeProperty("display");
+        } else {
+          row.style.display = "none";
+        }
+      }
     }
   }
 
