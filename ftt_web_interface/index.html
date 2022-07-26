@@ -136,6 +136,7 @@
             type="button"
             id="start-logging-btn"
             class="styled-button log-big-btn"
+            title="Only availabe when a connection to the FTT ROS node is active. Can only start when all logs are open."
             disabled
           >
             Start Logging
@@ -159,8 +160,8 @@
         </form>
         <div class="space-between-stripe">
           <div>
-            <label class="switch">
-              <input type="checkbox" id="auto-refresh" />
+            <label class="switch" title="Only availabe when logging.">
+              <input type="checkbox" id="auto-refresh" disabled/>
               <span class="slider round"></span>
             </label>
             <label>Auto Refresh</label>

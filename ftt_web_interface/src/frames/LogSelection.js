@@ -258,17 +258,6 @@ class TestEventLog extends Log {
     this.openBtn.addEventListener("click", this.openBtnClickHandler.bind(this));
   }
 
-  checkSelectionCallback() {
-    super.checkSelectionCallback();
-    if (this.open) {
-      this.endBtn.style.display = "grid";
-      this.openBtn.style.display = "none";
-    } else {
-      this.endBtn.style.display = "none";
-      this.openBtn.style.display = "grid";
-    }
-  }
-
   async newBtnClickHandler() {
     //Set postData.
     this.postData = [null, null, null, null];
@@ -522,6 +511,7 @@ export class LogSelection {
     this.doneCallback = doneCallback;
     //Reach to DOM elements.
     this.startLoggingBtn = document.getElementById("start-logging-btn");
+    this.autoRefreshBox = document.getElementById("auto-refresh");
     //Initialize variables.
     this.isLogging = false;
     this.setLoggingClient = new ROSLIB.Service({
@@ -615,24 +605,26 @@ export class LogSelection {
             this.isLogging
           ) {
             this.startLoggingBtn.disabled = false;
+            this.autoRefreshBox.disabled = false;
           } else {
             this.startLoggingBtn.disabled = true;
+            this.autoRefreshBox.disabled = true;
           }
           //Activate the auto refresh box if logging, deactivate it if not.
-          const autoRefreshBox = document.getElementById("auto-refresh");
           if (this.isLogging) {
-            if (!autoRefreshBox.checked) {
-              autoRefreshBox.click();
+            if (!this.autoRefreshBox.checked) {
+              this.autoRefreshBox.click();
             }
           } else {
-            if (autoRefreshBox.checked) {
-              autoRefreshBox.click();
+            if (this.autoRefreshBox.checked) {
+              this.autoRefreshBox.click();
             }
           }
         }
       });
     } else {
       this.startLoggingBtn.disabled = true;
+      this.autoRefreshBox.disabled = true;
     }
   }
 
@@ -673,9 +665,14 @@ export class LogSelection {
         log.statusDot.classList.remove("status-green");
       }
     }
-    this.testEventLog.statusDot.style.background = !this.testEventLog.open;
-    this.shiftLog.statusDot.style.background = !this.shiftLog.open;
-    this.legLog.statusDot.style.background = !this.legLog.open;
+    //Update end/open option for test event
+    if (this.testEventLog.open) {
+      this.testEventLog.endBtn.style.display = "grid";
+      this.testEventLog.openBtn.style.display = "none";
+    } else {
+      this.testEventLog.endBtn.style.display = "none";
+      this.testEventLog.openBtn.style.display = "grid";
+    }
     //Trigger callback if all log ids have been selected.
     if (
       this.testEventLog.select.value &&
@@ -687,11 +684,11 @@ export class LogSelection {
       this.updateLogging();
     } else {
       this.startLoggingBtn.disabled = true;
+      this.autoRefreshBox.disabled = true;
     }
     //Guarantee the segment auto-refresh isn't active.
-    // const autoRefreshBox = document.getElementById("auto-refresh");
-    // if (autoRefreshBox.checked) {
-    //   autoRefreshBox.click();
+    // if (this.autoRefreshBox.checked) {
+    //   this.autoRefreshBox.click();
     // }
     //Guarantee the gps map is disabled.
     const gpsBox = document.getElementById("gps-map-box");
