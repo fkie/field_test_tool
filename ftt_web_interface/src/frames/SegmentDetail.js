@@ -61,6 +61,7 @@ export class SegmentDetail {
     this.selectedRowId = null;
     this.selectedRowParentId = null;
     this.autoRefreshTimer = 2000;
+    this.showAutoSegments = true;
     //Check stored configuration.
     let autoRefreshData = JSON.parse(
       localStorage.getItem("fttAutoRefreshData")
@@ -257,6 +258,8 @@ export class SegmentDetail {
       //Record if maps were empty.
       const local_reset = localMapLayers.length === 0;
       const gps_reset = mapLayers.length === 0;
+      //Record if segmentTable was empty.
+      const table_reset = this.segmentTable.children.length === 0;
       //Add or edit data from table and map:
       for (const entry of this.segmentList.reverse()) {
         //Find if the entry was in the table before the update.
@@ -299,6 +302,26 @@ export class SegmentDetail {
               entryReason,
               entryState,
             ]);
+            //Set visibility if the row is AUTO
+            if (entry.segmentType === "AUTO") {
+              if (!this.showAutoSegments) {
+                this.segmentTable.firstChild.style.display = "none";
+              }
+            }
+            //Activate maps if this is the first row:
+            if (table_reset) {
+              //If the segment has GPS poses, activate the GPS map
+              if (entry.lng && entry.lat && !this.gpsMapBox.checked) {
+                this.gpsMapBox.checked = true;
+                this.mapInterface.mapElement.style.display = "block";
+                this.mapInterface.leafletMap.invalidateSize(true);
+              }
+              //If any segment has local poses, activate the local map
+              if (entry.local_x && entry.local_y && !this.localMapBox.checked) {
+                this.localMapBox.checked = true;
+                this.localMapInterface.mapElement.style.display = "block";
+              }
+            }
           }
         }
         //If GPS map is active:
@@ -400,14 +423,15 @@ export class SegmentDetail {
 
   showItoOnlyBoxHandler() {
     //Hide auto segments if the box is checked.
-    let showAuto = true;
     if (this.showItoOnlyBox.checked) {
-      showAuto = false;
+      this.showAutoSegments = false;
+    } else {
+      this.showAutoSegments = true;
     }
     const tableRows = Array.from(this.segmentTable.querySelectorAll("tr"));
     for (const row of tableRows) {
       if (row.children[1].textContent === "AUTO") {
-        if (showAuto) {
+        if (this.showAutoSegments) {
           row.style.removeProperty("display");
         } else {
           row.style.display = "none";

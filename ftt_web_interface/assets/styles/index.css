@@ -5,7 +5,8 @@
   justify-content: space-between;
 }
 
-.nav-right, .nav-center {
+.nav-right,
+.nav-center {
   display: flex;
 }
 
@@ -38,24 +39,45 @@
 
 #trail-selection form {
   display: grid;
-  grid-template-columns: 5rem 4rem 3rem 3rem 3rem 3rem;
+  grid-template-columns: 5.5rem 3.5rem 3rem 3rem 3rem 3rem;
   grid-gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
-#trail-selection form label {
-  width: 5rem;
-  text-align: right;
-  padding: 0;
-  font-weight: bold;
+#trail-selection form > div {
+  display: flex;
+  align-items: center;
+  justify-content: end;
 }
 
-#trail-selection form label:after {
-  content: ":";
+#trail-selection form label {
+  font-weight: bold;
+  margin-right: 0.3rem;
 }
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  background: black;
+}
+
+.status-green {
+  background: green;
+}
+
+.status-red {
+  background: indianred;
+}
+
+/* #trail-selection form label:after {
+  content: ":";
+} */
 
 #trail-selection form select {
-  width: 4rem;
+  width: 3.5rem;
 }
 
 .open-log {

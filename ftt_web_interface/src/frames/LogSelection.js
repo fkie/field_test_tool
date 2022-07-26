@@ -36,6 +36,7 @@ class Log {
     this.childClass = childClass;
     this.checkSelectionFcn = checkSelectionCallback;
     //Get DOM element hooks.
+    this.statusDot = document.getElementById(`${name}-status-dot`);
     this.select = document.getElementById(`${name}-id`);
     this.newBtn = document.getElementById(`new-${name}-btn`);
     this.endBtn = document.getElementById(`end-${name}-btn`);
@@ -57,6 +58,7 @@ class Log {
   }
 
   checkSelectionCallback() {
+    //Execute callback passed in constructor's arguments.
     this.checkSelectionFcn();
   }
 
@@ -179,6 +181,11 @@ class Log {
       return;
     }
     try {
+      //Stop logging.
+      const startLoggingBtn = document.getElementById("start-logging-btn");
+      if (startLoggingBtn.textContent === "Stop Logging") {
+        startLoggingBtn.click();
+      }
       //Close log entry.
       await this.dataInterface.put(this.select.value, "close");
       //Update dataList and select options' status for this and all the children classes.
@@ -594,14 +601,34 @@ export class LogSelection {
           //Toggle logging to match status in ros.
           this.toggleLogging();
         }
-        //Enable the logging button if all logs are open or if the logging status is active.
+        //If all log ids have been selected.
         if (
-          (this.testEventLog.open && this.shiftLog.open && this.legLog.open) ||
-          this.isLogging
+          this.testEventLog.select.value &&
+          this.shiftLog.select.value &&
+          this.legLog.select.value
         ) {
-          this.startLoggingBtn.disabled = false;
-        } else {
-          this.startLoggingBtn.disabled = true;
+          //Enable the logging button if all logs are open or if the logging status is active.
+          if (
+            (this.testEventLog.open &&
+              this.shiftLog.open &&
+              this.legLog.open) ||
+            this.isLogging
+          ) {
+            this.startLoggingBtn.disabled = false;
+          } else {
+            this.startLoggingBtn.disabled = true;
+          }
+          //Activate the auto refresh box if logging, deactivate it if not.
+          const autoRefreshBox = document.getElementById("auto-refresh");
+          if (this.isLogging) {
+            if (!autoRefreshBox.checked) {
+              autoRefreshBox.click();
+            }
+          } else {
+            if (autoRefreshBox.checked) {
+              autoRefreshBox.click();
+            }
+          }
         }
       });
     } else {
@@ -630,6 +657,25 @@ export class LogSelection {
     //Hide the segment details and map.
     document.getElementById("segment-detail").style.display = "none";
     document.getElementById("map-viewer").style.display = "none";
+    //Update status dot for all logs
+    const logs = [this.testEventLog, this.shiftLog, this.legLog];
+    for (const log of logs) {
+      if (log.select.value) {
+        if (log.open) {
+          log.statusDot.classList.remove("status-red");
+          log.statusDot.classList.add("status-green");
+        } else {
+          log.statusDot.classList.remove("status-green");
+          log.statusDot.classList.add("status-red");
+        }
+      } else {
+        log.statusDot.classList.remove("status-red");
+        log.statusDot.classList.remove("status-green");
+      }
+    }
+    this.testEventLog.statusDot.style.background = !this.testEventLog.open;
+    this.shiftLog.statusDot.style.background = !this.shiftLog.open;
+    this.legLog.statusDot.style.background = !this.legLog.open;
     //Trigger callback if all log ids have been selected.
     if (
       this.testEventLog.select.value &&
@@ -643,10 +689,10 @@ export class LogSelection {
       this.startLoggingBtn.disabled = true;
     }
     //Guarantee the segment auto-refresh isn't active.
-    const autoRefreshBox = document.getElementById("auto-refresh");
-    if (autoRefreshBox.checked) {
-      autoRefreshBox.click();
-    }
+    // const autoRefreshBox = document.getElementById("auto-refresh");
+    // if (autoRefreshBox.checked) {
+    //   autoRefreshBox.click();
+    // }
     //Guarantee the gps map is disabled.
     const gpsBox = document.getElementById("gps-map-box");
     if (gpsBox.checked) {
