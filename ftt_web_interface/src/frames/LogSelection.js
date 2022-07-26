@@ -597,17 +597,63 @@ export class LogSelection {
           this.shiftLog.select.value &&
           this.legLog.select.value
         ) {
-          //Enable the logging button if all logs are open or if the logging status is active.
+          //Enable the logging button if all logs are open or if the logging status is active and all the logs are closed.
+          let forceActivate = false;
+          if (this.isLogging) {
+            //Find if all test events are closed.
+            const testEventsClosed =
+              !this.testEventLog.open &&
+              this.testEventLog.dataList.reduce(
+                (closed, curr) => closed && !!curr.endTime,
+                true
+              );
+            if (testEventsClosed) {
+              forceActivate = true;
+            } else if (this.testEventLog.open) {
+              //This test event is open. Find if all shifts are closed.
+              const shiftsClosed =
+                !this.shiftLog.open &&
+                this.shiftLog.dataList.reduce(
+                  (closed, curr) => closed && !!curr.endTime,
+                  true
+                );
+              if (shiftsClosed) {
+                forceActivate = true;
+              } else if (this.shiftLog.open) {
+                //This shift is open. Find if all legs are closed.
+                const legsClosed =
+                  !this.legLog.open &&
+                  this.legLog.dataList.reduce(
+                    (closed, curr) => closed && !!curr.endTime,
+                    true
+                  );
+                if (legsClosed) {
+                  forceActivate = true;
+                }
+              }
+            }
+          }
           if (
             (this.testEventLog.open &&
               this.shiftLog.open &&
               this.legLog.open) ||
-            this.isLogging
+            forceActivate
           ) {
             this.startLoggingBtn.disabled = false;
-            this.autoRefreshBox.disabled = false;
           } else {
             this.startLoggingBtn.disabled = true;
+          }
+          //Enable the auto refresh box if all logs are open.
+          if (
+            this.testEventLog.open &&
+            this.shiftLog.open &&
+            this.legLog.open
+          ) {
+            this.autoRefreshBox.disabled = false;
+          } else {
+            if (this.autoRefreshBox.checked) {
+              this.autoRefreshBox.click();
+            }
             this.autoRefreshBox.disabled = true;
           }
           //Activate the auto refresh box if logging, deactivate it if not.
@@ -624,6 +670,9 @@ export class LogSelection {
       });
     } else {
       this.startLoggingBtn.disabled = true;
+      if (this.autoRefreshBox.checked) {
+        this.autoRefreshBox.click();
+      }
       this.autoRefreshBox.disabled = true;
     }
   }
@@ -673,6 +722,10 @@ export class LogSelection {
       this.testEventLog.endBtn.style.display = "none";
       this.testEventLog.openBtn.style.display = "grid";
     }
+    //Guarantee the segment auto-refresh isn't active.
+    if (this.autoRefreshBox.checked) {
+      this.autoRefreshBox.click();
+    }
     //Trigger callback if all log ids have been selected.
     if (
       this.testEventLog.select.value &&
@@ -686,10 +739,6 @@ export class LogSelection {
       this.startLoggingBtn.disabled = true;
       this.autoRefreshBox.disabled = true;
     }
-    //Guarantee the segment auto-refresh isn't active.
-    // if (this.autoRefreshBox.checked) {
-    //   this.autoRefreshBox.click();
-    // }
     //Guarantee the gps map is disabled.
     const gpsBox = document.getElementById("gps-map-box");
     if (gpsBox.checked) {
