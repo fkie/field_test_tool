@@ -15,6 +15,7 @@ import { UserSelect } from "../overlays/UserSelect.js";
 import { TestEventInterface } from "../database_interface/TestEvent.js";
 import { ReportDownload } from "../overlays/ReportDownload.js";
 import { Modal } from "../utility/Modal.js";
+import { RosConfig } from "../overlays/RosConfig.js";
 
 export class MainFrame {
   constructor(serverInterface) {
@@ -34,6 +35,12 @@ export class MainFrame {
     this.rosConnectIntervalId = null;
     this.forceRosConnect = false;
     this.ros_server_adr = `ws://${location.hostname}:9090`;
+    //Check stored configuration.
+    let rosData = JSON.parse(localStorage.getItem("fttRosData"));
+    if (rosData) {
+      //Update variable.
+      this.ros_server_adr = rosData.url;
+    }
     //Contruct page sections.
     this.segmentDetail = new SegmentDetail(serverInterface, this.currentUser);
     this.logSelection = new LogSelection(
@@ -81,7 +88,11 @@ export class MainFrame {
     }
     //If any segment has local poses, activate the local map
     for (const entry of segmentList) {
-      if (entry.local_x && entry.local_y && !this.segmentDetail.localMapBox.checked) {
+      if (
+        entry.local_x &&
+        entry.local_y &&
+        !this.segmentDetail.localMapBox.checked
+      ) {
         this.segmentDetail.localMapBox.checked = true;
         this.segmentDetail.localMapInterface.mapElement.style.display = "block";
         break;
@@ -132,8 +143,18 @@ export class MainFrame {
   }
 
   rosConnectIconClickHandler() {
-    this.forceRosConnect = true;
-    this.rosConnect();
+    //Build a map configuration overlay.
+    const rosConfig = new RosConfig();
+    //Display the overlay.
+    const userModal = new Modal(
+      rosConfig,
+      "Your browser doesn't support this feature! - Please change to a more modern one.",
+      () => {
+        this.forceRosConnect = true;
+        this.rosConnect();
+      }
+    );
+    userModal.show();
   }
 
   rosConnect() {

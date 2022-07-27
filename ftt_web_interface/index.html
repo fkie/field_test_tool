@@ -650,5 +650,30 @@
         </form>
       </section>
     </template>
+
+    <template id="ros-config-template">
+      <header class="modal__title">
+        <h2>ROS Configuration</h2>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-100">
+              <label for="ros-url">Rosbridge Server URL</label>
+              <input type="text" id="ros-url" name="ros-url"/>
+            </div>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+            <button type="submit" class="styled-button">
+              Reset Defaults
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
   </body>
 </html>

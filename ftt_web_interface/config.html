@@ -11,6 +11,7 @@
     />
     <link rel="stylesheet" href="assets/styles/generic.css" />
     <link rel="stylesheet" href="assets/styles/config.css" />
+    <link rel="stylesheet" href="assets/styles/modal.css" />
     <script src="src/lib/roslib.js" defer></script>
     <script src="assets/scripts/config.js" defer type="module"></script>
   </head>
@@ -170,5 +171,41 @@
         </div>
       </section>
     </div>
+
+    <template id="modal-template">
+      <div class="backdrop"></div>
+      <div class="modal">
+        <div class="modal__end">
+          <button type="button" id="modal-close-btn" class="styled-button">
+            Done
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <template id="ros-config-template">
+      <header class="modal__title">
+        <h2>ROS Configuration</h2>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-100">
+              <label for="ros-url">Rosbridge Server URL</label>
+              <input type="text" id="ros-url" name="ros-url"/>
+            </div>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+            <button type="submit" class="styled-button">
+              Reset Defaults
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
   </body>
 </html>

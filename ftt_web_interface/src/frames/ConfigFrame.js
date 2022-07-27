@@ -12,6 +12,8 @@ import { PoseSourceInterface } from "../database_interface/PoseSource.js";
 import { VehicleInterface } from "../database_interface/Vehicle.js";
 import { RosParamsInterface } from "../ros_interface/Parameters.js";
 import { RosTopicsInterface } from "../ros_interface/Topics.js";
+import { Modal } from "../utility/Modal.js";
+import { RosConfig } from "../overlays/RosConfig.js";
 
 export class ConfigFrame {
   constructor(serverInterface) {
@@ -362,8 +364,18 @@ export class ConfigFrame {
   }
 
   rosConnectIconClickHandler() {
-    this.forceRosConnect = true;
-    this.rosConnect();
+    //Build a map configuration overlay.
+    const rosConfig = new RosConfig();
+    //Display the overlay.
+    const userModal = new Modal(
+      rosConfig,
+      "Your browser doesn't support this feature! - Please change to a more modern one.",
+      () => {
+        this.forceRosConnect = true;
+        this.rosConnect();
+      }
+    );
+    userModal.show();
   }
 
   rosConnect() {
