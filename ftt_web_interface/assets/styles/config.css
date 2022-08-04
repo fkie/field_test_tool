@@ -126,18 +126,19 @@ section > div:last-child {
   background: #00987a33;
 }
 
-.icon-container {
+.table-icon-container {
   display: flex;
+  position: relative;
   border: none;
   background: none;
   justify-content: space-evenly;
 }
 
-.icon-container:focus {
+.table-icon-container:focus {
   outline: 1px dashed green;
 }
 
-.icon-container:focus i {
+.table-icon-container:focus i {
   opacity: 1;
 }
 

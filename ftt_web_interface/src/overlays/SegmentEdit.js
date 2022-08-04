@@ -419,6 +419,7 @@ export class SegmentEdit {
     //Create a remove bubble.
     const removeImgBubble = DOMGeneric.createMaterialIconsContainer(
       "span",
+      "remove-icon-container",
       ["remove_circle_outline"]
     );
     //Add an event listener to it.

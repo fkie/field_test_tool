@@ -93,6 +93,7 @@ export class DOMGeneric {
 
   static createMaterialIconsContainer(
     containerTag,
+    containerClass,
     iconNames,
     clickCallbacks = null
   ) {
@@ -101,7 +102,7 @@ export class DOMGeneric {
     //Assigns an icon-container html class to the container.
     //The icons are actually inserted from the google material icons, that must be included in the html.
     const container = document.createElement(containerTag);
-    container.className = "icon-container";
+    container.className = containerClass;
     iconNames.forEach((iconName, index) => {
       //Create icon.
       const icon = DOMGeneric.createMaterialIcon(iconName);

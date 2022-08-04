@@ -115,6 +115,7 @@ export class ConfigFrame {
       //Create an icon container.
       const container = DOMGeneric.createMaterialIconsContainer(
         "div",
+        "table-icon-container",
         methods,
         callbacks
       );
@@ -266,9 +267,11 @@ export class ConfigFrame {
       }
     }
     //Change row icons to done icon.
-    const doneCell = DOMGeneric.createMaterialIconsContainer("button", [
-      "done",
-    ]);
+    const doneCell = DOMGeneric.createMaterialIconsContainer(
+      "button",
+      "table-icon-container",
+      ["done"]
+    );
     editRow.lastElementChild.replaceWith(doneCell);
     //Append event listener to the button (not to the icon, so it can be triggered with an "enter").
     doneCell.addEventListener(
@@ -316,9 +319,11 @@ export class ConfigFrame {
         target.appendChild(newInput);
       }
       //Insert done icon in last cell.
-      const doneCell = DOMGeneric.createMaterialIconsContainer("button", [
-        "done",
-      ]);
+      const doneCell = DOMGeneric.createMaterialIconsContainer(
+        "button",
+        "table-icon-container",
+        ["done"]
+      );
       target.appendChild(doneCell);
       //Append event listener to the button (not to the icon, so it can be triggered with an "enter").
       doneCell.addEventListener(

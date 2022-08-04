@@ -146,7 +146,7 @@
   transform: scale(1.2);
 } */
 
-.icon-container {
+.remove-icon-container {
   position: absolute;
   top: 0;
   right: 0;
@@ -155,13 +155,13 @@
   padding: 0;
 }
 
-.icon-container i{
+.remove-icon-container i{
   color: red;
   opacity: 0.5;
   cursor: pointer;
 }
 
-.icon-container:hover i{
+.remove-icon-container:hover i{
   opacity: 1;
 }
 
