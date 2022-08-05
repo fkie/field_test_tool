@@ -27,12 +27,53 @@ The Field Test Tools comprises five software modules:
 
 ### **1.1. Database**
 
-A PostgreSQL database with PostGIS extension is used to store the relevant data. The databse schema is shown in Figure 1. The robot's position, operating mode, images from on-board or off-board cameras and user notes are stored under a hierarchical logging structure representing the trial instance (Test Event), test attempt (Shift), and route section (Leg). Each trajectory under a single operating mode comprises a Segment entry.
+A PostgreSQL database with PostGIS extension is used to store the relevant data. The databse schema is shown in Figure 1. The robot's position, operating mode, images and user notes are stored under a hierarchical logging structure representing the trial instance (Test Event), test attempt (Shift), and route section (Leg). Each trajectory under a single operating mode comprises a Segment entry.
 
 <figure>
   <img src="doc/images/database_schema.png" alt="database schema" width="500">
   <figcaption>Figure 1. Database schema.</figcaption>
 </figure>
+<br/><br/>
+
+In addition to the data tables (Test Event, Shift, Leg, Segment, Map Image, Pose, Local Pose, Image and Note), which are used to store user- or robot-generated field data, a number of configuration tables complete the database schema. This configuration tables are divided in static (Weather, ITO Reason, Segment Type) and user-defined (Personnel, Performer, Vehicle, Pose Source). While the latter are designed to contain use-case specific information, the former are completely defined upon database initialization and contain a standardized set of options, from which the user can select when configuring the experimental setup. These options are shown below.
+<br/><br/>
+
+Table 1: Weather configuration table data.
+| Key      |	Description                                                               |
+| -------- | -------------------------------------------------------------------------- |
+| sunny    |	Mainly sunny, less than 30 percent of the sky is covered by clouds.       |
+| cloudy   |	Mainly cloudy, between 30 and 95 percent of the sky is covered by clouds. |
+| overcast |	More than 95 percent of the sky is covered by clouds.                     |
+| foggy    |	Reduced visibility due to fog to less than one kilometer.                 |
+| rainy    |	-                                                                         |
+| snowy    |	-                                                                         |
+
+<br/><br/>
+
+Table 2: ITO Reason configuration table data.
+| Key	           | Description                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| safety         |	Safety stop, initiated by an inhabitant of the vehicle.                                              |
+| maintenance    |	Maintenance stop, a stop initiated by the performer to fix code.                                     |
+| planner        |	Planner stop, a stop caused by a timeout or error of the planner.                                    |
+| apparatus      |	Apparatus stop, a stop that is initiated by the test admin to fix the test apparatus.                |
+| non_stop       |	Non-Stop, indicates that no stop was performed. Ignore this ITO.                                     |
+| stereo         |	Stereo test stop, a stop initiated to perform a test of the stereo accuracy.                         |
+| goal           |	Goal reached, a stop because the vehicle reached an (intermediate) goal.                             |
+| end_shift      |	End of shift indicates the stop was caused because the time for the shift was up.                    |
+| manual_transit |	Manual transit indicates that the vehicle was stopped to drive it manually through a dangerous area. |
+| other          |	Other reasons.                                                                                       |
+| unassigned     |	Unassigned.                                                                                          |
+| unexpected     |	Unexpected, non safety-critical behavior.                                                            |
+
+<br/><br/>
+
+Table 3: Segment Type configuration table data.
+| Key	 | Description                              |
+| ---- | ---------------------------------------- |
+| ito	 | ITO - inhabited take over (manual mode). |
+| auto | Autonomous.                              |
+
 <br/><br/>
 
 ### **1.2. Report generator**
