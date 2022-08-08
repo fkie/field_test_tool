@@ -10,26 +10,29 @@
 #include <nlohmann/json.hpp>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
+#include <cv_bridge/cv_bridge.h>
 
 using json = nlohmann::json;
 
-Ros2api::Ros2api()
+Ros2api::Ros2api() : it(nh)
 {
   ROS_INFO_STREAM("Initiating Ros2api.");
-  nh = std::make_shared<ros::NodeHandle>(ros::NodeHandle());
-  priv_nh = std::make_shared<ros::NodeHandle>(ros::NodeHandle("~"));
+  nh = ros::NodeHandle("");
+  priv_nh = ros::NodeHandle("~");
 
   start_logging = false;
+  image_count = 0;
+  last_image_time = ros::Time::now();
 
   // Read absolute parameters
-  nh->param<std::string>("/set_ftt_logging_service", set_logging_service_name , "/set_ftt_logging");
-  nh->param<std::string>("/get_ftt_logging_service", get_logging_service_name , "/get_ftt_logging");
-  nh->param<std::string>("/save_ftt_params_service", save_params_service_name , "/save_ftt_params");
+  nh.param<std::string>("/set_ftt_logging_service", set_logging_service_name, "/set_ftt_logging");
+  nh.param<std::string>("/get_ftt_logging_service", get_logging_service_name, "/get_ftt_logging");
+  nh.param<std::string>("/save_ftt_params_service", save_params_service_name, "/save_ftt_params");
 
   // Service servers
-  set_logging_service = nh->advertiseService(set_logging_service_name, &Ros2api::setLogging, this);
-  get_logging_service = nh->advertiseService(get_logging_service_name, &Ros2api::getLogging, this);
-  save_params_service = nh->advertiseService(save_params_service_name, &Ros2api::saveParams, this);
+  set_logging_service = nh.advertiseService(set_logging_service_name, &Ros2api::setLogging, this);
+  get_logging_service = nh.advertiseService(get_logging_service_name, &Ros2api::getLogging, this);
+  save_params_service = nh.advertiseService(save_params_service_name, &Ros2api::saveParams, this);
 }
 
 Ros2api::~Ros2api()
@@ -66,17 +69,17 @@ std::string Ros2api::printRespJson(std::string resp)
     size_t tag_pos;
     if ((tag_pos = resp_message.find("[ERROR]")) != std::string::npos)
     {
-      print_msg = resp_message.substr(tag_pos+8);
+      print_msg = resp_message.substr(tag_pos + 8);
       ROS_ERROR_STREAM(print_msg);
     }
     else if ((tag_pos = resp_message.find("[WARN]")) != std::string::npos)
     {
-      print_msg = resp_message.substr(tag_pos+7);
+      print_msg = resp_message.substr(tag_pos + 7);
       ROS_WARN_STREAM(print_msg);
     }
     else if ((tag_pos = resp_message.find("[INFO]")) != std::string::npos)
     {
-      print_msg = resp_message.substr(tag_pos+7);
+      print_msg = resp_message.substr(tag_pos + 7);
       ROS_INFO_STREAM(print_msg);
     }
     else
@@ -96,17 +99,20 @@ std::string Ros2api::printRespJson(std::string resp)
 void Ros2api::getParams()
 {
   // Read parameters
-  priv_nh->param<bool>("params/use_tf", use_tf , true);
-  priv_nh->param<std::string>("params/map_frame", map_frame , "map");
-  priv_nh->param<std::string>("params/robot_frame", robot_frame , "base_link");
-  priv_nh->param<std::string>("params/server_address", server_address , "localhost:5000");
-  priv_nh->param<double>("params/send_pose_period", send_pose_period , 2.0);
-  priv_nh->param<double>("params/send_map_period", send_map_period , 2.0);
-  
-  priv_nh->param<std::string>("topics/robot_mode", robot_mode_topic , "robot_mode");
-  priv_nh->param<std::string>("topics/gps_fix", gps_fix_topic , "gps_fix");
-  priv_nh->param<std::string>("topics/local_pose", local_pose_topic , "local_pose");
-  priv_nh->param<std::string>("topics/map", map_topic , "map");
+  priv_nh.param<bool>("params/use_tf", use_tf, true);
+  priv_nh.param<std::string>("params/map_frame", map_frame, "map");
+  priv_nh.param<std::string>("params/robot_frame", robot_frame, "base_link");
+  priv_nh.param<std::string>("params/server_address", server_address, "localhost:5000");
+  priv_nh.param<double>("params/send_pose_period", send_pose_period, 2.0);
+  priv_nh.param<double>("params/send_map_period", send_map_period, 2.0);
+  priv_nh.param<int>("params/image_buffer_size", image_buffer_size, 1);
+  priv_nh.param<double>("params/image_buffer_step", image_buffer_step, 1.0);
+
+  priv_nh.param<std::string>("topics/robot_mode", robot_mode_topic, "robot_mode");
+  priv_nh.param<std::string>("topics/gps_fix", gps_fix_topic, "gps_fix");
+  priv_nh.param<std::string>("topics/local_pose", local_pose_topic, "local_pose");
+  priv_nh.param<std::string>("topics/map", map_topic, "map");
+  priv_nh.param<std::string>("topics/image", image_topic, "image");
 }
 
 void Ros2api::subscribeData()
@@ -114,12 +120,15 @@ void Ros2api::subscribeData()
   ROS_INFO_STREAM("Subscribing to robot data.");
   // Reset variables
   resetVariables();
+  // Clear the image buffer
+  image_buffer.clear();
   // Create robot data subscribers
-  data_subscribers.push_back(nh->subscribe(robot_mode_topic, 1, &Ros2api::robotModeCallback, this));
-  data_subscribers.push_back(nh->subscribe(gps_fix_topic, 1, &Ros2api::navSatFixCallback, this));
-  data_subscribers.push_back(nh->subscribe(local_pose_topic, 1, &Ros2api::poseCallback, this));
-  data_subscribers.push_back(nh->subscribe(map_topic, 1, &Ros2api::mapCallback, this));
-  
+  data_subscribers.push_back(nh.subscribe(robot_mode_topic, 1, &Ros2api::robotModeCallback, this));
+  data_subscribers.push_back(nh.subscribe(gps_fix_topic, 1, &Ros2api::navSatFixCallback, this));
+  data_subscribers.push_back(nh.subscribe(local_pose_topic, 1, &Ros2api::poseCallback, this));
+  data_subscribers.push_back(nh.subscribe(map_topic, 1, &Ros2api::mapCallback, this));
+  image_sub = it.subscribe(image_topic, 1, &Ros2api::imageCallback, this);
+
   // If using tf, create tf listener for local position
   if (use_tf)
   {
@@ -135,19 +144,20 @@ void Ros2api::unsubscribeData()
   //   subscriber.shutdown();
   // }
   data_subscribers.clear();
+  image_sub.shutdown();
 
   if (use_tf)
   {
-      delete tf2_listener;
-      tf2_listener = nullptr;
+    delete tf2_listener;
+    tf2_listener = nullptr;
   }
 }
 
 void Ros2api::createPostTimers()
 {
   // Create data POST timers
-  post_timers.push_back(nh->createTimer(ros::Duration(send_pose_period), &Ros2api::sendPoseTimerCb, this));
-  post_timers.push_back(nh->createTimer(ros::Duration(send_map_period), &Ros2api::sendMapTimerCb, this));
+  post_timers.push_back(nh.createTimer(ros::Duration(send_pose_period), &Ros2api::sendPoseTimerCb, this));
+  post_timers.push_back(nh.createTimer(ros::Duration(send_map_period), &Ros2api::sendMapTimerCb, this));
 }
 
 void Ros2api::stopPostTimers()
@@ -159,13 +169,13 @@ void Ros2api::stopPostTimers()
   post_timers.clear();
 }
 
-std::pair<bool,std::string> Ros2api::closeCurrentSegment()
+std::pair<bool, std::string> Ros2api::closeCurrentSegment()
 {
-  std::string body{"{\"id\": \"Current Segment\", \"action\": \"close\"}"};
+  std::string body{ "{\"id\": \"Current Segment\", \"action\": \"close\"}" };
   cpr::Response r = cpr::Put(
-    cpr::Url{std::string("http://") + server_address + std::string("/segment")},
-    cpr::Body{body},
-    cpr::Header{{"Content-Type", "application/json"}}
+    cpr::Url{ std::string("http://") + server_address + std::string("/segment") },
+    cpr::Body{ body },
+    cpr::Header{ {"Content-Type", "application/json"} }
   );
   if (r.status_code == 200)
   {
@@ -186,7 +196,7 @@ std::pair<bool,std::string> Ros2api::closeCurrentSegment()
   }
 }
 
-bool Ros2api::setLogging(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+bool Ros2api::setLogging(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
 {
   if (req.data && !start_logging)
   {
@@ -201,7 +211,7 @@ bool Ros2api::setLogging(std_srvs::SetBool::Request &req, std_srvs::SetBool::Res
   else if (!req.data && start_logging)
   {
     // Close open segment
-    std::pair<bool,std::string> close_resp = closeCurrentSegment();
+    std::pair<bool, std::string> close_resp = closeCurrentSegment();
     if (close_resp.first)
     {
       start_logging = false;
@@ -232,14 +242,14 @@ bool Ros2api::setLogging(std_srvs::SetBool::Request &req, std_srvs::SetBool::Res
   return true;
 }
 
-bool Ros2api::getLogging(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+bool Ros2api::getLogging(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
 {
   // Return current logging status
   res.success = start_logging;
   return true;
 }
 
-bool Ros2api::saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+bool Ros2api::saveParams(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
 {
   // Update params
   getParams();
@@ -252,7 +262,7 @@ bool Ros2api::saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Res
   {
     config = YAML::LoadFile(file_path);
   }
-  catch (const YAML::BadFile & e)
+  catch (const YAML::BadFile& e)
   {
     res.success = false;
     res.message = "Error while opening config file.";
@@ -265,7 +275,7 @@ bool Ros2api::saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Res
   config["params"]["server_address"] = server_address;
   config["params"]["send_pose_period"] = send_pose_period;
   config["params"]["send_map_period"] = send_map_period;
-  
+
   config["topics"]["robot_mode"] = robot_mode_topic;
   config["topics"]["gps_fix"] = gps_fix_topic;
   config["topics"]["local_pose"] = local_pose_topic;
@@ -281,7 +291,7 @@ bool Ros2api::saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Res
     res.message = std::string("FTT parameters saved to ") + file_path;
     return true;
   }
-  catch (const std::exception & e)
+  catch (const std::exception& e)
   {
     // Error
     res.success = false;
@@ -290,7 +300,7 @@ bool Ros2api::saveParams(std_srvs::Trigger::Request &req, std_srvs::Trigger::Res
   }
 }
 
-void Ros2api::robotModeCallback(const industrial_msgs::RobotMode &msg)
+void Ros2api::robotModeCallback(const industrial_msgs::RobotMode& msg)
 {
   // Check robot mode change
   if (last_robot_mode != msg.val)
@@ -308,7 +318,7 @@ void Ros2api::robotModeCallback(const industrial_msgs::RobotMode &msg)
       }
       else
       {
-        ROS_WARN_STREAM("Unknown robot mode. Supported modes are MANUAL (" <<  msg.MANUAL << ") and AUTO (" << msg.AUTO << "). Please check your system.");
+        ROS_WARN_STREAM("Unknown robot mode. Supported modes are MANUAL (" << msg.MANUAL << ") and AUTO (" << msg.AUTO << "). Please check your system.");
         return;
       }
     }
@@ -324,7 +334,7 @@ void Ros2api::robotModeCallback(const industrial_msgs::RobotMode &msg)
       {
         transformStamped = tf2_buffer.lookupTransform(map_frame, robot_frame, ros::Time(0));
       }
-      catch (tf2::TransformException &ex)
+      catch (tf2::TransformException& ex)
       {
         ROS_WARN_STREAM("Posting new segment without local position data.");
       }
@@ -378,13 +388,14 @@ void Ros2api::robotModeCallback(const industrial_msgs::RobotMode &msg)
     data["orig_starttime_secs"] = ros::Time::now().toSec();
     // Post new segment
     cpr::Response r = cpr::Post(
-      cpr::Url{std::string("http://") + server_address + std::string("/segment")},
-      cpr::Body{data.dump()},
-      cpr::Header{{"Content-Type", "application/json"}}
+      cpr::Url{ std::string("http://") + server_address + std::string("/segment") },
+      cpr::Body{ data.dump() },
+      cpr::Header{ {"Content-Type", "application/json"} }
     );
     if (r.status_code == 200)
     {
       last_robot_mode = msg.val;
+      sendImageBuffer();
       printRespJson(r.text);
     }
     else if (r.status_code == 400)
@@ -398,22 +409,35 @@ void Ros2api::robotModeCallback(const industrial_msgs::RobotMode &msg)
   }
 }
 
-void Ros2api::navSatFixCallback(const sensor_msgs::NavSatFix &msg)
+void Ros2api::navSatFixCallback(const sensor_msgs::NavSatFix& msg)
 {
   last_ts = msg.header.stamp.toSec();
   last_lat = msg.latitude;
   last_lng = msg.longitude;
 }
 
-void Ros2api::poseCallback(const geometry_msgs::PoseStamped &msg)
+void Ros2api::poseCallback(const geometry_msgs::PoseStamped& msg)
 {
   last_pose_stamped = msg;
 }
 
-void Ros2api::mapCallback(const nav_msgs::OccupancyGrid &msg)
+void Ros2api::mapCallback(const nav_msgs::OccupancyGrid& msg)
 {
   // Copy the message
   last_map = msg;
+}
+
+void Ros2api::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{
+  if ((ros::Time::now() - last_image_time).toSec() > image_buffer_step)
+  {
+    while (image_buffer.size() >= image_buffer_size)
+    {
+      image_buffer.pop_front();
+    }
+    image_buffer.push_back(msg);
+    last_image_time = ros::Time::now();
+  }
 }
 
 void Ros2api::sendPoseTimerCb(const ros::TimerEvent& event)
@@ -453,9 +477,9 @@ void Ros2api::sendLastGpsPose()
     data["orig_secs"] = last_ts;
     // Post new gps pose
     cpr::Response r = cpr::Post(
-      cpr::Url{std::string("http://") + server_address + std::string("/pose")},
-      cpr::Body{data.dump()},
-      cpr::Header{{"Content-Type", "application/json"}}
+      cpr::Url{ std::string("http://") + server_address + std::string("/pose") },
+      cpr::Body{ data.dump() },
+      cpr::Header{ {"Content-Type", "application/json"} }
     );
     if (r.status_code == 200)
     {
@@ -489,7 +513,7 @@ void Ros2api::sendLastLocalPose()
       {
         transformStamped = tf2_buffer.lookupTransform(map_frame, robot_frame, ros::Time(0));
       }
-      catch (tf2::TransformException &ex)
+      catch (tf2::TransformException& ex)
       {
         ROS_WARN_STREAM("Unable to get transfrom from " << map_frame << " to " << robot_frame);
       }
@@ -516,9 +540,9 @@ void Ros2api::sendLastLocalPose()
       data["orig_secs"] = pose_ts.toSec();
       // Post new local pose
       cpr::Response r = cpr::Post(
-        cpr::Url{std::string("http://") + server_address + std::string("/local_pose")},
-        cpr::Body{data.dump()},
-        cpr::Header{{"Content-Type", "application/json"}}
+        cpr::Url{ std::string("http://") + server_address + std::string("/local_pose") },
+        cpr::Body{ data.dump() },
+        cpr::Header{ {"Content-Type", "application/json"} }
       );
       if (r.status_code == 200)
       {
@@ -537,19 +561,19 @@ void Ros2api::sendLastLocalPose()
   }
 }
 
-std::string Ros2api::encodeMap(const nav_msgs::OccupancyGrid &msg)
+std::string Ros2api::encodeMap(const nav_msgs::OccupancyGrid& msg)
 {
   // Convert Occupancy Grid to cv::Mat
   int idx = 0;
   cv::Mat image(msg.info.width, msg.info.height, CV_8UC1);
-  for(std::vector<int8_t>::const_iterator it = msg.data.begin(); it != msg.data.end(); ++it, ++idx) {
+  for (std::vector<int8_t>::const_iterator it = msg.data.begin(); it != msg.data.end(); ++it, ++idx) {
     // Default value (Unkown)
     int value = 127;
     // Rescale 0-100 to 0-255
     if ((int)*it >= 0) {
-      value = 255 - (int)*it*255/100;
-    } 
-    image.at<uchar>(idx/image.cols, idx%image.cols) = (uchar)value;
+      value = 255 - (int)*it * 255 / 100;
+    }
+    image.at<uchar>(idx / image.cols, idx % image.cols) = (uchar)value;
   }
   // Flip image
   cv::Mat flipped_image;
@@ -558,12 +582,12 @@ std::string Ros2api::encodeMap(const nav_msgs::OccupancyGrid &msg)
   std::vector<uchar> buf;
   cv::imencode(".jpg", flipped_image, buf);
   // Encode in base64
-  auto *enc_msg = reinterpret_cast<unsigned char*>(buf.data());
+  auto* enc_msg = reinterpret_cast<unsigned char*>(buf.data());
   std::string encoded = base64_encode(enc_msg, buf.size());
   return encoded;
 }
 
-void Ros2api::sendNewMap(const nav_msgs::OccupancyGrid &msg)
+void Ros2api::sendNewMap(const nav_msgs::OccupancyGrid& msg)
 {
   std::string map_img_encoded = encodeMap(msg);
   // Build the body of the HTTP request
@@ -579,9 +603,9 @@ void Ros2api::sendNewMap(const nav_msgs::OccupancyGrid &msg)
   data["orig_secs"] = msg.header.stamp.toSec();
   // Post new map
   cpr::Response r = cpr::Post(
-    cpr::Url{std::string("http://") + server_address + std::string("/map_image")},
-    cpr::Body{data.dump()},
-    cpr::Header{{"Content-Type", "application/json"}}
+    cpr::Url{ std::string("http://") + server_address + std::string("/map_image") },
+    cpr::Body{ data.dump() },
+    cpr::Header{ {"Content-Type", "application/json"} }
   );
   if (r.status_code == 200)
   {
@@ -600,7 +624,7 @@ void Ros2api::sendNewMap(const nav_msgs::OccupancyGrid &msg)
   }
 }
 
-void Ros2api::updateMap(const nav_msgs::OccupancyGrid &msg)
+void Ros2api::updateMap(const nav_msgs::OccupancyGrid& msg)
 {
   std::string map_img_encoded = encodeMap(msg);
   // Build the body of the HTTP request
@@ -616,9 +640,9 @@ void Ros2api::updateMap(const nav_msgs::OccupancyGrid &msg)
   data["orig_secs"] = msg.header.stamp.toSec();
   // Update map
   cpr::Response r = cpr::Put(
-    cpr::Url{std::string("http://") + server_address + std::string("/map_image")},
-    cpr::Body{data.dump()},
-    cpr::Header{{"Content-Type", "application/json"}}
+    cpr::Url{ std::string("http://") + server_address + std::string("/map_image") },
+    cpr::Body{ data.dump() },
+    cpr::Header{ {"Content-Type", "application/json"} }
   );
   if (r.status_code == 200)
   {
@@ -636,8 +660,63 @@ void Ros2api::updateMap(const nav_msgs::OccupancyGrid &msg)
   }
 }
 
-int main( int argc, char** argv ) {
-  ros::init( argc, argv, "ros2api" );
+void Ros2api::sendImageBuffer()
+{
+  for (auto& imgConstPtr : image_buffer)
+  {
+    sendImage(imgConstPtr);
+  }
+}
+
+std::string Ros2api::encodeImage(const sensor_msgs::ImageConstPtr& msg)
+{
+  // Convert ImageConstPtr to cv::Mat
+  cv::Mat image = cv_bridge::toCvShare(msg)->image;
+  // Transform to jpeg
+  std::vector<uchar> buf;
+  cv::imencode(".jpg", image, buf);
+  // Encode in base64
+  auto* enc_msg = reinterpret_cast<unsigned char*>(buf.data());
+  std::string encoded = base64_encode(enc_msg, buf.size());
+  return encoded;
+}
+
+void Ros2api::sendImage(const sensor_msgs::ImageConstPtr& msg)
+{
+  if (msg->data.size() > 0)
+  {
+    std::string img_encoded = encodeImage(msg);
+    // Build the body of the HTTP request
+    json data;
+    data["segment_id"] = "Current Segment";
+    data["image_filename"] = std::string("rgb_img") + std::to_string(image_count);
+    data["image_data"] = img_encoded;
+    data["description"] = "Automatic image capture for segment transition";
+    data["orig_secs"] = msg->header.stamp.toSec();
+    // Post new map
+    cpr::Response r = cpr::Post(
+      cpr::Url{ std::string("http://") + server_address + std::string("/image") },
+      cpr::Body{ data.dump() },
+      cpr::Header{ {"Content-Type", "application/json"} }
+    );
+    if (r.status_code == 200)
+    {
+      image_count = image_count + 1;
+      printRespJson(r.text);
+    }
+    else if (r.status_code == 400)
+    {
+      printRespJson(r.text);
+    }
+    else
+    {
+      ROS_ERROR_STREAM("Server unavailable!");
+    }
+  }
+}
+
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "ros2api");
   Ros2api ros2api;
   ros::spin();
   return 0;

@@ -10,10 +10,12 @@
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
 #include <tf2_ros/transform_listener.h>
+#include <image_transport/image_transport.h>
 
 #include <string>
 #include <utility>
 #include <vector>
+#include <deque>
 
 class Ros2api {
 public:
@@ -35,6 +37,7 @@ protected:
   void navSatFixCallback(const sensor_msgs::NavSatFix &msg);
   void poseCallback(const geometry_msgs::PoseStamped &msg);
   void mapCallback(const nav_msgs::OccupancyGrid &msg);
+  void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 	void sendPoseTimerCb(const ros::TimerEvent& event);
   void sendMapTimerCb(const ros::TimerEvent& event);
   void sendLastGpsPose();
@@ -42,6 +45,9 @@ protected:
   std::string encodeMap(const nav_msgs::OccupancyGrid &msg);
   void sendNewMap(const nav_msgs::OccupancyGrid &msg);
   void updateMap(const nav_msgs::OccupancyGrid &msg);
+  void sendImageBuffer();
+  std::string encodeImage(const sensor_msgs::ImageConstPtr& msg);
+  void sendImage(const sensor_msgs::ImageConstPtr& msg);
 private:
   //Internal variables
   const unsigned int SEGMENT_TYPE_ITO = 1;
@@ -57,10 +63,11 @@ private:
   geometry_msgs::PoseStamped last_pose_stamped;
   nav_msgs::OccupancyGrid last_map;
   bool map_sent;
+  ros::Time last_image_time;
 
   //ROS NodeHandle
-  std::shared_ptr<ros::NodeHandle> nh;
-  std::shared_ptr<ros::NodeHandle> priv_nh;
+  ros::NodeHandle nh;
+  ros::NodeHandle priv_nh;
 
   //ROS params
   std::string set_logging_service_name;
@@ -72,11 +79,16 @@ private:
   std::string server_address;
   double send_pose_period;
   double send_map_period;
+  int image_count;
+  std::deque<sensor_msgs::ImageConstPtr> image_buffer;
+  int image_buffer_size;
+  double image_buffer_step;
   
   std::string robot_mode_topic;
   std::string gps_fix_topic;
   std::string local_pose_topic;
   std::string map_topic;
+  std::string image_topic;
 
   //ROS subscribers, publishers and services
   ros::ServiceServer set_logging_service;
@@ -84,9 +96,12 @@ private:
   ros::ServiceServer save_params_service;
   std::vector<ros::Subscriber> data_subscribers;
   std::vector<ros::Timer> post_timers;
+  image_transport::Subscriber image_sub;
 
   tf2_ros::Buffer tf2_buffer;
   tf2_ros::TransformListener *tf2_listener;
+
+  image_transport::ImageTransport it;
 };
 
 #endif

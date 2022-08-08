@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   cv_bridge
   roslib
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
@@ -125,7 +126,7 @@ catkin_python_setup()
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES ftt_ros_interface
-  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs std_srvs geometry_msgs tf2_ros cv_bridge roslib
+  CATKIN_DEPENDS industrial_msgs nav_msgs rospy sensor_msgs std_msgs std_srvs geometry_msgs tf2_ros cv_bridge roslib image_transport
 #  DEPENDS system_lib
 )
 
