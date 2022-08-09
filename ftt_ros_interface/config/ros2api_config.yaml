@@ -16,5 +16,5 @@ topics:
   local_pose: local_pose
   map: map
   map_jpeg: map_jpeg
-  image: image_raw
+  image: image
   image_compressed: image_compressed

@@ -100,16 +100,17 @@ A python script implements a JSON API with the common requests (POST, PUT, GET) 
 
 A ROS node that fetches the robot data to create database entries. It can be run either as a Python or a C++ node. The following data are subscribed:
 
-| Data                      | Type                                                 |
-| ------------------------- | ---------------------------------------------------- |
-| Operation mode            | industrial_msgs/RobotMode                            |
-| GPS position              | sensor_msgs/NavSatFix                                |
-| Local position            | TF (map -> robot frame) or geometry_msgs/PoseStamped |
-| Environment map           | nav_msgs/OccupancyGrid                               |
-| Map image<sup>\*</sup>    | sensor_msgs/CompressedImage                          |
-| Camera Image<sup>\*</sup> | sensor_msgs/Image or sensor_msgs/CompressedImage     |
+| Data                          | Type                                                 |
+| ----------------------------- | ---------------------------------------------------- |
+| Operation mode                | industrial_msgs/RobotMode                            |
+| GPS position                  | sensor_msgs/NavSatFix                                |
+| Local position                | TF (map -> robot frame) or geometry_msgs/PoseStamped |
+| Environment map               | nav_msgs/OccupancyGrid                               |
+| Map image<sup>\*</sup>        | sensor_msgs/CompressedImage                          |
+| Camera image                  | sensor_msgs/Image                                    |
+| Compressed image<sup>\*</sup> | sensor_msgs/CompressedImage                          |
 
-<span style="font-size:smaller">\* Only in the Python implementation.</span>
+<span style="font-size:smaller">\* Options added only to the Python implementation to improve efficiency.</span>
 <br/><br/>
 
 Additionally, the node advertises the following services to interact with the web user interface:
@@ -444,9 +445,9 @@ Once the logging is activated, the node's parameters are read, the subscribers f
 | ----------------------------- | --------------------------- |
 | robot_mode                    | industrial_msgs/RobotMode   |
 | robot_position                | sensor_msgs/NavSatFix       |
-| Environment map               | nav_msgs/OccupancyGrid      |
-| Map image<sup>\*</sup>        | sensor_msgs/CompressedImage |
-| image_raw<sup>\*</sup>        | sensor_msgs/Image           |
+| map                           | nav_msgs/OccupancyGrid      |
+| map_jpeg<sup>\*</sup>         | sensor_msgs/CompressedImage |
+| image                         | sensor_msgs/Image           |
 | image_compressed<sup>\*</sup> | sensor_msgs/CompressedImage |
 
 <span style="font-size:smaller">\* Only in the Python implementation.</span>
@@ -527,7 +528,7 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 | topics/gps_position      | robot_position   | Name of the topic for GPS position data.                                 |
 | topics/map               | map              | Name of the topic for the map of the environment.                        |
 | topics/map_jpeg          | map_jpeg         | Name of the topic for the map image (must be the same map as the above). |
-| topics/image             | image_raw        | Name of the topic for robot frontal camera (raw) images.                 |
+| topics/image             | image            | Name of the topic for robot frontal camera (raw) images.                 |
 | topics/image_compressed  | image_compressed | Name of the topic for robot frontal camera (compressed) images.          |
 | params/use_tf            | true             | Flag to create a TF listener to extract the robot's local position.      |
 | params/map_frame         | map              | Name of the map frame for the tf listener.                               |
