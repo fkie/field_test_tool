@@ -608,14 +608,52 @@ Most of the parameters are self-explanatory, but the following should be noted:
 
 <br/><br/>
 
-## _8. Offline Usage of the web GUI_
+## _8. Offline usage of the web GUI (local tile server)_
 
 Completing the installation steps for the web GUI enables the offline usage of the application on your machine, the one **exception** being the tile server.
 
-A tile server is needed for the leaflet map viewer in the FTT. By default, OpenStreetMap is used. Without internet access, a local tile server must be configured. A guide on how to do this can be found on:
+A tile server is needed for the leaflet map viewer in the FTT. By default, OpenStreetMap is used. Without internet access, a local tile server must be configured. 
+
+### **8.1. Configuring a tile server with OSM data**
+
+A guide on how to do this can be found at:
 
 - https://switch2osm.org/serving-tiles/manually-building-a-tile-server-18-04-lts
 
-A docker container is also available on:
+A docker container is also available at:
 
 - https://github.com/Overv/openstreetmap-tile-server
+
+### **8.2. Configuring a tile server with a GeoTIFF image**
+
+Serving tiles from a GeoTIFF image is easier done with the [GeoServer](https://geoserver.org/) tool. A handy docker container can be found at:
+
+- https://github.com/kartoza/docker-geoserver
+
+That repository includes sample docker-compose.yml and .env files to quicky configure and install the application. Once installed, the GeoServer needs to be set up to serve tiles from the GeoTIFF image. The following steps will walk you through this process.
+
+1. Move your GeoTIFF data to the GeoServer docker image data volume. This is easier done by modifying the docker-compose file to mount the volume in a local rounte of the host machine, e.g. by changig:
+    ```
+    geoserver:
+      volumes:
+        - geoserver-data:/opt/geoserver/data_dir
+    ```
+    To:
+    ```
+    geoserver:
+      volumes:
+        - ./geoserver_data:/opt/geoserver/data_dir
+    ```
+    And then creating a directory called `geoserver_data` in the same location as your docker-compose file.
+
+2. Set up a Workspace in the GeoServer. Go to the GeoServer home page (`http://localhost:8600/geoserver` by default in the sample configuration) and log in using your credentials (by default, user: `admin`, password: `myawesomegeoserver`). On the left side, click on `Workspaces` then `Add new workspace`. You can choose a name and URI, such as `ftt` and `http://localhost:8600/geoserver/ftt`, then click `save`.
+
+3. Set up a Store. Again on the left side, click on `Store`, then `Add new store`. Select `GeoTIFF` as the data source type. Pick a data source name, write a description and browse for your .tiff image. Click `save`. 
+
+4. Set up a Layer. On the page that opens after step 3, click on `Publish`. Change the `Name` of the layer to something simple (e.g. `MyLayer`), then click on `save` at the bottom of the page. 
+
+5. Set up Tile Caching. Once again on the left side, click on `Tile Layers`. Select your newly created layer (ftt:MyLayer in this example) and under the `Tile Caching` tab, near the bottom of the page, expand the list for `Add grid subset`. Type and select `WebMercatorQuad` and click on the plus icon on the right to add it. Click `save`.
+
+6. You can now fetch the tiles using the following URL format (note that this may vary depending on your workspace and layer name).
+
+    - http://localhost:8600/geoserver/gwc/service/tms/1.0.0/ftt:MyLayer/{z}/{x}/{y}.png?flipY=true
