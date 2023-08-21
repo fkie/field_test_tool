@@ -444,7 +444,8 @@ Once the logging is activated, the node's parameters are read, the subscribers f
 | Topic                         | Type                        |
 | ----------------------------- | --------------------------- |
 | robot_mode                    | industrial_msgs/RobotMode   |
-| robot_position                | sensor_msgs/NavSatFix       |
+| gps_fix                       | sensor_msgs/NavSatFix       |
+| local_pose                    | geometry_msgs/PoseStamped   |
 | map                           | nav_msgs/OccupancyGrid      |
 | map_jpeg<sup>\*</sup>         | sensor_msgs/CompressedImage |
 | image                         | sensor_msgs/Image           |
@@ -525,7 +526,8 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 | /get_ftt_logging_service | /get_ftt_logging | Name of the service to get the node's status. Should keep default.       |
 | /save_ftt_params_service | /save_ftt_params | Name of the service to store the node's parameters. Should keep default. |
 | topics/robot_mode        | robot_mode       | Name of the topic for robot operating mode.                              |
-| topics/gps_position      | robot_position   | Name of the topic for GPS position data.                                 |
+| topics/gps_fix           | gps_fix          | Name of the topic for GPS position data.                                 |
+| topics/local_pose        | local_pose       | Name of the topic for robot local position data.                         |
 | topics/map               | map              | Name of the topic for the map of the environment.                        |
 | topics/map_jpeg          | map_jpeg         | Name of the topic for the map image (must be the same map as the above). |
 | topics/image             | image            | Name of the topic for robot frontal camera (raw) images.                 |
@@ -536,7 +538,7 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 | params/server_address    | localhost:5000   | Database API server IP and port.                                         |
 | params/send_pose_period  | 2.0              | Time period for sending position data to the database.                   |
 | params/send_map_period   | 2.0              | Time period for sending map data to the database.                        |
-| image_buffer_size        | 3                | Number of images keep in buffer.                                         |
+| image_buffer_size        | 1                | Number of images keep in buffer.                                         |
 | image_buffer_step        | 1.0              | Minimum time interval between buffered images.                           |
 
 <br/><br/>
