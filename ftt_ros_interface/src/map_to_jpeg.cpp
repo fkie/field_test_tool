@@ -40,15 +40,15 @@ void MapToJpeg::publishTimerCb(const ros::TimerEvent& event)
   {
     // Convert Occupancy Grid to cv::Mat
     int idx = 0;
-    cv::Mat image(map.info.width, map.info.height, CV_8UC1);
+    cv::Mat image(map.info.height, map.info.width, CV_8UC1);
     for(std::vector<int8_t>::const_iterator it = map.data.begin(); it != map.data.end(); ++it, ++idx) {
       // Default value (Unkown)
       int value = 127;
       // Rescale 0-100 to 0-255
-      if ((int)*it >= 0) {
-        value = 255 - (int)*it*255/100;
-      } 
-      image.at<uchar>(idx/image.cols, idx%image.cols) = (uchar)value;
+      if (*it >= 0) {
+        value = 255 - static_cast<int>(*it) * 255 / 100;
+      }
+      image.at<uchar>(idx/image.cols, idx%image.cols) = static_cast<uchar>(value);
     }
     // Flip image
     cv::Mat flipped_image;

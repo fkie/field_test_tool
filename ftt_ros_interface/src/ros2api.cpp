@@ -565,15 +565,15 @@ std::string Ros2api::encodeMap(const nav_msgs::OccupancyGrid& msg)
 {
   // Convert Occupancy Grid to cv::Mat
   int idx = 0;
-  cv::Mat image(msg.info.width, msg.info.height, CV_8UC1);
+  cv::Mat image(msg.info.height, msg.info.width, CV_8UC1);
   for (std::vector<int8_t>::const_iterator it = msg.data.begin(); it != msg.data.end(); ++it, ++idx) {
     // Default value (Unkown)
     int value = 127;
     // Rescale 0-100 to 0-255
-    if ((int)*it >= 0) {
-      value = 255 - (int)*it * 255 / 100;
+    if (*it >= 0) {
+      value = 255 - static_cast<int>(*it) * 255 / 100;
     }
-    image.at<uchar>(idx / image.cols, idx % image.cols) = (uchar)value;
+    image.at<uchar>(idx / image.cols, idx % image.cols) = static_cast<uchar>(value);
   }
   // Flip image
   cv::Mat flipped_image;
@@ -589,6 +589,11 @@ std::string Ros2api::encodeMap(const nav_msgs::OccupancyGrid& msg)
 
 void Ros2api::sendNewMap(const nav_msgs::OccupancyGrid& msg)
 {
+  if (msg.data.empty())
+  {
+    ROS_WARN("Received an empty map. Doing nothing.");
+    return;
+  }
   std::string map_img_encoded = encodeMap(msg);
   // Build the body of the HTTP request
   json data;
@@ -626,6 +631,11 @@ void Ros2api::sendNewMap(const nav_msgs::OccupancyGrid& msg)
 
 void Ros2api::updateMap(const nav_msgs::OccupancyGrid& msg)
 {
+  if (msg.data.empty())
+  {
+    ROS_WARN("Received an empty map. Doing nothing.");
+    return;
+  }
   std::string map_img_encoded = encodeMap(msg);
   // Build the body of the HTTP request
   json data;

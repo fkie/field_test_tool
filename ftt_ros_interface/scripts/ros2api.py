@@ -441,8 +441,8 @@ class Ros2api:
         image_json = r.json()
         for image_data in image_json:
             image_filename = image_data[3]
-            encoded_image = image_data[4]
-            b64_decoded_img = encoded_image.decode("base64")
+            encoded_image = image_data[4].encode("ascii")
+            b64_decoded_img = base64.b64decode(encoded_image)
             image = base64.decodestring(b64_decoded_img)
             pil_img = PilImage.open(BytesIO(image))
             with open(image_filename.rstrip()+"."+pil_img.format.lower(), "wb") as image_file:
@@ -511,9 +511,10 @@ class Ros2api:
         r_json = r.json()
         if r.status_code == 200:
             print(("Saving requested map image to %s" % self.save_image_dir))
-            encoded_image = r_json[7]
-            b64_decoded_img = encoded_image.decode("base64")
-            image = base64.decodestring(b64_decoded_img)
+            encoded_image = r_json[9].encode("ascii")
+            b64_decoded_img = base64.b64decode(encoded_image)
+            image = base64.standard_b64decode(b64_decoded_img)
+            print(image[0:100])
             pil_img = PilImage.open(BytesIO(image))
             with open(self.save_image_dir + "/map_" + str(int_msg.data) + "."+pil_img.format.lower(), "wb") as image_file:
                 image_file.write(image)
