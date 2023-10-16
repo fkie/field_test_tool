@@ -6,7 +6,12 @@
 
 //Common class for displaying overlays.
 export class Modal {
-  constructor(contentObject, fallbackText, closeCallbackFunction) {
+  constructor(
+    contentObject,
+    fallbackText,
+    closeCallbackFunction,
+    noMaxWidth = false
+  ) {
     this.fallbackText = fallbackText;
     this.closeCallbackFunction = closeCallbackFunction;
     this.visible = false;
@@ -15,6 +20,9 @@ export class Modal {
     const modalElements = document.importNode(modalTemplateEl.content, true);
     //Fill modal with the elements of contentObject.
     this.modalElement = modalElements.querySelector(".modal");
+    if (noMaxWidth) {
+      this.modalElement.classList.add("no-max-width");
+    }
     this.modalElement.insertBefore(
       contentObject.element,
       this.modalElement.children[0]

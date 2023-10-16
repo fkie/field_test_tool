@@ -18,7 +18,7 @@ import { MapImageInterface } from "../database_interface/MapImage.js";
 
 //LeafletMap class to wrap map related variables and functions.
 export class LeafletMap {
-  constructor(serverInterface) {
+  constructor(serverInterface, mapElementName, mapContainerName) {
     //Set arguments as properties.
     this.poseInterface = new PoseInterface(serverInterface);
     this.mapImageInterface = new MapImageInterface(serverInterface);
@@ -26,14 +26,14 @@ export class LeafletMap {
     this.mapPointsLayers = [];
     this.activeMarker = null;
     this.activePoses = null;
-    this.leafletMap = L.map("gps-map");
+    this.leafletMap = L.map(mapElementName);
     this.changeTileLayer();
     this.localMapOverlay = null;
     this.layerControl = null;
     this.mapImage = null;
     //Reach to DOM elements.
-    this.mapElementContainer = document.getElementById("map-viewer");
-    this.mapElement = document.getElementById("gps-map");
+    this.mapElementContainer = document.getElementById(mapContainerName);
+    this.mapElement = document.getElementById(mapElementName);
   }
 
   changeTileLayer() {
@@ -221,30 +221,35 @@ export class LeafletMap {
     }
   }
 
-  async getAndDrawMapPoses(segmentId) {
+  async getAndDrawMapPoses(segmentId, markerColorAuto, markerColorIto, markerAlpha) {
+    let geoJsonData = null;
     try {
       //Get geoJSON data from server.
-      const geoJsonData = await this.poseInterface.get(segmentId);
+      geoJsonData = await this.poseInterface.get(segmentId);
       //Remove any data from the specified segment that was already on the map.
       this.removePoses(segmentId);
       if (geoJsonData.features) {
         //Show map and force tile fetch.
-        this.mapElementContainer.style.display = "block";
+        if (this.mapElementContainer) {
+          this.mapElementContainer.style.display = "block";
+        }
         this.leafletMap.invalidateSize(true);
         //Set poses map display options.
         let markerOptions = {
           radius: 2,
           weight: 1,
-          opacity: 1,
-          fillOpacity: 0.8,
+          opacity: 1 * markerAlpha,
+          fillOpacity: 0.8 * markerAlpha,
         };
+        //Sort poses
+        geoJsonData.features.sort((a, b) => a.properties.id - b.properties.id);
         //Add poses to map, while setting special options and pop-up with data from geoJSON data features.
         const points = L.geoJSON(geoJsonData, {
           pointToLayer: function (feature, latlng) {
             if (feature.properties.type == "AUTO") {
-              markerOptions.color = "green";
+              markerOptions.color = markerColorAuto || "green";
             } else {
-              markerOptions.color = "red";
+              markerOptions.color = markerColorIto || "red";
             }
             return L.circleMarker(latlng, markerOptions);
           },
@@ -267,6 +272,7 @@ export class LeafletMap {
     } catch (error) {
       console.log(error.message);
     }
+    return geoJsonData;
   }
 
   removeActiveMarker() {

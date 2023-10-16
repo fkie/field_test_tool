@@ -36,9 +36,9 @@ export class SegmentDetail {
     this.plannerBtn = document.getElementById("planner-btn");
     this.safetyBtn = document.getElementById("safety-btn");
     this.transitBtn = document.getElementById("transit-btn");
+    this.showItoOnlyBox = document.getElementById("show-ito-only");
     this.autoRefreshBox = document.getElementById("auto-refresh");
     this.autoRefreshCfg = document.getElementById("auto-refresh-config-icon");
-    this.showItoOnlyBox = document.getElementById("show-ito-only");
     this.segmentTable = document.getElementById("segment-table-body");
     this.segmentNewBtn = document.getElementById("new-segment-btn");
     this.segmentEndBtn = document.getElementById("end-segment-btn");
@@ -48,7 +48,7 @@ export class SegmentDetail {
     this.gpsMapBox = document.getElementById("gps-map-box");
     this.localMapBox = document.getElementById("local-map-box");
     //Initialize variables.
-    this.mapInterface = new LeafletMap(serverInterface);
+    this.mapInterface = new LeafletMap(serverInterface, "gps-map", "map-viewer");
     this.localMapInterface = new LocalMap(serverInterface);
     this.segmentInterface = new SegmentInterface(serverInterface);
     this.itoReasonInterface = new ItoReasonInterface(serverInterface);
@@ -60,8 +60,8 @@ export class SegmentDetail {
     this.selectedRow = null;
     this.selectedRowId = null;
     this.selectedRowParentId = null;
-    this.autoRefreshTimer = 2000;
     this.showAutoSegments = true;
+    this.autoRefreshTimer = 2000;
     //Check stored configuration.
     let autoRefreshData = JSON.parse(
       localStorage.getItem("fttAutoRefreshData")
@@ -119,6 +119,10 @@ export class SegmentDetail {
     this.refreshBtn.addEventListener("click", () => {
       this.updateSegments();
     });
+    this.showItoOnlyBox.addEventListener(
+      "change",
+      this.showItoOnlyBoxHandler.bind(this)
+    );
     this.autoRefreshBox.addEventListener(
       "change",
       this.autoRefreshBoxHandler.bind(this)
@@ -126,10 +130,6 @@ export class SegmentDetail {
     this.autoRefreshCfg.addEventListener(
       "click",
       this.autoRefreshConfigHandler.bind(this)
-    );
-    this.showItoOnlyBox.addEventListener(
-      "change",
-      this.showItoOnlyBoxHandler.bind(this)
     );
     this.gpsMapConfig.addEventListener(
       "click",
@@ -382,6 +382,25 @@ export class SegmentDetail {
     }
   }
 
+  showItoOnlyBoxHandler() {
+    //Hide auto segments if the box is checked.
+    if (this.showItoOnlyBox.checked) {
+      this.showAutoSegments = false;
+    } else {
+      this.showAutoSegments = true;
+    }
+    const tableRows = Array.from(this.segmentTable.querySelectorAll("tr"));
+    for (const row of tableRows) {
+      if (row.children[1].textContent === "AUTO") {
+        if (this.showAutoSegments) {
+          row.style.removeProperty("display");
+        } else {
+          row.style.display = "none";
+        }
+      }
+    }
+  }
+
   autoRefreshBoxHandler() {
     //Call updateSegments in regular intervals if the box is checked.
     if (this.autoRefreshBox.checked) {
@@ -419,25 +438,6 @@ export class SegmentDetail {
       }
     );
     userModal.show();
-  }
-
-  showItoOnlyBoxHandler() {
-    //Hide auto segments if the box is checked.
-    if (this.showItoOnlyBox.checked) {
-      this.showAutoSegments = false;
-    } else {
-      this.showAutoSegments = true;
-    }
-    const tableRows = Array.from(this.segmentTable.querySelectorAll("tr"));
-    for (const row of tableRows) {
-      if (row.children[1].textContent === "AUTO") {
-        if (this.showAutoSegments) {
-          row.style.removeProperty("display");
-        } else {
-          row.style.display = "none";
-        }
-      }
-    }
   }
 
   segmentTableClickHandler(event) {

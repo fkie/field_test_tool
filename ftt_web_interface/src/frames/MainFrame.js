@@ -14,6 +14,7 @@ import {
 import { UserSelect } from "../overlays/UserSelect.js";
 import { TestEventInterface } from "../database_interface/TestEvent.js";
 import { ReportDownload } from "../overlays/ReportDownload.js";
+import { ShiftCompare } from "../overlays/ShiftCompare.js";
 import { Modal } from "../utility/Modal.js";
 import { RosConfig } from "../overlays/RosConfig.js";
 
@@ -26,6 +27,8 @@ export class MainFrame {
     this.userName = document.getElementById("user-name");
     this.downloadIcon = document.getElementById("download-icon");
     this.rosConnectIcon = document.getElementById("ros-status-light");
+    this.selectForCompreBox = document.getElementById("select-for-compare");
+    this.compareBtn = document.getElementById("compare-btn");
     //Initialize variables.
     this.currentUser = new Personnel();
     this.personnelInterface = new PersonnelInterface(this.serverInterface);
@@ -35,6 +38,7 @@ export class MainFrame {
     this.rosConnectIntervalId = null;
     this.forceRosConnect = false;
     this.ros_server_adr = `ws://${location.hostname}:9090`;
+    this.compareIds = [];
     //Check stored configuration.
     let rosData = JSON.parse(localStorage.getItem("fttRosData"));
     if (rosData) {
@@ -62,6 +66,13 @@ export class MainFrame {
       "click",
       this.rosConnectIconClickHandler.bind(this)
     );
+    this.selectForCompreBox.addEventListener(
+      "change",
+      this.selectForCompreBoxHandler.bind(this)
+    );
+    this.compareBtn.addEventListener("click", () => {
+      this.compareLogsHandler();
+    });
     this.ros.on("error", this.rosErrorHandler.bind(this));
     this.ros.on("connection", this.rosConnectionHandler.bind(this));
     this.ros.on("close", this.rosCloseHandler.bind(this));
@@ -100,6 +111,13 @@ export class MainFrame {
     }
     //Update segments table.
     this.segmentDetail.updateSegments(segmentList);
+    //Check if this shift id is selected for compare and update slider accodingly.
+    const shiftSelectValue = document.getElementById("shift-id").value;
+    if (this.compareIds.includes(shiftSelectValue)) {
+      this.selectForCompreBox.checked = true;
+    } else {
+      this.selectForCompreBox.checked = false;
+    }
   }
 
   async userIconClickHandler() {
@@ -155,6 +173,39 @@ export class MainFrame {
       }
     );
     userModal.show();
+  }
+
+  selectForCompreBoxHandler() {
+    //Store or delete this shift id for compare
+    const shiftSelectValue = document.getElementById("shift-id").value;
+    if (this.selectForCompreBox.checked) {
+      this.compareIds.push(shiftSelectValue);
+    } else {
+      this.compareIds = this.compareIds.filter(
+        (value) => value != shiftSelectValue
+      );
+    }
+    this.compareBtn.disabled = this.compareIds.length < 2;
+  }
+
+  compareLogsHandler() {
+    try {
+      //Build a shift compare overlay.
+      const shiftCompare = new ShiftCompare(
+        this.serverInterface,
+        this.compareIds
+      );
+      //Display the overlay.
+      const userModal = new Modal(
+        shiftCompare,
+        "Your browser doesn't support this feature! - Please change to a more modern one.",
+        () => {},
+        true
+      );
+      userModal.show();
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
   rosConnect() {

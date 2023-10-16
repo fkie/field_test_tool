@@ -13,8 +13,13 @@
 }
 
 .modal.show {
-  top: 20vh;
+  top: 5vh;
   opacity: 1;
+}
+
+.modal.no-max-width {
+  left: 10% !important;
+  width: 80% !important;
 }
 
 .modal__title {
