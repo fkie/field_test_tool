@@ -388,13 +388,13 @@ From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interfac
 ### **4.9. Installation with Docker**
 
 The project includes Docker files and a docker-compose file to speed up the deployment of the application for testing purposes.
-The docker containers do not include building of the web application's front end (GUI), so please follow the instructions of [section 4.8](#48-installation-of-the-ftt-web-gui) for complete development and offline usage.
+The docker containers will build the web application's front end (GUI) (as described in [section 4.8](#48-installation-of-the-ftt-web-gui)), so beware of incompatibilities that may arise if then trying to rebuild it from the host system.
 
-First, make sure to have [Docker](https://docs.docker.com/engine/install/ubuntu/) and [docker-compose](https://docs.docker.com/compose/install/) installed on your machine or follow the official documentation to install them. Then, simply step in the project's directory and run docker-compose:
+First, make sure to have [Docker Desktop](https://docs.docker.com/desktop/install/ubuntu/) installed on your machine or follow the official documentation to install it. Then, simply step in the project's directory and run docker compose:
 ```
 cd <ros_workspace>/src/field_test_tool
 
-docker-compose up
+docker compose up
 ```
 
 Doing so will build and start three docker containers:
