@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     ros-noetic-tf2-ros \
     ros-noetic-cv-bridge \
     ros-noetic-rosbridge-server \
+    ros-noetic-image-transport \
     python3-opencv \
     libopencv-dev \
     libyaml-cpp-dev \

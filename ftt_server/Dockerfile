@@ -24,6 +24,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     texlive-fonts-extra \
     texlive-xetex \
     libpq-dev \
+    ca-certificates \
+    curl \
+    gnupg \
   && python3 -m pip install -U \
     requests \
     Pillow \
@@ -42,5 +45,19 @@ RUN mkdir /ftt_web_interface
 # make the directory for the report generator code (to be mounted as volume)
 RUN mkdir /ftt_report_generator
 
-# run the web server
-CMD ["/bin/bash", "-c", "cd ftt_server/scripts; python3 api.py --database_ip=ftt-database;"]
+# download and import the Nodesource GPG key
+RUN mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+
+# create deb repository for nodejs
+RUN NODE_MAJOR=20 && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+
+# install nodejs
+RUN apt-get update && apt-get install -y nodejs
+
+# config nodejs proxy
+RUN npm config set proxy ${http_proxy}
+RUN npm config set https-proxy ${https_proxy}
+
+# compile code and run the web server
+CMD ["/bin/bash", "-c", "cd ftt_web_interface; npm install; cd ../ftt_server/scripts; python3 api.py --database_ip=ftt-database;"]
