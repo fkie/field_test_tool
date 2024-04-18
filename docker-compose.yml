@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: ftt_database/Dockerfile
     volumes:
-      - ./ftt_database/data:/var/lib/postgresql/data
+      - ~/ftt_database:/var/lib/postgresql/data
   ftt-web-server:
     build: 
       context: .
