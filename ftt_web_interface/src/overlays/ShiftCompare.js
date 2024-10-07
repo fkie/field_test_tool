@@ -7,9 +7,21 @@
 import { SegmentInterface } from "../database_interface/Segment.js";
 import { LegInterface } from "../database_interface/Leg.js";
 import { LeafletMap } from "../utility/LeafletMap.js";
-import { distErp, distDtw } from "../utility/TrajectoryDistance.js";
+import {
+  distL2FromLngLat,
+  distErp,
+  distDtw,
+  trajectoryTrackingError,
+} from "../utility/TrajectoryDistance.js";
 
-const markerColorList = ["blue", "gold", "violet", "orange", "green", "red"];
+const markerColorList = [
+  "Navy",
+  "Crimson",
+  "Green",
+  "Violet",
+  "Orange",
+  "Gold",
+];
 
 //Structure and logic of the map config UI.
 export class ShiftCompare {
@@ -70,6 +82,12 @@ export class ShiftCompare {
             );
             //Get the lng-lat coordinates (at most every 0.5 meter).
             geoJsonData.features.forEach((feature) => {
+              const coords = feature.geometry.coordinates;
+              for (const p of trajectory) {
+                if (distL2FromLngLat(p, coords) < 0.5) {
+                  return;
+                }
+              }
               trajectory.push(feature.geometry.coordinates);
             });
           }
@@ -105,45 +123,69 @@ export class ShiftCompare {
         distancesErp[j][i] = distancesErp[i][j];
       }
     }
+    //Get Tracking distances between trajectories
+    const distancesTt = Array.from({ length: trajectories.length }).map(() =>
+      Array.from({ length: trajectories.length }).fill(0)
+    );
+    for (let i = 0; i < trajectories.length; i++) {
+      for (let j = 0; j < trajectories.length; j++) {
+        if (i == j) {
+          continue;
+        }
+        distancesTt[i][j] = trajectoryTrackingError(
+          trajectories[i],
+          trajectories[j]
+        );
+      }
+    }
     //Show distances
     const headerEl = document.querySelector(".modal__title");
     let distCompEl;
     if (trajectories.length < 3) {
-      distCompEl = this.createComparisonParagraph(distancesDtw[0][1], "DTW");
+      distCompEl = this.createComparisonParagraph(0, 1, distancesTt[0][1], "Tracking");
       headerEl.appendChild(distCompEl);
-      distCompEl = this.createComparisonParagraph(distancesErp[0][1], "ERP");
+      distCompEl = this.createComparisonParagraph(1, 0, distancesTt[1][0], "Tracking");
+      headerEl.appendChild(distCompEl);
+      distCompEl = this.createComparisonParagraph(0, 1, distancesDtw[0][1], "DTW");
+      headerEl.appendChild(distCompEl);
+      distCompEl = this.createComparisonParagraph(0, 1, distancesErp[0][1], "ERP");
       headerEl.appendChild(distCompEl);
     } else {
-      distCompEl = this.createComparisonTable(distancesDtw);
+      distCompEl = this.createComparisonTable(distancesTt, "TT");
+      headerEl.appendChild(distCompEl);
+      distCompEl = this.createComparisonTable(distancesDtw, "DTW");
+      headerEl.appendChild(distCompEl);
+      distCompEl = this.createComparisonTable(distancesErp, "ERP");
       headerEl.appendChild(distCompEl);
     }
   }
 
-  createComparisonParagraph(distance, type) {
+  createComparisonParagraph(sourceId, targetId, distance, type) {
     const p = document.createElement("p");
     p.style.marginTop = "0.5rem";
     p.innerHTML = `
-    <span style="font-weight:bold; color:${markerColorList[0]}">Shift ${
-      this.compareIds[0]
-    } (${markerColorList[0]})</span>
+    <span style="font-weight:bold">Shift ${this.compareIds[sourceId]} </span>
+    <span style="color:${markerColorList[sourceId]}">(${markerColorList[sourceId]})</span>
     to
-    <span style="font-weight:bold; color:${markerColorList[1]}">Shift ${
-      this.compareIds[1]
-    } (${markerColorList[1]})</span>
-    ${type} distance:
+    <span style="font-weight:bold">Shift ${this.compareIds[targetId]} </span>
+    <span style="color:${markerColorList[targetId]}">(${markerColorList[targetId]})</span>
+    <span style="font-weight:bold">${type} </span>
+    distance:
     <span style="font-weight:bold">${distance.toFixed(2)}m</span>
     `;
     return p;
   }
 
-  createComparisonTable(distances) {
+  createComparisonTable(distances, type) {
     const table = document.createElement("table");
     table.style.marginTop = "0.5rem";
     const tHead = document.createElement("thead");
     const tBody = document.createElement("tbody");
     //Header row
     const tHeaderRow = document.createElement("tr");
-    tHeaderRow.appendChild(document.createElement("th"));
+    const tHeadTitle = document.createElement("th");
+    tHeadTitle.textContent = `${type}`;
+    tHeaderRow.appendChild(tHeadTitle);
     for (const [idx, shiftId] of this.compareIds.entries()) {
       const tHeadData = document.createElement("th");
       tHeadData.textContent = `Shift ${shiftId} (${markerColorList[idx]})`;

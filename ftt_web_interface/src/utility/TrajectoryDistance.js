@@ -27,6 +27,55 @@ export const mdistL2FromLngLat = (t0, t1) => {
   return mdist;
 };
 
+export const lngLatToXY = (lngLat) => {
+  // Radius of the Earth in meters
+  const R = 6378137;
+
+  // Convert latitude and longitude from degrees to radians
+  const longRad = (lngLat[0] * Math.PI) / 180;
+  const latRad = (lngLat[1] * Math.PI) / 180;
+
+  // Mercator projection formula
+  const x = R * longRad;
+  const y = R * Math.log(Math.tan(Math.PI / 4 + latRad / 2));
+
+  return [x, y];
+};
+
+export const distanceCoordsToSegment = (p, a, b) => {
+  const [px, py] = lngLatToXY(p);
+  const [ax, ay] = lngLatToXY(a);
+  const [bx, by] = lngLatToXY(b);
+  const A = px - ax;
+  const B = py - ay;
+  const C = bx - ax;
+  const D = by - ay;
+
+  const dot = A * C + B * D;
+  const len_sq = C * C + D * D;
+  let param = -1;
+  if (len_sq !== 0) {
+    param = dot / len_sq;
+  }
+
+  let xx, yy;
+
+  if (param < 0) {
+    xx = ax;
+    yy = ay;
+  } else if (param > 0 && param < 1) {
+    xx = ax + param * C;
+    yy = ay + param * D;
+  } else {
+    xx = bx;
+    yy = by;
+  }
+
+  const dx = px - xx;
+  const dy = py - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 /**
  * Returns the edit distance with real penalty (ERP) between two GNSS trajectories
  *
@@ -100,4 +149,27 @@ export const distDtw = (t0, t1) => {
   }
   const dtw = C[n0][n1];
   return dtw;
+};
+
+/**
+ * Returns the trajectory tracking error (lateral path distance) between a source and a target GNSS trajectory
+ *
+ * @param {array} source Source trajectory (array) of [lng, lat] coordinates
+ * @param {array} target Target trajectory (array) of [lng, lat] coordinates
+ * @return {number} lateral tracking error
+ *
+ */
+export const trajectoryTrackingError = (source, target) => {
+  let totalError = 0;
+  source.forEach((p) => {
+    let minDistance = Infinity;
+    for (let i = 0; i < target.length - 1; i++) {
+      const distance = distanceCoordsToSegment(p, target[i], target[i + 1]);
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
+    }
+    totalError += minDistance;
+  });
+  return totalError;
 };
