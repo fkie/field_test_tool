@@ -1,4 +1,23 @@
-export const distL2FromLngLat = (a, b) => {
+export const distL2 = (a, b) => {
+  //Calculate 2D point distance in meters.
+  const diff = [b[0] - a[0], b[1] - a[1]];
+  return Math.hypot(...diff);
+};
+
+export const mdistL2 = (t0, t1) => {
+  //Calculate 2D distance matrix between the trajectory points.
+  const mdist = [];
+  for (const a of t0) {
+    const row = [];
+    for (const b of t1) {
+      row.push(distL2(a, b));
+    }
+    mdist.push(row);
+  }
+  return mdist;
+};
+
+export const diffInMetersFromLngLat = (a, b) => {
   //Estimate differences of lat and lng degrees in meters.
   //https://en.wikipedia.org/wiki/Geographic_coordinate_system
   const latMid = ((a[1] + b[1]) / 2) * (Math.PI / 180);
@@ -11,11 +30,17 @@ export const distL2FromLngLat = (a, b) => {
     111412.84 * Math.cos(latMid) -
     93.5 * Math.cos(3 * latMid) +
     0.118 * Math.cos(5 * latMid);
-  const diffInMeters = [(b[0] - a[0]) * mPerLng, (b[1] - a[1]) * mPerLat];
+  return [(b[0] - a[0]) * mPerLng, (b[1] - a[1]) * mPerLat];
+};
+
+export const distL2FromLngLat = (a, b) => {
+  //Estimate the distance between lng, lat coordinates
+  const diffInMeters = diffInMetersFromLngLat(a, b);
   return Math.hypot(...diffInMeters);
 };
 
 export const mdistL2FromLngLat = (t0, t1) => {
+  //Calculate 2D distance matrix between the trajectory lng,lat coordinates.
   const mdist = [];
   for (const a of t0) {
     const row = [];
@@ -27,32 +52,15 @@ export const mdistL2FromLngLat = (t0, t1) => {
   return mdist;
 };
 
-export const lngLatToXY = (lngLat) => {
-  // Radius of the Earth in meters
-  const R = 6378137;
+export const distPointToSegmentFromLngLat = (p, a, b) => {
+  //Calculate the distance between a lng, lat coordinate and the line defined by other two coordinates
+  //First, project the points to the euclidean space, taking "a" as reference
+  const [px, py] = diffInMetersFromLngLat(a, p);
+  const [bx, by] = diffInMetersFromLngLat(a, b);
 
-  // Convert latitude and longitude from degrees to radians
-  const longRad = (lngLat[0] * Math.PI) / 180;
-  const latRad = (lngLat[1] * Math.PI) / 180;
-
-  // Mercator projection formula
-  const x = R * longRad;
-  const y = R * Math.log(Math.tan(Math.PI / 4 + latRad / 2));
-
-  return [x, y];
-};
-
-export const distanceCoordsToSegment = (p, a, b) => {
-  const [px, py] = lngLatToXY(p);
-  const [ax, ay] = lngLatToXY(a);
-  const [bx, by] = lngLatToXY(b);
-  const A = px - ax;
-  const B = py - ay;
-  const C = bx - ax;
-  const D = by - ay;
-
-  const dot = A * C + B * D;
-  const len_sq = C * C + D * D;
+  //Then, calculate the point to line distance in the euclidean space
+  const dot = px * bx + py * by;
+  const len_sq = bx * bx + by * by;
   let param = -1;
   if (len_sq !== 0) {
     param = dot / len_sq;
@@ -61,11 +69,11 @@ export const distanceCoordsToSegment = (p, a, b) => {
   let xx, yy;
 
   if (param < 0) {
-    xx = ax;
-    yy = ay;
+    xx = 0;
+    yy = 0;
   } else if (param > 0 && param < 1) {
-    xx = ax + param * C;
-    yy = ay + param * D;
+    xx = param * bx;
+    yy = param * by;
   } else {
     xx = bx;
     yy = by;
@@ -164,7 +172,11 @@ export const minimumDistance = (source, target) => {
   source.forEach((p) => {
     let minDistance = Infinity;
     for (let i = 0; i < target.length - 1; i++) {
-      const distance = distanceCoordsToSegment(p, target[i], target[i + 1]);
+      const distance = distPointToSegmentFromLngLat(
+        p,
+        target[i],
+        target[i + 1]
+      );
       if (distance < minDistance) {
         minDistance = distance;
       }
