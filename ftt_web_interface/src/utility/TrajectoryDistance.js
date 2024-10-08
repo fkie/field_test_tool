@@ -152,14 +152,14 @@ export const distDtw = (t0, t1) => {
 };
 
 /**
- * Returns the trajectory tracking error (lateral path distance) between a source and a target GNSS trajectory
+ * Returns the minimum distance (smallest point-to-line distance) between a source and a target GNSS trajectory
  *
  * @param {array} source Source trajectory (array) of [lng, lat] coordinates
  * @param {array} target Target trajectory (array) of [lng, lat] coordinates
- * @return {number} lateral tracking error
+ * @return {number} minimum distance
  *
  */
-export const trajectoryTrackingError = (source, target) => {
+export const minimumDistance = (source, target) => {
   let totalError = 0;
   source.forEach((p) => {
     let minDistance = Infinity;

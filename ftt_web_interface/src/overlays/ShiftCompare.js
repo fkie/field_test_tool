@@ -8,10 +8,10 @@ import { SegmentInterface } from "../database_interface/Segment.js";
 import { LegInterface } from "../database_interface/Leg.js";
 import { LeafletMap } from "../utility/LeafletMap.js";
 import {
-  distL2FromLngLat,
+  // distL2FromLngLat,
   distErp,
   distDtw,
-  trajectoryTrackingError,
+  minimumDistance,
 } from "../utility/TrajectoryDistance.js";
 
 const markerColorList = [
@@ -82,12 +82,12 @@ export class ShiftCompare {
             );
             //Get the lng-lat coordinates (at most every 0.5 meter).
             geoJsonData.features.forEach((feature) => {
-              const coords = feature.geometry.coordinates;
-              for (const p of trajectory) {
-                if (distL2FromLngLat(p, coords) < 0.5) {
-                  return;
-                }
-              }
+              // const coords = feature.geometry.coordinates;
+              // for (const p of trajectory) {
+              //   if (distL2FromLngLat(p, coords) < 0.5) {
+              //     return;
+              //   }
+              // }
               trajectory.push(feature.geometry.coordinates);
             });
           }
@@ -124,7 +124,7 @@ export class ShiftCompare {
       }
     }
     //Get Tracking distances between trajectories
-    const distancesTt = Array.from({ length: trajectories.length }).map(() =>
+    const distancesMin = Array.from({ length: trajectories.length }).map(() =>
       Array.from({ length: trajectories.length }).fill(0)
     );
     for (let i = 0; i < trajectories.length; i++) {
@@ -132,7 +132,7 @@ export class ShiftCompare {
         if (i == j) {
           continue;
         }
-        distancesTt[i][j] = trajectoryTrackingError(
+        distancesMin[i][j] = minimumDistance(
           trajectories[i],
           trajectories[j]
         );
@@ -142,16 +142,16 @@ export class ShiftCompare {
     const headerEl = document.querySelector(".modal__title");
     let distCompEl;
     if (trajectories.length < 3) {
-      distCompEl = this.createComparisonParagraph(0, 1, distancesTt[0][1], "Tracking");
+      distCompEl = this.createComparisonParagraph(0, 1, distancesMin[0][1], "Minimum");
       headerEl.appendChild(distCompEl);
-      distCompEl = this.createComparisonParagraph(1, 0, distancesTt[1][0], "Tracking");
+      distCompEl = this.createComparisonParagraph(1, 0, distancesMin[1][0], "Minimum");
       headerEl.appendChild(distCompEl);
       distCompEl = this.createComparisonParagraph(0, 1, distancesDtw[0][1], "DTW");
       headerEl.appendChild(distCompEl);
       distCompEl = this.createComparisonParagraph(0, 1, distancesErp[0][1], "ERP");
       headerEl.appendChild(distCompEl);
     } else {
-      distCompEl = this.createComparisonTable(distancesTt, "TT");
+      distCompEl = this.createComparisonTable(distancesMin, "Min");
       headerEl.appendChild(distCompEl);
       distCompEl = this.createComparisonTable(distancesDtw, "DTW");
       headerEl.appendChild(distCompEl);
