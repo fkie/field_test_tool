@@ -43,6 +43,7 @@ target_include_directories(ros2api PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIRS}
 )
 target_link_libraries(ros2api PRIVATE
   ament_index_cpp::ament_index_cpp
@@ -57,7 +58,8 @@ target_link_libraries(ros2api PRIVATE
   ${sensor_msgs_TARGETS}
   ${std_msgs_TARGETS}
   ${std_srvs_TARGETS}
-  yaml-cpp::yaml-cpp
+  ${OpenCV_LIBRARIES}
+  ${YAML_CPP_LIBRARIES}
   cpr::cpr
   nlohmann_json::nlohmann_json
 )

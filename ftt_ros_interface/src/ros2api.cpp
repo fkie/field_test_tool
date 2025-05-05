@@ -9,7 +9,7 @@
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "cpr/cpr.h"
-#include "cv_bridge/cv_bridge.hpp"
+#include "cv_bridge/cv_bridge.h"
 #include "ftt_ros_interface/base64.h"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nlohmann/json.hpp"
