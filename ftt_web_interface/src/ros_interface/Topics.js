@@ -11,15 +11,15 @@ import { getRosTopicsForType } from "./roslibExtension.js";
 //ROS topics interaction class.
 //Interaction with ROS topics is done here through parameters, but their edition is conditioned to available topics.
 export class RosTopicsInterface extends RosParamsInterface {
-  constructor(ros, prefix = "/ftt_ros/topics/") {
+  constructor(ros, prefix = "topics") {
     super(ros, prefix);
     this.supportedTopics = {
-      robot_mode: "industrial_msgs/RobotMode",
-      gps_fix: "sensor_msgs/NavSatFix",
-      local_pose: "geometry_msgs/Pose",
-      map: "nav_msgs/OccupancyGrid",
-      image: "sensor_msgs/Image",
-      image_compressed: "sensor_msgs/CompressedImage",
+      robot_mode: "std_msgs/msg/Bool",
+      gps_fix: "sensor_msgs/msg/NavSatFix",
+      local_pose: "geometry_msgs/msg/Pose",
+      map: "nav_msgs/msg/OccupancyGrid",
+      image: "sensor_msgs/msg/Image",
+      image_compressed: "sensor_msgs/msg/CompressedImage",
     };
   }
 

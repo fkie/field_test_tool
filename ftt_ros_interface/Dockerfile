@@ -1,25 +1,23 @@
-FROM ros:noetic
+FROM ros:jazzy
 
 # install requirements
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    python3-pip \
     python3-ruamel.yaml \
-    ros-noetic-industrial-msgs \
-    ros-noetic-tf2-ros \
-    ros-noetic-cv-bridge \
-    ros-noetic-rosbridge-server \
-    ros-noetic-image-transport \
+    ros-jazzy-tf2-ros \
+    ros-jazzy-cv-bridge \
+    ros-jazzy-rosbridge-server \
+    ros-jazzy-image-transport \
     python3-opencv \
+    libcurl4-openssl-dev \
+    python3-requests \
+    python3-pil \
     libopencv-dev \
     libyaml-cpp-dev \
     git \
-  && python3 -m pip install -U \
-    requests \
-    Pillow \
   && rm -rf /var/lib/apt/lists/*
 
 # make the directory for the ROS code (to be mounted as volume)
-RUN mkdir -p /ros/src/ftt_ros_interface
-
+RUN mkdir -p /ros2/src/ftt_ros_interface
+ENV FASTDDS_BUILTIN_TRANSPORTS=UDPv4
 # compile and launch ros node
-CMD ["/bin/bash", "-c", "source /opt/ros/noetic/setup.bash; cd /ros; catkin_make; source /ros/devel/setup.bash; roslaunch ftt_ros_interface ftt_ros.launch"]
+CMD ["/bin/bash", "-c", "source /opt/ros/jazzy/setup.bash; cd /ros2; colcon build --symlink-install; source /ros2/install/setup.bash; ros2 launch ftt_ros_interface ftt_ros.launch.xml"]

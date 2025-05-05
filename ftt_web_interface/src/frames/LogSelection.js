@@ -516,12 +516,12 @@ export class LogSelection {
     this.isLogging = false;
     this.setLoggingClient = new ROSLIB.Service({
       ros: this.ros,
-      name: "/set_ftt_logging",
+      name: "/ftt_ros/set_status",
       serviceType: "std_srvs/SetBool",
     });
     this.getLoggingClient = new ROSLIB.Service({
       ros: this.ros,
-      name: "/get_ftt_logging",
+      name: "/ftt_ros/get_status",
       serviceType: "std_srvs/Trigger",
     });
     //Initialize log objects.
@@ -585,7 +585,7 @@ export class LogSelection {
     //If ROS is connected
     if (this.ros.isConnected) {
       //Check current logging status in ros.
-      const request = new ROSLIB.ServiceRequest();
+      const request = {};
       this.getLoggingClient.callService(request, (result) => {
         if (result.success != this.isLogging) {
           //Toggle logging to match status in ros.
@@ -679,9 +679,9 @@ export class LogSelection {
 
   loggingBtnClickHandler() {
     //Call ros service to start/stop logging.
-    const request = new ROSLIB.ServiceRequest({
+    const request = {
       data: !this.isLogging,
-    });
+    };
     this.setLoggingClient.callService(request, (result) => {
       if (result.success) {
         //Update the table.

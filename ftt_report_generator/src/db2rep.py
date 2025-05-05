@@ -582,6 +582,7 @@ class ReportGenerator:
             if child.tag == "postgis":
                 db_info['dbname'] = child.get("dbname")
                 db_info['host'] = child.get("host")
+                db_info['port'] = child.get("port")
                 db_info['user'] = child.get("user")
                 db_info['password'] = child.get("password")
             # Get report info.
@@ -622,7 +623,7 @@ class ReportGenerator:
         (report_info_list, db_info, tile_server_info, stop_count_keys) = self.read_xml(argv[0])
 
         # Read connection details from the XML-File-Var and connect to the DB
-        ftt_adapter = FttAdapter(db_info['host'], db_info['dbname'], db_info['user'], db_info['password'])
+        ftt_adapter = FttAdapter(db_info['host'], db_info['port'], db_info['dbname'], db_info['user'], db_info['password'])
         ftt_adapter.connect()
 
         # Init the ReportGenerator

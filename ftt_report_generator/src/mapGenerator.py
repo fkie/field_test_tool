@@ -11,7 +11,7 @@ import os
 import sys
 import base64
 import requests
-import pyproj
+from pyproj import Transformer
 from PIL import Image, ImageDraw
 from io import BytesIO
 
@@ -92,7 +92,7 @@ class MapGenerator:
                     # Get the tile.
                     tile = Image.open(filename)
                     # Fix the tile size.
-                    tile = tile.resize((TILE_FIX_SIZE, TILE_FIX_SIZE), Image.ANTIALIAS)
+                    tile = tile.resize((TILE_FIX_SIZE, TILE_FIX_SIZE), Image.Resampling.LANCZOS)
                     # Paste it in the canvas.
                     map_images.paste(tile, box=((xtile-xmin)*TILE_FIX_SIZE ,  (ytile-ymin)*TILE_FIX_SIZE))
                 except:
@@ -141,9 +141,8 @@ class MapGenerator:
         lon = bb[0::2]
         lat = bb[1::2]
         # Find the bounding box in the Mercator projection EPSG:3857 (used by the tile server).
-        wgs84 = pyproj.Proj("+init=EPSG:4326")  # Database's LatLon coordinates.
-        mercator = pyproj.Proj("+init=EPSG:3857")  # Tile server projection.
-        easting, northing = pyproj.transform(wgs84, mercator, lon, lat)
+        transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+        easting, northing = transformer.transform(lon, lat)
         # Expand the bounding box by 10% of the longest dimension (at least 10m)
         border = max((easting[1] - easting[0]) / 10, (northing[1] - northing[0]) / 10, 10)
         easting[0] = easting[0] - border
@@ -254,7 +253,7 @@ class MapGenerator:
         if map_image_width < 4*TILE_FIX_SIZE:
             resize_ratio = 4.0*TILE_FIX_SIZE/map_image_width
             # Fix the tile size.
-            map_image = map_image.resize((int(map_image_width*resize_ratio), int(map_image_height*resize_ratio)), Image.ANTIALIAS)
+            map_image = map_image.resize((int(map_image_width*resize_ratio), int(map_image_height*resize_ratio)), Image.Resampling.LANCZOS)
             # Adjust the resolution accordingly.
             resolution /= resize_ratio
         # Add local position data to image:

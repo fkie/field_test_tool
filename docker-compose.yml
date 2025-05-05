@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   ftt-database:
     build: 
@@ -15,14 +14,17 @@ services:
       - ./ftt_web_interface:/ftt_web_interface
       - ./ftt_report_generator:/ftt_report_generator
     ports: 
-      - "5000:5000"
+      - 5000:5000
     depends_on:
-      - "ftt-database"
+      - ftt-database
     restart: on-failure
   ftt-ros-interface:
     build: 
       context: .
       dockerfile: ftt_ros_interface/Dockerfile
-    network_mode: "host"
+    network_mode: host
+    environment:
+      RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+      ROS_DOMAIN_ID: 0
     volumes:
-      - ./ftt_ros_interface:/ros/src/ftt_ros_interface
+      - ./ftt_ros_interface:/ros2/src/ftt_ros_interface

@@ -98,28 +98,25 @@ A python script implements a JSON API with the common requests (POST, PUT, GET) 
 
 ### **1.4. ROS interface**
 
-A ROS node that fetches the robot data to create database entries. It can be run either as a Python or a C++ node. The following data are subscribed:
+A C++ ROS node that fetches the robot data to create database entries. The following data are subscribed:
 
-| Data                          | Type                                                 |
-| ----------------------------- | ---------------------------------------------------- |
-| Operation mode                | industrial_msgs/RobotMode                            |
-| GPS position                  | sensor_msgs/NavSatFix                                |
-| Local position                | TF (map -> robot frame) or geometry_msgs/PoseStamped |
-| Environment map               | nav_msgs/OccupancyGrid                               |
-| Map image<sup>\*</sup>        | sensor_msgs/CompressedImage                          |
-| Camera image                  | sensor_msgs/Image                                    |
-| Compressed image<sup>\*</sup> | sensor_msgs/CompressedImage                          |
+| Data                          | Type                       |
+| ----------------------------- | -------------------------- |
+| Operation mode                | std_msgs/msg/Bool          |
+| GPS position                  | sensor_msgs/msg/NavSatFix  |
+| Local position                | TF (map -> robot frame)    |
+| Environment map               | nav_msgs/msg/OccupancyGrid |
+| Camera image                  | sensor_msgs/msg/Image      |
 
-<span style="font-size:smaller">\* Options added only to the Python implementation to improve efficiency.</span>
 <br/><br/>
 
 Additionally, the node advertises the following services to interact with the web user interface:
 
-| Service          | Description                                          |
-| ---------------- | ---------------------------------------------------- |
-| /set_ftt_logging | Starts/stops sending robot data to the database      |
-| /get_ftt_logging | Returns the current logging status (active/inactive) |
-| /save_ftt_params | Write the node parameters to the config file         |
+| Service              | Description                                          |
+| -------------------- | ---------------------------------------------------- |
+| /ftt_ros/set_status  | Starts/stops sending robot data to the database      |
+| /ftt_ros/get_status  | Returns the current logging status (active/inactive) |
+| /ftt_ros/save_params | Write the node parameters to the config file         |
 
 <br/><br/>
 
@@ -144,43 +141,45 @@ Figures 4 and 5 show an overview of the FTT web GUI displaying GPS and local pos
 
 The following libraries and resources are needed for this project. They are shown alongside their respective license.
 
-| Name                       | License                                 | URL                                                                |
-| -------------------------- | --------------------------------------- | ------------------------------------------------------------------ |
-| rospy                      | BSD License                             | https://wiki.ros.org/rospy                                         |
-| roscpp                     | BSD License                             | https://wiki.ros.org/roscpp                                        |
-| common_msgs                | BSD License                             | https://wiki.ros.org/common_msgs                                   |
-| industrial_msgs            | BSD License                             | https://wiki.ros.org/industrial_msgs                               |
-| cv_bridge                  | BSD License                             | https://wiki.ros.org/cv_bridge                                     |
-| tf2_ros                    | BSD License                             | https://wiki.ros.org/tf2_ros                                       |
-| Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                             |
-| requests                   | Apache License Version 2.0              | https://github.com/psf/requests/blob/master/LICENSE                |
-| ruamel.yaml                | MIT License                             | https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/LICENSE |
-| Pillow                     | HPND License                            | https://github.com/python-pillow/Pillow/blob/master/LICENSE        |
-| psycopg2                   | GNU Lesser General Public License       | https://www.psycopg.org/license/                                   |
-| Flask                      | BSD-3-Clause License                    | https://github.com/pallets/flask/blob/master/LICENSE.rst           |
-| Flask-restful              | BSD-3-Clause License                    | https://github.com/flask-restful/flask-restful/blob/master/LICENSE |
-| Flask-cors                 | MIT License                             | https://github.com/corydolphin/flask-cors/blob/master/LICENSE      |
-| LXML                       | BSD-3-Clause License                    | https://github.com/lxml/lxml/blob/master/LICENSE.txt               |
-| jinja2                     | BSD-3-Clause License                    | https://github.com/pallets/jinja/blob/master/LICENSE.rst           |
-| parse                      | MIT License                             | https://github.com/r1chardj0n3s/parse/blob/master/LICENSE          |
-| pyproj                     | MIT License                             | https://github.com/pyproj4/pyproj/blob/master/LICENSE              |
-| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE |
-| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                          |
-| GNU C++ Standard Library   | GPLv3 License                           | https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html       |
-| OpenCV                     | BSD-3-Clause or Apache 2.0 License      | https://opencv.org/license                                         |
-| cpr                        | MIT License                             | https://github.com/libcpr/cpr/blob/master/LICENSE                  |
-| nlohmann json              | MIT License                             | https://github.com/nlohmann/json/blob/develop/LICENSE.MIT          |
-| yaml-cpp                   | MIT License                             | https://github.com/jbeder/yaml-cpp/blob/master/LICENSE             |
-| Leaflet                    | 2-clause BSD License                    | https://github.com/Leaflet/Leaflet/blob/master/LICENSE             |
-| OpenStreetMap<sup>\*</sup> | Open Data Commons Open Database License | https://www.openstreetmap.org/copyright                            |
-| Google Material Icons      | Apache License Version 2.0              | https://www.apache.org/licenses/LICENSE-2.0.txt                    |
-| Webpack                    | MIT License                             | https://github.com/webpack/webpack/blob/master/LICENSE             |
-| Webpack CLI                | MIT License                             | https://github.com/webpack/webpack-cli/blob/master/LICENSE         |
-| Webpack Dev Server         | MIT License                             | https://github.com/webpack/webpack-dev-server/blob/master/LICENSE  |
-| HTML Webpack Plugin        | MIT License                             | https://github.com/jantimon/html-webpack-plugin/blob/main/LICENSE  |
-| Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt        |
-| Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE     |
-| Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE      |
+| Name                       | License                                 | URL                                                                          |
+| -------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| rospy                      | Apache-2.0 License                      | https://github.com/ros2/rclpy/blob/rolling/LICENSE                           |
+| rclcpp                     | Apache-2.0 License                      | https://github.com/ros2/rclcpp/blob/rolling/LICENSE                          |
+| std_msgs                   | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/std_msgs/LICENSE      |
+| sensor_msgs                | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/LICENSE   |
+| geometry_msgs              | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/geometry_msgs/LICENSE |
+| nav_msgs                   | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/nav_msgs/LICENSE      |
+| cv_bridge                  | Apache-2.0 and BSD-3-Clause License     | https://github.com/ros-perception/vision_opencv                              |
+| tf2_ros                    | BSD-3-Clause License                    | https://github.com/ros2/geometry2/blob/rolling/LICENSE                       |
+| Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                                       |
+| requests                   | Apache-2.0 License                      | https://github.com/psf/requests/blob/master/LICENSE                          |
+| ruamel.yaml                | MIT License                             | https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/LICENSE           |
+| Pillow                     | HPND License                            | https://github.com/python-pillow/Pillow/blob/master/LICENSE                  |
+| psycopg2                   | GNU Lesser General Public License       | https://www.psycopg.org/license/                                             |
+| Flask                      | BSD-3-Clause License                    | https://github.com/pallets/flask/blob/master/LICENSE.rst                     |
+| Flask-restful              | BSD-3-Clause License                    | https://github.com/flask-restful/flask-restful/blob/master/LICENSE           |
+| Flask-cors                 | MIT License                             | https://github.com/corydolphin/flask-cors/blob/master/LICENSE                |
+| LXML                       | BSD-3-Clause License                    | https://github.com/lxml/lxml/blob/master/LICENSE.txt                         |
+| jinja2                     | BSD-3-Clause License                    | https://github.com/pallets/jinja/blob/master/LICENSE.rst                     |
+| parse                      | MIT License                             | https://github.com/r1chardj0n3s/parse/blob/master/LICENSE                    |
+| pyproj                     | MIT License                             | https://github.com/pyproj4/pyproj/blob/master/LICENSE                        |
+| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE           |
+| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                                    |
+| GNU C++ Standard Library   | GPLv3 License                           | https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html                 |
+| OpenCV                     | BSD-3-Clause or Apache-2.0 License      | https://opencv.org/license                                                   |
+| cpr                        | MIT License                             | https://github.com/libcpr/cpr/blob/master/LICENSE                            |
+| nlohmann json              | MIT License                             | https://github.com/nlohmann/json/blob/develop/LICENSE.MIT                    |
+| yaml-cpp                   | MIT License                             | https://github.com/jbeder/yaml-cpp/blob/master/LICENSE                       |
+| Leaflet                    | 2-clause BSD License                    | https://github.com/Leaflet/Leaflet/blob/master/LICENSE                       |
+| OpenStreetMap<sup>\*</sup> | Open Data Commons Open Database License | https://www.openstreetmap.org/copyright                                      |
+| Google Material Icons      | Apache-2.0 License                      | https://www.apache.org/licenses/LICENSE-2.0.txt                              |
+| Webpack                    | MIT License                             | https://github.com/webpack/webpack/blob/master/LICENSE                       |
+| Webpack CLI                | MIT License                             | https://github.com/webpack/webpack-cli/blob/master/LICENSE                   |
+| Webpack Dev Server         | MIT License                             | https://github.com/webpack/webpack-dev-server/blob/master/LICENSE            |
+| HTML Webpack Plugin        | MIT License                             | https://github.com/jantimon/html-webpack-plugin/blob/main/LICENSE            |
+| Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt                  |
+| Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE               |
+| Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE                |
 
 <span style="font-size:smaller">\* © OpenStreetMap contributors. Base map and data from OpenStreetMap and OpenStreetMap Foundation.</span>
 
@@ -188,16 +187,13 @@ The following libraries and resources are needed for this project. They are show
 
 ## _3. System requirements_
 
-- Ubuntu 20.04 and ROS Noetic.
+- Ubuntu 24.04 and ROS Jazzy.
 - Current version of a web browser, at least<sup>\*</sup>:
   - Chrome 89+
   - Firefox 86+
   - Safari 14+
 
 <span style="font-size:smaller">\* Older destop versions might also work fine, but mobile ones probably won't.</span>
-<br/><br/>
-
-**Note**: The FTT currently runs with Python 3. Python 2 support ended with version 2.1.
 <br/><br/>
 
 ## _4. Installation_
@@ -207,14 +203,13 @@ The following libraries and resources are needed for this project. They are show
 ### **4.1. Installation of Python libraries**
 
 ```bash
-sudo apt-get install build-essential python3-pyproj python3-catkin-tools python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk python3-opencv libopencv-dev libyaml-cpp-dev
-sudo python3 -m pip install -U requests Pillow Flask flask-restful flask-cors psycopg2
+sudo apt install build-essential python3-pyproj python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk python3-opencv libopencv-dev libyaml-cpp-dev libcurl4-openssl-dev python3-requests python3-pil python3-psycopg2 python3-flask python3-flask-restful python3-flask-cors
 ```
 
 ### **4.2. Installation of LaTeX and libraries**
 
 ```bash
-sudo apt-get install texlive texlive-lang-german texlive-latex-extra texmaker texlive-fonts-extra texlive-xetex
+sudo apt install texlive texlive-lang-german texlive-latex-extra texlive-fonts-extra texlive-xetex
 ```
 
 ### **4.3. Installation of the Field Test Tool**
@@ -223,24 +218,33 @@ sudo apt-get install texlive texlive-lang-german texlive-latex-extra texmaker te
 cd <ros_workspace>/src
 git clone https://github.com/fkie/field_test_tool.git
 rosdep install --from-paths field_test_tool/ --ignore-src
-catkin build
+colcon build --symlink-install
 ```
 
 ### **4.4. Installation of PostgreSQL server**
 
 ```bash
-sudo apt-get install postgresql postgresql-client postgis
+sudo apt install postgresql postgresql-client postgis
 ```
 
 ### **4.5. Configuration of PostgreSQL**
 
-Change to PostgreSQL interactive terminal (recognizable by postgres=#):
+Navigate to the FTT database directory and execute the setup script:
+
+```bash
+cd <ros_workspace>/src/field_test_tool/ftt_database/postgres
+./setup_ftt_db.sh
+```
+
+The script will roughly do the following:
+
+1. Login to Postgres.
 
 ```bash
 sudo -u postgres psql
 ```
 
-Set password for user postgres:
+2. Set password for user postgres.
 
 ```psql
 \password postgres
@@ -248,52 +252,35 @@ postgres
 postgres
 ```
 
-Create FTT database:
+3. Create the FTT database:
 
 ```psql
 CREATE DATABASE ftt;
 ```
 
-Show all databases (optional):
-
-```psql
-\l
-```
-
-Change to database ftt and show it's contents:
+4. Enable postgis and postgis_topology extensions for the FTT database and quit:
 
 ```psql
 \c ftt
-\dt
-```
-
-Enable postgis and postgis_topology extensions for the current database (ftt):
-
-```psql
 CREATE EXTENSION postgis;
 CREATE EXTENSION postgis_topology;
-```
-
-Quit Postgres interactive terminal:
-
-```psql
 \q
 ```
 
-Create the database schema and fill some tables with the required values:
+5. Create the database schema and fill some tables with the required values:
 
 ```bash
-cd <ros_workspace>/src
-psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/ftt_schema.sql
-psql -U postgres -h localhost -d ftt -a -f field_test_tool/ftt_database/postgres/setup_queries.sql
+cd <ros_workspace>/src/field_test_tool/ftt_database/postgres
+psql -U postgres -h localhost -d ftt -a -f ftt_schema.sql
+psql -U postgres -h localhost -d ftt -a -f setup_queries.sql
 ```
 
 Alternative: If postgres server is on a different host:
 
 ```bash
-cd <ros_workspace>/src
-psql -h hostname -d ftt -U postgres -p 5432 -a -q -f field_test_tool/ftt_database/postgres/ftt_schema.sql ftt
-psql -h hostname -d ftt -U postgres -p 5432 -a -q -f field_test_tool/ftt_database/postgres/setup_queries.sql ftt
+cd <ros_workspace>/src/field_test_tool/ftt_database/postgres
+psql -h <hostname> -d ftt -U postgres -p 5432 -a -q -f ftt_schema.sql ftt
+psql -h <hostname> -d ftt -U postgres -p 5432 -a -q -f setup_queries.sql ftt
 ```
 
 ### **4.6. Installation texmaker (optional)**
@@ -301,7 +288,7 @@ psql -h hostname -d ftt -U postgres -p 5432 -a -q -f field_test_tool/ftt_databas
 Texmaker is an editor of LaTeX files.
 
 ```bash
-sudo apt-get install texmaker
+sudo apt install texmaker
 ```
 
 ### **4.7. Installation pgAdmin 4 (optional)**
@@ -388,9 +375,9 @@ From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interfac
 ### **4.9. Installation with Docker**
 
 The project includes Docker files and a docker-compose file to speed up the deployment of the application for testing purposes.
-The docker containers will build the web application's front end (GUI) (as described in [section 4.8](#48-installation-of-the-ftt-web-gui)), so beware of incompatibilities that may arise if then trying to rebuild it from the host system.
+The docker containers do not include building of the web application's front end (GUI), so please follow the instructions of [section 4.8](#48-installation-of-the-ftt-web-gui) for complete development and offline usage.
 
-First, make sure to have [Docker Desktop](https://docs.docker.com/desktop/install/ubuntu/) installed on your machine or follow the official documentation to install it. Then, simply step in the project's directory and run docker compose:
+First, make sure to have [Docker](https://docs.docker.com/engine/install/ubuntu/) installed on your machine or follow the official documentation to install them. Then, simply step in the project's directory and run docker compose:
 ```
 cd <ros_workspace>/src/field_test_tool
 
@@ -398,9 +385,14 @@ docker compose up
 ```
 
 Doing so will build and start three docker containers:
-  * One for the FTT ROS interface node, with access to all network ports.
+  * One for the FTT ROS interface node, with access to all network ports<sup>\*</sup>.
   * One for the FTT server and web interface (back- and front-end), with access to port 5000.
   * One for the FTT database (access only to docker's internal network).
+
+\***Note**: In order for the ROS nodes in the container to be able to communicate with nodes from the host machine, the following environmental variables must be used in the host machine (conversely the values could be changed in the docker-compose file). 
+```
+RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ROS_DOMAIN_ID=0
+```
 
 The input source code is made available to the docker containers via volume mounting. Likewise, a volume is mounted in the FTT database directory of the host environment for the database structure.
 
@@ -421,37 +413,32 @@ python3 api.py
 
 ### **5.2. FTT ROS interface**
 
-The FTT ROS node was originally implemented in Python and then ported to C++ in order to improve the processing performance. In particular, the processing of map messages and TFs was found to be very computationally intensive for the Python script. The decision was made to keep both nodes, because the Python node still offers some extra functionality that was not considered useful enough to transfer to the new implementation.
-
-The following command launches the ROS data collector (C++ implementation by default) for sending the operation mode, GPS position, local map and base link position data. Additionally, the rosbridge_server's rosbrige_websocket launcher file will be executed, allowing direct communication between the ROS environment and the web application.
+The following command launches the ROS data collector for sending the operation mode, GPS position, local map and base link position data. Additionally, the rosbridge_server's rosbrige_websocket launcher file will be executed, allowing direct communication between the ROS environment and the web application.
 
 ```bash
-roslaunch ftt_ros_interface ftt_ros.launch
+ros2 launch ftt_ros_interface ftt_ros.launch.xml
 ```
 The launch file will load the parameters in the YAML file of the package's configuration folder (details below) and then run the ROS node.
-This node will initially only advertise three configuration services (_/set_ftt_logging_, _/get_ftt_logging_, _/save_ftt_params_). If the Python implementation is used, it will also subscribe to two debug topics (_download_image_, _download_map_).
+This node will initially only advertise three configuration services (_/ftt_ros/set_status_, _/ftt_ros/get_status_, _/ftt_ros/save_params_).
 
-The service "/set_ftt_logging" is used to start or stop the POSTing of data to the FTT server/database, the service "/get_ftt_logging" returns the current state of logging activity (active: true or inactive: false), and "/save_ftt_params" can be used to store the - potentially updated - node's parameters in the ROS parameters server, back to the YAML configuration file.
+The service "set_status" is used to start or stop the POSTing of data to the FTT server/database, the service "get_status" returns the current state of logging activity (active: true or inactive: false), and "save_params" can be used to store the - potentially updated - node's parameters in the ROS parameters server, back to the YAML configuration file.
 
-| Service          | Type             |
-| ---------------- | ---------------- |
-| /set_ftt_logging | std_srvs/SetBool |
-| /get_ftt_logging | std_srvs/Trigger |
-| /save_ftt_params | std_srvs/Trigger |
+| Service              | Type             |
+| -------------------- | ---------------- |
+| /ftt_ros/set_status  | std_srvs/SetBool |
+| /ftt_ros/get_status  | std_srvs/Trigger |
+| /ftt_ros/save_params | std_srvs/Trigger |
 
 Once the logging is activated, the node's parameters are read, the subscribers for the robot data are created and the POSTing to the FTT server starts executing. Specifically, the following topics are subscribed (**Note**: the topic names are specified in the node's parameters, which can also be modified via the FTT web GUI, as explained in the specific documentation).
 
 | Topic                         | Type                        |
 | ----------------------------- | --------------------------- |
-| robot_mode                    | industrial_msgs/RobotMode   |
-| gps_fix                       | sensor_msgs/NavSatFix       |
-| local_pose                    | geometry_msgs/PoseStamped   |
-| map                           | nav_msgs/OccupancyGrid      |
-| map_jpeg<sup>\*</sup>         | sensor_msgs/CompressedImage |
-| image                         | sensor_msgs/Image           |
-| image_compressed<sup>\*</sup> | sensor_msgs/CompressedImage |
+| robot_mode                    | std_msgs/msg/Bool   |
+| gps_fix                       | sensor_msgs/msg/NavSatFix       |
+| local_pose                    | geometry_msgs/msg/PoseStamped   |
+| map                           | nav_msgs/msg/OccupancyGrid      |
+| image                         | sensor_msgs/msg/Image           |
 
-<span style="font-size:smaller">\* Only in the Python implementation.</span>
 <br/><br/>
 
 Additionally, a TF listener is started to get the robot's position (_robot_frame_ parameter) in the local coordinate frame (_map_frame_ parameter). 
@@ -459,37 +446,15 @@ Additionally, a TF listener is started to get the robot's position (_robot_frame
 **Note**: For system with limited resources, it is recommended to prevent the execution of the TF listener if the logging of the local robot position is not required. This is done by setting the node's _use_tf_ parameter to _false_.
 <br/><br/>
 
-As for the aforementioned debug topics (only in the Python implementation), "download_image" triggers a GET request to the server for all images stored under the segment ID specified in the message data, then downloads them to the "Pictures" folder of the home directoy. Similarly, "download_map" fetches the stored map for the given shift ID in the message data.
-
-| Debug Topic    | Type           |
-| -------------- | -------------- |
-| download_image | std_msgs/Int32 |
-| download_map   | std_msgs/Int32 |
-
-
 #### **5.2.1 FTT ROS interface extras**
 
 Some extra utility ROS nodes are provided:
 
-- robotModePublisher (Python): This node subscribes to two velocity command topics (of type _geometry_msgs/TwistStamped_), one expected to come from the autonomous navigation stack and the other from a joystick interpreter. It then identifies the operation mode and publishes messages of type indutrial_msgs/RobotMode accordingly. The autonomous mode is flagged at the arrival of autonomous command messages. The publised message switches to manual mode the moment a non-zero joystick command message arrives. After joystick messages stop, a fixed time (parameter) must elapse before returning to the autonomous mode if navigation commands are still being received. This timeout routine is implemented in order to prevent unwanted switching between modes.
+- robot_mode_publisher (Python): This node subscribes to two velocity command topics (of type _geometry_msgs/msg/TwistStamped_), one expected to come from the autonomous navigation stack and the other from a joystick interpreter. It then identifies the operation mode and publishes messages of type std_msgs/msg/Bool accordingly. The autonomous mode (True) is flagged at the arrival of autonomous command messages. The publised message switches to manual mode (False) the moment a non-zero joystick command message arrives. After joystick messages stop, a fixed time (parameter) must elapse before returning to the autonomous mode if navigation commands are still being received. This timeout routine is implemented in order to prevent unwanted switching between modes.
 
-  To launch the robotModePublisher, the following command can be used (parameters in the launch file):
+  To launch the robot_mode_publisher, the following command can be used (parameters in the launch file):
   ```bash
-  roslaunch ftt_ros_interface robot_mode_publisher.launch <args>
-  ```
-
-- robot_pose_publisher (C++): This node subscribes the robot's TFs and publishes the robot position (as a _geometry_msgs/PoseStamped_ message). It was introduced to be used together with the Python implementation of the FTT interface node, due to the fact that TF processing is more efficient in C++.
-
-  To launch the robot_pose_publisher, the following command can be used (parameters in the launch file):
-  ```bash
-  roslaunch ftt_ros_interface robot_pose_publisher.launch <args>
-  ```
-
-- map_to_jpeg (C++): This node subscribes the robot's map (of type _nav_msgs/OccupancyGrid_) and publishes it as an image (as a _sensor_msgs/CompressedImage_ message). It was introduced to be used together with the Python implementation of the FTT interface node, due to the fact that occupancy grid to image conversion is more efficient in C++. It's important to note that for this to work properly, FTT interface node must subscribe to both the occupancy grid map and map image topics, as the former includes resolution and origin information, which the latter doesn't.
-
-  To launch the map_to_jpeg, the following command can be used (parameters in the launch file):
-  ```bash
-  roslaunch ftt_ros_interface map_to_jpeg.launch <args>
+  ros2 launch ftt_ros_interface robot_mode_publisher.launch.xml <args>
   ```
 
 ### **5.3. FTT web GUI**
@@ -522,9 +487,6 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 
 | Parameter Name           | Default Value    | Description                                                              |
 | ------------------------ | ---------------- | ------------------------------------------------------------------------ |
-| /set_ftt_logging_service | /set_ftt_logging | Name of the service to start/stop the node. Should keep default.         |
-| /get_ftt_logging_service | /get_ftt_logging | Name of the service to get the node's status. Should keep default.       |
-| /save_ftt_params_service | /save_ftt_params | Name of the service to store the node's parameters. Should keep default. |
 | topics/robot_mode        | robot_mode       | Name of the topic for robot operating mode.                              |
 | topics/gps_fix           | gps_fix          | Name of the topic for GPS position data.                                 |
 | topics/local_pose        | local_pose       | Name of the topic for robot local position data.                         |
@@ -538,43 +500,22 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 | params/server_address    | localhost:5000   | Database API server IP and port.                                         |
 | params/send_pose_period  | 2.0              | Time period for sending position data to the database.                   |
 | params/send_map_period   | 2.0              | Time period for sending map data to the database.                        |
-| image_buffer_size        | 1                | Number of images keep in buffer.                                         |
-| image_buffer_step        | 1.0              | Minimum time interval between buffered images.                           |
+| params/image_buffer_size | 3                | Number of images keep in buffer.                                         |
+| params/image_buffer_step | 1.0              | Minimum time interval between buffered images.                           |
 
 <br/><br/>
 
 ### **6.1 Extra nodes parameters**
 
-The robotModePublisher node also requires some parameters to be set when using it. Unlike the ftt_ros node, these are set directly in the launcher file: robot_mode_publisher.launch.
+The robot_mode_publisher node also requires some parameters to be set when using it. Unlike the ftt_ros node, these are set directly in the launcher file: robot_mode_publisher.launch.xml.
 
 | Parameter Name   | Description                                                                                           |
 | ---------------- | ----------------------------------------------------------------------------------------------------- |
-| JOY_CMD_TOPIC    | ROS topic for joystick velocity command messsages of type _geometry_msgs/TwistStamped_.               |
-| NAV_CMD_TOPIC    | ROS topic for navigation velocity command messsages of type _geometry_msgs/TwistStamped_.             |
-| ROBOT_MODE_TOPIC | ROS topic for robot operating mode of type _industrial_msgs/RobotMode_.                               |
-| JOY_CMD_TIMEOUT  | Parameter to set the mininum time to switch out of manual mode after joystick commands stop arriving. |
-| PUBLISH_PERIOD   | Parameter to set the interval time for publishing robot mode messages.                                |
-
-<br/><br/>
-
-The same holds true for the robot_pose_publisher node:
-
-| Parameter Name   | Description                                                                               |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| robot_pose_topic | ROS topic for the published robot pose of type _geometry_msgs/PoseStamped_.               |
-| robot_frame      | Parameter to set the name of the robot frame (position of this frame relative to global). |
-| global_frame     | Parameter to set the name of the global frame.                                            |
-| publish_rate     | Parameter to set the frequency for publishing robot pose messages.                        |
-
-<br/><br/>
-
-And also for the map_to_jpeg node:
-
-| Parameter Name | Description                                                                  |
-| -------------- | ---------------------------------------------------------------------------- |
-| map_topic      | ROS topic for the subscribed map of type _nav_msgs/OccupancyGrid_.           |
-| map_jpeg_topic | ROS topic for the published map image of type _sensor_msgs/CompressedImage_. |
-| publish_rate   | Parameter to set the frequency for publishing robot pose messages.           |
+| joy_cmd_topic    | ROS topic for joystick velocity command messsages of type _geometry_msgs/msg/TwistStamped_.           |
+| nav_cmd_topic    | ROS topic for navigation velocity command messsages of type _geometry_msgs/msg/TwistStamped_.         |
+| robot_mode_topic | ROS topic for robot operating mode of type _std_msgs/msg/Bool_. True = Autonomous, False = Manual.    |
+| joy_cmd_timeout  | Parameter to set the mininum time to switch out of manual mode after joystick commands stop arriving. |
+| publish_period   | Parameter to set the interval time for publishing robot mode messages.                                |
 
 <br/><br/>
 

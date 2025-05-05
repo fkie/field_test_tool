@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>ftt_ros_interface</name>
-  <version>0.2.0</version>
+  <version>2.0.0</version>
   <description>ROS data collector and database interface nodes for the Field Test Tool</description>
   <author>Johannes Pellenz</author>
   <author>Sebastian de la Cueva Couto Klein</author>
@@ -10,35 +10,27 @@
   <maintainer email="carlos.tampier.cotoras@fkie.fraunhofer.de">Carlos Tampier Cotoras</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  
-  <build_depend>message_generation</build_depend>
-  <build_depend>industrial_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>std_srvs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>tf2_ros</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>roslib</build_depend>
-  <build_depend>yaml-cpp</build_depend>
-  <build_depend>image_transport</build_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
-  <run_depend>message_runtime</run_depend>
-  <run_depend>industrial_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>tf2_ros</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>roslib</run_depend>
-  <run_depend>yaml-cpp</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>rosbridge_server</run_depend>
+  <depend>ament_index_cpp</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>cv_bridge</depend>
+  <depend>geometry_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>nav_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2</depend>
+
+  <exec_depend>rosbridge_server</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 
 </package>

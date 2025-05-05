@@ -5,28 +5,26 @@
  * Copyright (c) 2021 - Fraunhofer FKIE
  */
 
-//Wrap roslib's service calls in promises. Services:
-//  * get_param_names
-//  * get_param
-//  * set_param
-//  * topic_type
-//  * topics_for_type
-//  * nodes
-//  * node_details
+//Wrap some roslib's service calls in promises. Services:
+//  * /ftt_ros/list_parameters (previously /rosapi/get_param_names, but now it's too slow)
+//  * /rosapi/get_param
+//  * /rosapi/set_param
+//  * /rosapi/topic_type
+//  * /rosapi/topics_for_type
 
-export function getRosParamNames(ros) {
+export function getRosParamNames(ros, prefix) {
   return new Promise((resolve, reject) => {
     const client = new ROSLIB.Service({
       ros: ros,
-      name: "/rosapi/get_param_names",
-      serviceType: "rosapi/GetParamNames",
+      name: "/ftt_ros/list_parameters",
+      serviceType: "rcl_interfaces/srv/ListParameters",
     });
-    const request = new ROSLIB.ServiceRequest();
+    const request = {prefixes: [prefix]};
     client.callService(
       request,
       function (result) {
         console.log("Retrieved all ROS parameter names.");
-        resolve(result.names);
+        resolve(result.result.names.map((name) => "/ftt_ros:"+name));
       },
       function (message) {
         reject(new Error(message));
@@ -40,12 +38,12 @@ export function getRosParam(ros, paramName) {
     const client = new ROSLIB.Service({
       ros: ros,
       name: "/rosapi/get_param",
-      serviceType: "rosapi/GetParam",
+      serviceType: "rosapi_msgs/srv/GetParam",
     });
-    const request = new ROSLIB.ServiceRequest({
+    const request = {
       name: paramName,
-      default: "",
-    });
+      default_value: "",
+    };
     client.callService(
       request,
       function (result) {
@@ -64,12 +62,12 @@ export function setRosParam(ros, paramName, paramValue) {
     const client = new ROSLIB.Service({
       ros: ros,
       name: "/rosapi/set_param",
-      serviceType: "rosapi/SetParam",
+      serviceType: "rosapi_msgs/srv/SetParam",
     });
-    const request = new ROSLIB.ServiceRequest({
+    const request = {
       name: paramName,
       value: paramValue,
-    });
+    };
     client.callService(
       request,
       function (result) {
@@ -88,11 +86,11 @@ export function getRosTopicType(ros, topic) {
     const client = new ROSLIB.Service({
       ros: ros,
       name: "/rosapi/topic_type",
-      serviceType: "rosapi/TopicType",
+      serviceType: "rosapi_msgs/srv/TopicType",
     });
-    const request = new ROSLIB.ServiceRequest({
+    const request = {
       topic: topic,
-    });
+    };
     client.callService(
       request,
       function (result) {
@@ -111,11 +109,11 @@ export function getRosTopicsForType(ros, topicType) {
     const client = new ROSLIB.Service({
       ros: ros,
       name: "/rosapi/topics_for_type",
-      serviceType: "rosapi/TopicsForType",
+      serviceType: "rosapi_msgs/srv/TopicsForType",
     });
-    const request = new ROSLIB.ServiceRequest({
+    const request = {
       type: topicType,
-    });
+    };
     client.callService(
       request,
       function (result) {
@@ -126,63 +124,5 @@ export function getRosTopicsForType(ros, topicType) {
         reject(new Error(message));
       }
     );
-  });
-}
-
-export function getRosNodes(ros) {
-  return new Promise((resolve, reject) => {
-    const client = new ROSLIB.Service({
-      ros: ros,
-      name: "/rosapi/nodes",
-      serviceType: "rosapi/Nodes",
-    });
-
-    const request = new ROSLIB.ServiceRequest();
-    if (typeof failedCallback === "function") {
-      client.callService(
-        request,
-        function (result) {
-          console.log(`Got all ROS nodes`);
-          resolve(result.nodes);
-        },
-        function (message) {
-          reject(new Error(message));
-        }
-      );
-    } else {
-      client.callService(request, function (result) {
-        callback(result.nodes);
-      });
-    }
-  });
-}
-
-export function getRosNodeDetails(ros, node) {
-  return new Promise((resolve, reject) => {
-    const client = new ROSLIB.Service({
-      ros: ros,
-      name: "/rosapi/node_details",
-      serviceType: "rosapi/NodeDetails",
-    });
-
-    const request = new ROSLIB.ServiceRequest({
-      node: node,
-    });
-    if (typeof failedCallback === "function") {
-      client.callService(
-        request,
-        function (result) {
-          console.log(`Got details of node ${node}`);
-          resolve([result.subscribing, result.publishing, result.services]);
-        },
-        function (message) {
-          reject(new Error(message));
-        }
-      );
-    } else {
-      client.callService(request, function (result) {
-        callback(result);
-      });
-    }
   });
 }

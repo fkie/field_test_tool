@@ -13,7 +13,7 @@ import {
 
 //ROS parameters interaction class.
 export class RosParamsInterface {
-  constructor(ros, prefix = "/ftt_ros/params/") {
+  constructor(ros, prefix = "params") {
     //Set arguments as properties.
     this.ros = ros;
     //Initialize variables.
@@ -28,11 +28,7 @@ export class RosParamsInterface {
   async getFttRosParamNames() {
     if (!this.fttRosParamNames) {
       //Get parameters from ROS.
-      const rosParamNames = await getRosParamNames(this.ros);
-      //Filter parameters of the ftt ros node.
-      this.fttRosParamNames = rosParamNames.filter((name) =>
-        name.includes(this.fttRosParamNamePrefix)
-      );
+      this.fttRosParamNames = await getRosParamNames(this.ros, this.fttRosParamNamePrefix);
     }
   }
 
@@ -43,7 +39,7 @@ export class RosParamsInterface {
     const fttParams = [];
     for (const name of this.fttRosParamNames) {
       fttParams.push({
-        name: name.split("/").pop(),
+        name: name.split(/[/:.]/).pop(),
         value: await getRosParam(this.ros, name),
       });
     }

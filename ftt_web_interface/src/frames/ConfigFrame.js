@@ -49,8 +49,8 @@ export class ConfigFrame {
       new PersonnelInterface(serverInterface),
       new PoseSourceInterface(serverInterface),
       new VehicleInterface(serverInterface),
-      new RosParamsInterface(this.ros, "/ftt_ros/params/"),
-      new RosTopicsInterface(this.ros, "/ftt_ros/topics/"),
+      new RosParamsInterface(this.ros),
+      new RosTopicsInterface(this.ros),
     ];
 
     //Append event listeners:
@@ -349,10 +349,10 @@ export class ConfigFrame {
     //Call ros service to save parameters to file.
     const client = new ROSLIB.Service({
       ros: this.ros,
-      name: "/save_ftt_params",
+      name: "/ftt_ros/save_params",
       serviceType: "std_srvs/Trigger",
     });
-    const request = new ROSLIB.ServiceRequest();
+    const request = {};
     client.callService(
       request,
       function (result) {

@@ -59,9 +59,10 @@ class DBInterface:
     # Static class to wrap psycopg2 functions.
 
     @staticmethod
-    def init(db_host):
+    def init(db_host, db_port):
         DBInterface.host = db_host or "localhost"
-        DBInterface.conn = connect("host=%s dbname='ftt' user='postgres' password='postgres'" % DBInterface.host)
+        DBInterface.port = db_port or "5432"
+        DBInterface.conn = connect("host='%s' port='%s' dbname='ftt' user='postgres' password='postgres'" % (DBInterface.host, DBInterface.port))
 
     @staticmethod
     def execute(sql_stmt, params=None, returning=False, once=False):
@@ -1329,6 +1330,7 @@ class GenerateReport(Resource):
             # Edit database ip.
             if child.tag == "postgis":
                 child.set("host", DBInterface.host)
+                child.set("port", DBInterface.port)
             # Edit report info.
             if child.tag == "report":
                 child.set("name", data["report_name"])
@@ -1358,7 +1360,7 @@ class GenerateReport(Resource):
         server_path = os.path.dirname(os.path.realpath(__file__))
         report_generator_path = server_path+"/../../ftt_report_generator/src/db2rep.py"
         # Execute script.
-        return os.system("python3 %s ../config/auto_config.xml" % report_generator_path)
+        return os.system("bash -c 'source ~/.bashrc && python3 %s ../config/auto_config.xml'" % report_generator_path)
 
     @staticmethod
     def check_gps_poses(test_event_id):
@@ -1474,12 +1476,13 @@ if __name__ == '__main__':
     # Optional arguments.
     parser=argparse.ArgumentParser()
     parser.add_argument('--server_ip', help='IP on which this server will run')
-    parser.add_argument('--server_port', help='IP on which this server will run')
+    parser.add_argument('--server_port', help='Port on which this server will run')
     parser.add_argument('--database_ip', help='IP on which the postgres database runs')
+    parser.add_argument('--database_port', help='Port on which the postgres database runs')
     args=parser.parse_args()
 
     # Initialize the database interface.
-    DBInterface.init(args.database_ip)
+    DBInterface.init(args.database_ip, args.database_port)
     # Run the web server.
     server_ip = args.server_ip or '0.0.0.0'
     server_port = args.server_port or 5000

@@ -14,15 +14,16 @@ import psycopg2.extras
 ###############################################################
 
 class PgAdapter:
-    def __init__(self, host, dbname, user, password):
+    def __init__(self, host, port, dbname, user, password):
         self.host = host
+        self.port = port
         self.dbname = dbname
         self.user = user
         self.password = password
 
     def connect(self):
-        conn_string = "host='%s' dbname='%s' user='%s' password='%s'" % (
-            self.host, self.dbname, self.user, self.password)
+        conn_string = "host='%s' port='%s' dbname='%s' user='%s' password='%s'" % (
+            self.host, self.port, self.dbname, self.user, self.password)
         print(("Connecting to db: %s" % (self.dbname,)))
         self.conn = psycopg2.connect(conn_string)
         self.cursor = self.conn.cursor()

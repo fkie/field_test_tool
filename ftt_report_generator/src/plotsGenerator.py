@@ -203,7 +203,7 @@ class PlotsGenerator:
         # Set legend
         fontP = FontProperties()
         fontP.set_size('small')
-        legend = [self.dist_seq[0][0][0], self.dist_seq[0][1][0]]
+        legend = list({item for shift_id in self.dist_seq for seg_type in shift_id for item in seg_type if isinstance(item, str)})
         legend = [w.replace('ito', 'manual') for w in legend]
         self.ax.legend(legend, prop = fontP, loc='upper right')
 

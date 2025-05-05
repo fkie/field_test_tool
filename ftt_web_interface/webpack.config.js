@@ -16,7 +16,7 @@ module.exports = {
   devServer: {
     contentBase: "./",
   },
-  devtool: "eval-cheap-module-source-map",
+  devtool: "cheap-module-eval-source-map",
   plugins: [
     new HtmlWebpackPlugin({
       template: './index.html',

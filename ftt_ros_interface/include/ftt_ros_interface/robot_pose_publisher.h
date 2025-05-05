@@ -1,26 +1,28 @@
 #ifndef ROBOT_POSE_PUBLISHER_H
 #define ROBOT_POSE_PUBLISHER_H
 
-#include <ros/ros.h>
-#include <tf2_ros/transform_listener.h>
+#include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
-class RobotPosePublisher {
+class RobotPosePublisher : public rclcpp::Node {
 public:
   RobotPosePublisher();
 	virtual ~RobotPosePublisher();
 protected:
-	void publishTimerCb(const ros::TimerEvent& event);
+	void publishTimerCb();
 private:
 	double publish_rate;
   std::string robot_frame;
   std::string global_frame;
 
-  ros::Publisher pub;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub;
 
-  tf2_ros::Buffer tf2_buffer;
-  tf2_ros::TransformListener *tf2_listener;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener{nullptr};
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer;
 
-  ros::Timer timer;
+  rclcpp::TimerBase::SharedPtr timer;
 };
 
 #endif

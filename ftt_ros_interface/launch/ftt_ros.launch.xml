@@ -1,0 +1,17 @@
+<launch>
+  <!-- <arg name="save_image_dir" default="$(env HOME)/Pictures "/> -->
+  <arg name="robot_namespace" default="/"/>
+
+  <group>
+    <push_ros_namespace namespace="$(var robot_namespace)"/>
+    <!-- ROS Bridge -->
+    <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml"/>
+
+    <!-- FTT interface node -->
+    <!-- <let name="launch-prefix" value="gdb -ex run -ex bt -batch - -args"/> -->
+    <node name="ftt_ros" pkg="ftt_ros_interface" exec="ros2api" output="screen">
+      <param from="$(find-pkg-share ftt_ros_interface)/config/ros2api_config.yaml"/>
+    </node>
+  </group>
+
+</launch>

@@ -1,0 +1,16 @@
+<launch>
+  <arg name="joy_cmd_topic" default="/joystick/cmd_vel"/>
+  <arg name="nav_cmd_topic" default="/navigation/cmd_vel"/>
+  <arg name="robot_mode_topic" default="/robot_mode"/>
+  <arg name="joy_cmd_timeout" default="0.5"/>
+  <arg name="publish_period" default="1.0"/>
+
+  <node name="robot_mode_publisher" pkg="ftt_ros_interface" exec="robot_mode_publisher.py"  output="screen">
+    <remap from="joy_cmd_vel" to="$(var joy_cmd_topic)"/>
+    <remap from="nav_cmd_vel" to="$(var nav_cmd_topic)"/>
+    <remap from="robot_mode" to="$(var robot_mode_topic)"/>
+
+    <param name="joy_cmd_timeout" value="$(var joy_cmd_timeout)"/>
+    <param name="publish_period" value="$(var publish_period)"/>
+  </node>
+</launch>
