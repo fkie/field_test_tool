@@ -81,7 +81,7 @@ export class ShiftCompare {
               1.0
             );
             //Get the lng-lat coordinates (at most every 0.5 meter).
-            geoJsonData.features.forEach((feature) => {
+            geoJsonData.features && geoJsonData.features.forEach((feature) => {
               // const coords = feature.geometry.coordinates;
               // for (const p of trajectory) {
               //   if (distL2FromLngLat(p, coords) < 0.5) {

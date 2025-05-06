@@ -168,7 +168,7 @@ export const distDtw = (t0, t1) => {
  *
  */
 export const minimumDistance = (source, target) => {
-  let totalError = 0;
+  let totalError = source.length > 0 ? 0 : Infinity;
   source.forEach((p) => {
     let minDistance = Infinity;
     for (let i = 0; i < target.length - 1; i++) {
