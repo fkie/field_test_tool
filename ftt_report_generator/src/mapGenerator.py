@@ -92,11 +92,11 @@ class MapGenerator:
                     # Get the tile.
                     tile = Image.open(filename)
                     # Fix the tile size.
-                    tile = tile.resize((TILE_FIX_SIZE, TILE_FIX_SIZE), Image.Resampling.LANCZOS)
+                    tile = tile.resize((TILE_FIX_SIZE, TILE_FIX_SIZE), Image.LANCZOS)
                     # Paste it in the canvas.
                     map_images.paste(tile, box=((xtile-xmin)*TILE_FIX_SIZE ,  (ytile-ymin)*TILE_FIX_SIZE))
-                except:
-                    print(("Tile not found: %s/%s/%s" % (zoom, xtile, ytile)))
+                except Exception as error:
+                    print(("Cannot load tile: %s/%s/%s. Error: " % (zoom, xtile, ytile)), error)
         return map_images
 
     def draw_segment_points(self, seg_id, map_images, xmin, ymin, zoom):
@@ -253,7 +253,7 @@ class MapGenerator:
         if map_image_width < 4*TILE_FIX_SIZE:
             resize_ratio = 4.0*TILE_FIX_SIZE/map_image_width
             # Fix the tile size.
-            map_image = map_image.resize((int(map_image_width*resize_ratio), int(map_image_height*resize_ratio)), Image.Resampling.LANCZOS)
+            map_image = map_image.resize((int(map_image_width*resize_ratio), int(map_image_height*resize_ratio)), Image.LANCZOS)
             # Adjust the resolution accordingly.
             resolution /= resize_ratio
         # Add local position data to image:
