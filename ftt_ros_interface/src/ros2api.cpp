@@ -322,11 +322,11 @@ void Ros2api::autonomousModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
       geometry_msgs::msg::TransformStamped transform_stamped{};
       try {
         transform_stamped = tf_buffer->lookupTransform(map_frame, robot_frame, tf2::TimePointZero);
+        local_x = transform_stamped.transform.translation.x;
+        local_y = transform_stamped.transform.translation.y;
+        valid_local_pose = true;
       } catch (tf2::TransformException & ex) {
       }
-      local_x = transform_stamped.transform.translation.x;
-      local_y = transform_stamped.transform.translation.y;
-      valid_local_pose = true;
     } else {
       if (
         last_pose_stamped &&
@@ -345,7 +345,7 @@ void Ros2api::autonomousModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
       return;
     } else if (!valid_local_pose) {
       RCLCPP_WARN_STREAM(get_logger(), "Posting new segment without local position data.");
-    } else {
+    } else if (!valid_gps_pose){
       RCLCPP_WARN_STREAM(get_logger(), "Posting new segment without gps position data.");
     }
     // Build the body of the HTTP request
