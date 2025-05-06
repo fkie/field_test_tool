@@ -1,6 +1,7 @@
 <launch>
   <!-- <arg name="save_image_dir" default="$(env HOME)/Pictures "/> -->
   <arg name="robot_namespace" default="/"/>
+  <arg name="use_sim_time" default="false"/>
 
   <group>
     <push_ros_namespace namespace="$(var robot_namespace)"/>
@@ -11,6 +12,7 @@
     <!-- <let name="launch-prefix" value="gdb -ex run -ex bt -batch - -args"/> -->
     <node name="ftt_ros" pkg="ftt_ros_interface" exec="ros2api" output="screen">
       <param from="$(find-pkg-share ftt_ros_interface)/config/ros2api_config.yaml"/>
+      <param name="use_sim_time" value="$(var use_sim_time)" />
     </node>
   </group>
 
