@@ -4,6 +4,7 @@
   <arg name="robot_mode_topic" default="/robot_mode"/>
   <arg name="joy_cmd_timeout" default="0.5"/>
   <arg name="publish_period" default="1.0"/>
+  <arg name="use_sim_time" default="false"/>
 
   <node name="robot_mode_publisher" pkg="ftt_ros_interface" exec="robot_mode_publisher.py"  output="screen">
     <remap from="joy_cmd_vel" to="$(var joy_cmd_topic)"/>
@@ -12,5 +13,6 @@
 
     <param name="joy_cmd_timeout" value="$(var joy_cmd_timeout)"/>
     <param name="publish_period" value="$(var publish_period)"/>
+    <param name="use_sim_time" value="$(var use_sim_time)" />
   </node>
 </launch>
