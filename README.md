@@ -158,7 +158,7 @@ Figures 4 and 5 show an overview of the FTT web GUI displaying GPS and local pos
 
 ## _3. Installation_
 
-### **4.1. Installation with script**
+### **3.1. Installation with script**
 
 Simply clone the repository and run the installation script:
 
