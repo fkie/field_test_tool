@@ -147,7 +147,7 @@ Figures 4 and 5 show an overview of the FTT web GUI displaying GPS and local pos
 
 ## _2. System requirements_
 
-- Ubuntu 24.04 and ROS Jazzy.
+- Ubuntu 20.04 and ROS Humble.
 - Current version of a web browser, at least<sup>\*</sup>:
   - Chrome 89+
   - Firefox 86+
