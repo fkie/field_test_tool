@@ -198,36 +198,52 @@ The following libraries and resources are needed for this project. They are show
 
 ## _4. Installation_
 
-**Note**: See installation with Docker at the end of the section.
+### **4.1. Installation with script**
 
-### **4.1. Installation of Python libraries**
+Simply clone the repository run the installation script:
+
+```bash
+cd <ros_workspace>/src
+git clone https://github.com/fkie/field_test_tool.git
+cd field_test_tool
+./install.sh
+```
+
+It will install the required dependencies, build the ros nodes and the web server, and link the ```run.sh``` script in the ```.local/bin``` directory, so that the complete Field Test Tool can be then invoked with the command ```field-test-tool```.
+
+A step-by-step installation without the script is presented below.
+
+<details>
+
+<summary>Show step-by-step instructions</summary>
+
+#### **4.1.1. Installation of Python libraries**
 
 ```bash
 sudo apt install build-essential python3-pyproj python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk python3-opencv libopencv-dev libyaml-cpp-dev libcurl4-openssl-dev python3-requests python3-pil python3-psycopg2 python3-flask python3-flask-restful python3-flask-cors
 ```
 
-### **4.2. Installation of LaTeX and libraries**
+#### **4.1.2. Installation of LaTeX and libraries**
 
 ```bash
 sudo apt install texlive texlive-lang-german texlive-latex-extra texlive-fonts-extra texlive-xetex
 ```
 
-### **4.3. Installation of the Field Test Tool**
+#### **4.1.3. Installation of the Field Test Tool**
 
 ```bash
-cd <ros_workspace>/src
-git clone https://github.com/fkie/field_test_tool.git
-rosdep install --from-paths field_test_tool/ --ignore-src
+cd <ros_workspace>
+rosdep install --from-paths src/field_test_tool/ --ignore-src
 colcon build --symlink-install
 ```
 
-### **4.4. Installation of PostgreSQL server**
+#### **4.1.4. Installation of PostgreSQL server**
 
 ```bash
 sudo apt install postgresql postgresql-client postgis
 ```
 
-### **4.5. Configuration of PostgreSQL**
+#### **4.1.5. Configuration of PostgreSQL**
 
 Navigate to the FTT database directory and execute the setup script:
 
@@ -283,7 +299,7 @@ psql -h <hostname> -d ftt -U postgres -p 5432 -a -q -f ftt_schema.sql ftt
 psql -h <hostname> -d ftt -U postgres -p 5432 -a -q -f setup_queries.sql ftt
 ```
 
-### **4.6. Installation texmaker (optional)**
+#### **4.1.6. Installation texmaker (optional)**
 
 Texmaker is an editor of LaTeX files.
 
@@ -291,11 +307,11 @@ Texmaker is an editor of LaTeX files.
 sudo apt install texmaker
 ```
 
-### **4.7. Installation pgAdmin 4 (optional)**
+#### **4.1.7. Installation pgAdmin 4 (optional)**
 
 PgAdmin is a management software for the PostgreSQL-database. Follow the installation instruction from the [pgAdmin's website](https://www.pgadmin.org/download/pgadmin-4-apt/)
 
-### **4.8. Installation of the FTT Web GUI**
+#### **4.1.8. Installation of the FTT Web GUI**
 
 Once cloned, the repository already contains all the files ready for the web server to serve the web application. **However**, to further develop, make changes to the JavaScript code or use the application in offline mode, certain tools/libraries will be needed and the following steps will walk you through the installation process.
 
@@ -326,12 +342,12 @@ For:
 Otherwise, proceed with the installation steps below.
 <br/><br/>
 
-#### **_4.8.1. Installation of Node.js_**
+##### **4.1.8.1. Installation of Node.js**
 
 Install the latest version of Node.js for you machine from https://nodejs.org. This will give you access to the **_npm_** package manager needed for the next steps.
 <br/><br/>
 
-#### **_4.8.2. Installation of npm libraries_**
+##### **4.1.8.2. Installation of npm libraries**
 
 The following npm libraries (and their dependencies) will be installed:
 
@@ -354,28 +370,28 @@ cd <ros_workspace>/src/field_test_tool/ftt_web_interface
 npm install
 ```
 
-#### **_4.8.3. Installation of ESLint (optional for VS Code)_**
+##### **4.1.8.3. Installation of ESLint (optional for VS Code)**
 
 If you're working with VS Code, linting can be made available for this project to help with development. To do this, install the ESLint extension from the extensions tab of VSCode and enable it.
 
 Linting will be shown according to the rules set in the _.eslintrc.json_ file.
 <br/><br/>
 
-#### **_4.8.4. Useful npm commands_**
+##### **4.1.8.4. Useful npm commands**
 
-From the project directory _<ros_workspace>/src/field_test_tool/ftt_web_interface_ the following npm commands are conveniently available:
+From the project directory ```<ros_workspace>/src/field_test_tool/ftt_web_interface``` the following npm commands are conveniently available:
 
 | Command            | Description |
 | ------------------ | ----------- |
 | npm run build      | Bundles the different scripts and builds index.js and config.js under the assets/scripts folder. |
-| npm run build:dev  | Bundles the scripts and starts a development server to serve the applications at _localhost:8080_. </br>**Warning**: Since the web app is meant to be served from the same server as the database API,</br>the app won't work properly unless the server address is manually changed in _src/utility/ServerInterface.js_. |
+| npm run build:dev  | Bundles the scripts and starts a development server to serve the applications at ```localhost:8080```. </br>**Warning**: Since the web app is meant to be served from the same server as the database API,</br>the app won't work properly unless the server address is manually changed in ```src/utility/ServerInterface.js```. |
 | npm run build:prod | Just like build, but the built scripts are also optimized for production. |
 
+</details>
 
-### **4.9. Installation with Docker**
+### **4.2. Installation with Docker**
 
 The project includes Docker files and a docker-compose file to speed up the deployment of the application for testing purposes.
-The docker containers do not include building of the web application's front end (GUI), so please follow the instructions of [section 4.8](#48-installation-of-the-ftt-web-gui) for complete development and offline usage.
 
 First, make sure to have [Docker](https://docs.docker.com/engine/install/ubuntu/) installed on your machine or follow the official documentation to install them. Then, simply step in the project's directory and run docker compose:
 ```
@@ -400,6 +416,14 @@ With the docker containers running, the execution steps from sections [5.1](#51-
 <br/><br/>
 
 ## _5. Execution_
+
+If you installed the Field Test Tool with the installation script, you can start the FTT server and ROS nodes with the command:
+
+```bash
+field-test-tool
+```
+
+Then skip to [Section 5.3](#53-ftt-web-gui).
 
 ### **5.1. FTT server**
 
@@ -459,12 +483,12 @@ Some extra utility ROS nodes are provided:
 
 ### **5.3. FTT web GUI**
 
-After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server). Usage instructions can be found under the _docs_ directory of this repository.
+After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server). Usage instructions can be found under the ```docs``` directory of this repository.
 <br/><br/>
 
 ### **5.4. PDF-Report generator**
 
-The following commands will run the report generator. The output PDF report will be available at _<ros_workspace>/src/field_test_tool/ftt_report_generator/build/report.pdf_. The report configuration options are explained below.
+The report generator can be directly called from within the web GUI, but if you want to manually do it, it can be achieved with the following commands. The output PDF report will be available at ```<ros_workspace>/src/field_test_tool/ftt_report_generator/build/report.pdf```. The report configuration options are explained below.
 
 ```bash
 cd <ros_workspace>/src/field_test_tool/ftt_report_generator/src/
@@ -474,7 +498,7 @@ python3 db2rep.py <path_to_config_file> (e.g. ../config/2021_fkie_test.xml)
 
 ### **5.5. FTT database**
 
-Usually, you won't need to directly interact with the database after its initial setup, but the ```ftt_database``` folder of the repository does include a utility Python script called ```mergeDbs.py```. This script can be used to copy the data stored in a souce ftt database (e.g. running in your robot) to a target ftt database (e.g. running in your development pc). To run it, just specify the connection information for both databases as arguments to the program:
+Usually, you won't need to directly interact with the database after its initial setup, but the ```ftt_database``` folder of the repository does include a utility Python script called ```mergeDbs.py```. This script can be used to copy the data stored in a source ftt database (e.g. running in your robot) to a target ftt database (e.g. running in your development PC). To run it, just specify the connection information for both databases as arguments to the program:
 ```bash
 cd <ros_workspace>/src/field_test_tool/ftt_database/scripts/
 python3 mergeDbs.py "host=<source_system_ip> dbname=ftt user=postgres password=postgres" "host=<target_system_ip> dbname=ftt user=postgres password=postgres"
