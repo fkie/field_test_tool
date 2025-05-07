@@ -372,7 +372,7 @@ RMW_IMPLEMENTATION=rmw_fastrtps_cpp && ROS_DOMAIN_ID=0
 
 The input source code is made available to the docker containers via volume mounting. Likewise, a volume is mounted in the FTT database directory of the host environment for the database structure.
 
-With the docker containers running, the execution steps from sections [5.1](#51-ftt-server) and [5.2](#52-ftt-ros-interface) can be skipped.
+With the docker containers running, the execution steps from sections [4.1](#41-ftt-server) and [4.2](#42-ftt-ros-interface) can be skipped.
 <br/><br/>
 
 ## _4. Execution_
@@ -383,7 +383,7 @@ If you installed the Field Test Tool with the installation script, you can start
 field-test-tool
 ```
 
-Then skip to [Section 5.3](#53-ftt-web-gui).
+Then skip to [Section 4.3](#43-ftt-web-gui).
 
 ### **4.1. FTT server**
 
