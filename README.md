@@ -25,6 +25,12 @@ The Field Test Tools comprises five software modules:
 - A web user interface to the server API and the ROS interface.
 <br/><br/>
 
+A detailed explanation of each component is presented below. Operating instructions are also available under the ```doc``` directory of this repository.
+
+<details>
+
+<summary>Show detailed description</summary>
+
 ### **1.1. Database**
 
 A PostgreSQL database with PostGIS extension is used to store the relevant data. The databse schema is shown in Figure 1. The robot's position, operating mode, images and user notes are stored under a hierarchical logging structure representing the trial instance (Test Event), test attempt (Shift), and route section (Leg). Each trajectory under a single operating mode comprises a Segment entry.
@@ -137,55 +143,9 @@ Figures 4 and 5 show an overview of the FTT web GUI displaying GPS and local pos
 </figure>
 <br/><br/>
 
-## _2. Acknowledgements_
+</details>
 
-The following libraries and resources are needed for this project. They are shown alongside their respective license.
-
-| Name                       | License                                 | URL                                                                          |
-| -------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
-| rospy                      | Apache-2.0 License                      | https://github.com/ros2/rclpy/blob/rolling/LICENSE                           |
-| rclcpp                     | Apache-2.0 License                      | https://github.com/ros2/rclcpp/blob/rolling/LICENSE                          |
-| std_msgs                   | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/std_msgs/LICENSE      |
-| sensor_msgs                | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/LICENSE   |
-| geometry_msgs              | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/geometry_msgs/LICENSE |
-| nav_msgs                   | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/nav_msgs/LICENSE      |
-| cv_bridge                  | Apache-2.0 and BSD-3-Clause License     | https://github.com/ros-perception/vision_opencv                              |
-| tf2_ros                    | BSD-3-Clause License                    | https://github.com/ros2/geometry2/blob/rolling/LICENSE                       |
-| Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                                       |
-| requests                   | Apache-2.0 License                      | https://github.com/psf/requests/blob/master/LICENSE                          |
-| ruamel.yaml                | MIT License                             | https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/LICENSE           |
-| Pillow                     | HPND License                            | https://github.com/python-pillow/Pillow/blob/master/LICENSE                  |
-| psycopg2                   | GNU Lesser General Public License       | https://www.psycopg.org/license/                                             |
-| Flask                      | BSD-3-Clause License                    | https://github.com/pallets/flask/blob/master/LICENSE.rst                     |
-| Flask-restful              | BSD-3-Clause License                    | https://github.com/flask-restful/flask-restful/blob/master/LICENSE           |
-| Flask-cors                 | MIT License                             | https://github.com/corydolphin/flask-cors/blob/master/LICENSE                |
-| LXML                       | BSD-3-Clause License                    | https://github.com/lxml/lxml/blob/master/LICENSE.txt                         |
-| jinja2                     | BSD-3-Clause License                    | https://github.com/pallets/jinja/blob/master/LICENSE.rst                     |
-| parse                      | MIT License                             | https://github.com/r1chardj0n3s/parse/blob/master/LICENSE                    |
-| pyproj                     | MIT License                             | https://github.com/pyproj4/pyproj/blob/master/LICENSE                        |
-| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE           |
-| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                                    |
-| GNU C++ Standard Library   | GPLv3 License                           | https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html                 |
-| OpenCV                     | BSD-3-Clause or Apache-2.0 License      | https://opencv.org/license                                                   |
-| cpr                        | MIT License                             | https://github.com/libcpr/cpr/blob/master/LICENSE                            |
-| nlohmann json              | MIT License                             | https://github.com/nlohmann/json/blob/develop/LICENSE.MIT                    |
-| yaml-cpp                   | MIT License                             | https://github.com/jbeder/yaml-cpp/blob/master/LICENSE                       |
-| Leaflet                    | 2-clause BSD License                    | https://github.com/Leaflet/Leaflet/blob/master/LICENSE                       |
-| OpenStreetMap<sup>\*</sup> | Open Data Commons Open Database License | https://www.openstreetmap.org/copyright                                      |
-| Google Material Icons      | Apache-2.0 License                      | https://www.apache.org/licenses/LICENSE-2.0.txt                              |
-| Webpack                    | MIT License                             | https://github.com/webpack/webpack/blob/master/LICENSE                       |
-| Webpack CLI                | MIT License                             | https://github.com/webpack/webpack-cli/blob/master/LICENSE                   |
-| Webpack Dev Server         | MIT License                             | https://github.com/webpack/webpack-dev-server/blob/master/LICENSE            |
-| HTML Webpack Plugin        | MIT License                             | https://github.com/jantimon/html-webpack-plugin/blob/main/LICENSE            |
-| Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt                  |
-| Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE               |
-| Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE                |
-
-<span style="font-size:smaller">\* © OpenStreetMap contributors. Base map and data from OpenStreetMap and OpenStreetMap Foundation.</span>
-
-<br/><br/>
-
-## _3. System requirements_
+## _2. System requirements_
 
 - Ubuntu 24.04 and ROS Jazzy.
 - Current version of a web browser, at least<sup>\*</sup>:
@@ -196,11 +156,11 @@ The following libraries and resources are needed for this project. They are show
 <span style="font-size:smaller">\* Older destop versions might also work fine, but mobile ones probably won't.</span>
 <br/><br/>
 
-## _4. Installation_
+## _3. Installation_
 
 ### **4.1. Installation with script**
 
-Simply clone the repository run the installation script:
+Simply clone the repository and run the installation script:
 
 ```bash
 cd <ros_workspace>/src
@@ -217,19 +177,19 @@ A step-by-step installation without the script is presented below.
 
 <summary>Show step-by-step instructions</summary>
 
-#### **4.1.1. Installation of Python libraries**
+#### **3.1.1. Installation of Python libraries**
 
 ```bash
 sudo apt install build-essential python3-pyproj python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk python3-opencv libopencv-dev libyaml-cpp-dev libcurl4-openssl-dev python3-requests python3-pil python3-psycopg2 python3-flask python3-flask-restful python3-flask-cors
 ```
 
-#### **4.1.2. Installation of LaTeX and libraries**
+#### **3.1.2. Installation of LaTeX and libraries**
 
 ```bash
 sudo apt install texlive texlive-lang-german texlive-latex-extra texlive-fonts-extra texlive-xetex
 ```
 
-#### **4.1.3. Installation of the Field Test Tool**
+#### **3.1.3. Installation of the Field Test Tool**
 
 ```bash
 cd <ros_workspace>
@@ -237,13 +197,13 @@ rosdep install --from-paths src/field_test_tool/ --ignore-src
 colcon build --symlink-install
 ```
 
-#### **4.1.4. Installation of PostgreSQL server**
+#### **3.1.4. Installation of PostgreSQL server**
 
 ```bash
 sudo apt install postgresql postgresql-client postgis
 ```
 
-#### **4.1.5. Configuration of PostgreSQL**
+#### **3.1.5. Configuration of PostgreSQL**
 
 Navigate to the FTT database directory and execute the setup script:
 
@@ -299,7 +259,7 @@ psql -h <hostname> -d ftt -U postgres -p 5432 -a -q -f ftt_schema.sql ftt
 psql -h <hostname> -d ftt -U postgres -p 5432 -a -q -f setup_queries.sql ftt
 ```
 
-#### **4.1.6. Installation texmaker (optional)**
+#### **3.1.6. Installation texmaker (optional)**
 
 Texmaker is an editor of LaTeX files.
 
@@ -307,11 +267,11 @@ Texmaker is an editor of LaTeX files.
 sudo apt install texmaker
 ```
 
-#### **4.1.7. Installation pgAdmin 4 (optional)**
+#### **3.1.7. Installation pgAdmin 4 (optional)**
 
 PgAdmin is a management software for the PostgreSQL-database. Follow the installation instruction from the [pgAdmin's website](https://www.pgadmin.org/download/pgadmin-4-apt/)
 
-#### **4.1.8. Installation of the FTT Web GUI**
+#### **3.1.8. Installation of the FTT Web GUI**
 
 Once cloned, the repository already contains all the files ready for the web server to serve the web application. **However**, to further develop, make changes to the JavaScript code or use the application in offline mode, certain tools/libraries will be needed and the following steps will walk you through the installation process.
 
@@ -342,12 +302,12 @@ For:
 Otherwise, proceed with the installation steps below.
 <br/><br/>
 
-##### **4.1.8.1. Installation of Node.js**
+##### **3.1.8.1. Installation of Node.js**
 
 Install the latest version of Node.js for you machine from https://nodejs.org. This will give you access to the **_npm_** package manager needed for the next steps.
 <br/><br/>
 
-##### **4.1.8.2. Installation of npm libraries**
+##### **3.1.8.2. Installation of npm libraries**
 
 The following npm libraries (and their dependencies) will be installed:
 
@@ -370,14 +330,14 @@ cd <ros_workspace>/src/field_test_tool/ftt_web_interface
 npm install
 ```
 
-##### **4.1.8.3. Installation of ESLint (optional for VS Code)**
+##### **3.1.8.3. Installation of ESLint (optional for VS Code)**
 
 If you're working with VS Code, linting can be made available for this project to help with development. To do this, install the ESLint extension from the extensions tab of VSCode and enable it.
 
 Linting will be shown according to the rules set in the _.eslintrc.json_ file.
 <br/><br/>
 
-##### **4.1.8.4. Useful npm commands**
+##### **3.1.8.4. Useful npm commands**
 
 From the project directory ```<ros_workspace>/src/field_test_tool/ftt_web_interface``` the following npm commands are conveniently available:
 
@@ -389,7 +349,7 @@ From the project directory ```<ros_workspace>/src/field_test_tool/ftt_web_interf
 
 </details>
 
-### **4.2. Installation with Docker**
+### **3.2. Installation with Docker**
 
 The project includes Docker files and a docker-compose file to speed up the deployment of the application for testing purposes.
 
@@ -415,7 +375,7 @@ The input source code is made available to the docker containers via volume moun
 With the docker containers running, the execution steps from sections [5.1](#51-ftt-server) and [5.2](#52-ftt-ros-interface) can be skipped.
 <br/><br/>
 
-## _5. Execution_
+## _4. Execution_
 
 If you installed the Field Test Tool with the installation script, you can start the FTT server and ROS nodes with the command:
 
@@ -425,7 +385,7 @@ field-test-tool
 
 Then skip to [Section 5.3](#53-ftt-web-gui).
 
-### **5.1. FTT server**
+### **4.1. FTT server**
 
 The following commands starts the web server:
 
@@ -435,7 +395,7 @@ cd <ros_workspace>/src/field_test_tool/ftt_server/scripts/
 python3 api.py
 ```
 
-### **5.2. FTT ROS interface**
+### **4.2. FTT ROS interface**
 
 The following command launches the ROS data collector for sending the operation mode, GPS position, local map and base link position data. Additionally, the rosbridge_server's rosbrige_websocket launcher file will be executed, allowing direct communication between the ROS environment and the web application.
 
@@ -470,7 +430,7 @@ Additionally, a TF listener is started to get the robot's position (_robot_frame
 **Note**: For system with limited resources, it is recommended to prevent the execution of the TF listener if the logging of the local robot position is not required. This is done by setting the node's _use_tf_ parameter to _false_.
 <br/><br/>
 
-#### **5.2.1 FTT ROS interface extras**
+#### **4.2.1 FTT ROS interface extras**
 
 Some extra utility ROS nodes are provided:
 
@@ -481,12 +441,12 @@ Some extra utility ROS nodes are provided:
   ros2 launch ftt_ros_interface robot_mode_publisher.launch.xml <args>
   ```
 
-### **5.3. FTT web GUI**
+### **4.3. FTT web GUI**
 
-After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server). Usage instructions can be found under the ```docs``` directory of this repository.
+After running the FTT server API, visit http://localhost:5000/ from your web browser (alternatively, the IP address of the machine running the server). Usage instructions can be found under the ```doc``` directory of this repository.
 <br/><br/>
 
-### **5.4. PDF-Report generator**
+### **4.4. PDF-Report generator**
 
 The report generator can be directly called from within the web GUI, but if you want to manually do it, it can be achieved with the following commands. The output PDF report will be available at ```<ros_workspace>/src/field_test_tool/ftt_report_generator/build/report.pdf```. The report configuration options are explained below.
 
@@ -496,7 +456,7 @@ cd <ros_workspace>/src/field_test_tool/ftt_report_generator/src/
 python3 db2rep.py <path_to_config_file> (e.g. ../config/2021_fkie_test.xml)
 ```
 
-### **5.5. FTT database**
+### **4.5. FTT database**
 
 Usually, you won't need to directly interact with the database after its initial setup, but the ```ftt_database``` folder of the repository does include a utility Python script called ```mergeDbs.py```. This script can be used to copy the data stored in a source ftt database (e.g. running in your robot) to a target ftt database (e.g. running in your development PC). To run it, just specify the connection information for both databases as arguments to the program:
 ```bash
@@ -505,7 +465,7 @@ python3 mergeDbs.py "host=<source_system_ip> dbname=ftt user=postgres password=p
 ```
 <br/><br/>
 
-## _6. FTT ROS node parameters_
+## _5. FTT ROS node parameters_
 
 The FTT ROS interface node has its parameters loaded from a YAML file in the package's configuration folder. These parameters are explained below. Please note that some parameters are only used in the Python implementation of the node.
 
@@ -529,7 +489,7 @@ The FTT ROS interface node has its parameters loaded from a YAML file in the pac
 
 <br/><br/>
 
-### **6.1 Extra nodes parameters**
+### **5.1 Extra nodes parameters**
 
 The robot_mode_publisher node also requires some parameters to be set when using it. Unlike the ftt_ros node, these are set directly in the launcher file: robot_mode_publisher.launch.xml.
 
@@ -543,7 +503,7 @@ The robot_mode_publisher node also requires some parameters to be set when using
 
 <br/><br/>
 
-## _7. Report Generator Configuration File_
+## _6. Report Generator Configuration File_
 
 The report generator script requires an XML file with the following structure:
 
@@ -575,13 +535,13 @@ Most of the parameters are self-explanatory, but the following should be noted:
 
 <br/><br/>
 
-## _8. Offline usage of the web GUI (local tile server)_
+## _7. Offline usage of the web GUI (local tile server)_
 
 Completing the installation steps for the web GUI enables the offline usage of the application on your machine, the one **exception** being the tile server.
 
 A tile server is needed for the leaflet map viewer in the FTT. By default, OpenStreetMap is used. Without internet access, a local tile server must be configured. 
 
-### **8.1. Configuring a tile server with OSM data**
+### **7.1. Configuring a tile server with OSM data**
 
 A guide on how to do this can be found at:
 
@@ -591,7 +551,7 @@ A docker container is also available at:
 
 - https://github.com/Overv/openstreetmap-tile-server
 
-### **8.2. Configuring a tile server with a GeoTIFF image**
+### **7.2. Configuring a tile server with a GeoTIFF image**
 
 Serving tiles from a GeoTIFF image is easier done with the [GeoServer](https://geoserver.org/) tool. A handy docker container can be found at:
 
@@ -624,3 +584,51 @@ That repository includes sample docker-compose.yml and .env files to quicky conf
 6. You can now fetch the tiles using the following URL format (note that this may vary depending on your workspace and layer name).
 
     - http://localhost:8600/geoserver/gwc/service/tms/1.0.0/ftt:MyLayer/{z}/{x}/{y}.png?flipY=true
+
+<br/><br/>
+
+## _8. Acknowledgements_
+
+The following libraries and resources are needed for this project. They are shown alongside their respective license.
+
+| Name                       | License                                 | URL                                                                          |
+| -------------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| rospy                      | Apache-2.0 License                      | https://github.com/ros2/rclpy/blob/rolling/LICENSE                           |
+| rclcpp                     | Apache-2.0 License                      | https://github.com/ros2/rclcpp/blob/rolling/LICENSE                          |
+| std_msgs                   | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/std_msgs/LICENSE      |
+| sensor_msgs                | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/LICENSE   |
+| geometry_msgs              | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/geometry_msgs/LICENSE |
+| nav_msgs                   | Apache-2.0 License                      | https://github.com/ros2/common_interfaces/blob/rolling/nav_msgs/LICENSE      |
+| cv_bridge                  | Apache-2.0 and BSD-3-Clause License     | https://github.com/ros-perception/vision_opencv                              |
+| tf2_ros                    | BSD-3-Clause License                    | https://github.com/ros2/geometry2/blob/rolling/LICENSE                       |
+| Python Standard Library    | PSF License                             | https://docs.python.org/2/license.html                                       |
+| requests                   | Apache-2.0 License                      | https://github.com/psf/requests/blob/master/LICENSE                          |
+| ruamel.yaml                | MIT License                             | https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/LICENSE           |
+| Pillow                     | HPND License                            | https://github.com/python-pillow/Pillow/blob/master/LICENSE                  |
+| psycopg2                   | GNU Lesser General Public License       | https://www.psycopg.org/license/                                             |
+| Flask                      | BSD-3-Clause License                    | https://github.com/pallets/flask/blob/master/LICENSE.rst                     |
+| Flask-restful              | BSD-3-Clause License                    | https://github.com/flask-restful/flask-restful/blob/master/LICENSE           |
+| Flask-cors                 | MIT License                             | https://github.com/corydolphin/flask-cors/blob/master/LICENSE                |
+| LXML                       | BSD-3-Clause License                    | https://github.com/lxml/lxml/blob/master/LICENSE.txt                         |
+| jinja2                     | BSD-3-Clause License                    | https://github.com/pallets/jinja/blob/master/LICENSE.rst                     |
+| parse                      | MIT License                             | https://github.com/r1chardj0n3s/parse/blob/master/LICENSE                    |
+| pyproj                     | MIT License                             | https://github.com/pyproj4/pyproj/blob/master/LICENSE                        |
+| Matplotlib                 | PSF-based License                       | https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE           |
+| NumPy                      | BSD License                             | https://numpy.org/doc/stable/license.html                                    |
+| GNU C++ Standard Library   | GPLv3 License                           | https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html                 |
+| OpenCV                     | BSD-3-Clause or Apache-2.0 License      | https://opencv.org/license                                                   |
+| cpr                        | MIT License                             | https://github.com/libcpr/cpr/blob/master/LICENSE                            |
+| nlohmann json              | MIT License                             | https://github.com/nlohmann/json/blob/develop/LICENSE.MIT                    |
+| yaml-cpp                   | MIT License                             | https://github.com/jbeder/yaml-cpp/blob/master/LICENSE                       |
+| Leaflet                    | 2-clause BSD License                    | https://github.com/Leaflet/Leaflet/blob/master/LICENSE                       |
+| OpenStreetMap<sup>\*</sup> | Open Data Commons Open Database License | https://www.openstreetmap.org/copyright                                      |
+| Google Material Icons      | Apache-2.0 License                      | https://www.apache.org/licenses/LICENSE-2.0.txt                              |
+| Webpack                    | MIT License                             | https://github.com/webpack/webpack/blob/master/LICENSE                       |
+| Webpack CLI                | MIT License                             | https://github.com/webpack/webpack-cli/blob/master/LICENSE                   |
+| Webpack Dev Server         | MIT License                             | https://github.com/webpack/webpack-dev-server/blob/master/LICENSE            |
+| HTML Webpack Plugin        | MIT License                             | https://github.com/jantimon/html-webpack-plugin/blob/main/LICENSE            |
+| Easeljs                    | MIT License                             | https://github.com/CreateJS/EaselJS/blob/master/LICENSE.txt                  |
+| Roslibjs                   | BSD License                             | https://github.com/RobotWebTools/roslibjs/blob/develop/LICENSE               |
+| Ros2djs                    | BSD License                             | https://github.com/RobotWebTools/ros2djs/blob/develop/LICENSE                |
+
+<span style="font-size:smaller">\* © OpenStreetMap contributors. Base map and data from OpenStreetMap and OpenStreetMap Foundation.</span>
