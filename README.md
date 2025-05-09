@@ -463,6 +463,11 @@ Usually, you won't need to directly interact with the database after its initial
 cd <ros_workspace>/src/field_test_tool/ftt_database/scripts/
 python3 mergeDbs.py "host=<source_system_ip> dbname=ftt user=postgres password=postgres" "host=<target_system_ip> dbname=ftt user=postgres password=postgres"
 ```
+
+Alternatively, a database dump file can be passed as the source argument:
+```bash
+python3 mergeDbs.py "<path_to_db_dump_file>" "host=<target_system_ip> dbname=ftt user=postgres password=postgres"
+```
 <br/><br/>
 
 ## _5. FTT ROS node parameters_
