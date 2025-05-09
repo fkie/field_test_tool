@@ -25,6 +25,7 @@ export class MainFrame {
     //Reach to DOM elements.
     this.userIcon = document.getElementById("user-icon");
     this.userName = document.getElementById("user-name");
+    this.reportIcon = document.getElementById("report-icon");
     this.downloadIcon = document.getElementById("download-icon");
     this.rosConnectIcon = document.getElementById("ros-status-light");
     this.selectForCompreBox = document.getElementById("select-for-compare");
@@ -57,6 +58,10 @@ export class MainFrame {
     this.userIcon.addEventListener(
       "click",
       this.userIconClickHandler.bind(this)
+    );
+    this.reportIcon.addEventListener(
+      "click",
+      this.reportIconClickHandler.bind(this)
     );
     this.downloadIcon.addEventListener(
       "click",
@@ -140,7 +145,7 @@ export class MainFrame {
     }
   }
 
-  async downloadIconClickHandler() {
+  async reportIconClickHandler() {
     try {
       //Get the latest test event data from the server.
       const testEventList = await this.testEventInterface.get();
@@ -155,6 +160,25 @@ export class MainFrame {
         "Your browser doesn't support this feature! - Please change to a more modern one."
       );
       userModal.show();
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  async downloadIconClickHandler() {
+    try {
+      // Get blob for the database dump file
+      const blob = await this.serverInterface.sendGetRequest("download_data");
+      // Create a URL link for the file and download it
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'ftt_dump.sql';
+      document.body.appendChild(link);
+      link.click();
+      // Remove the URL link
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       alert(error.message);
     }
