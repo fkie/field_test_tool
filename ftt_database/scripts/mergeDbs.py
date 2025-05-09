@@ -7,9 +7,10 @@ __license__ = "MIT"
 __maintainer__ = "Carlos Tampier Cotoras"
 __email__ = "carlos.tampier.cotoras@fkie.fraunhofer.de"
 
-from os import dup
+import os
 import sys
 import re
+import subprocess
 
 import psycopg2
 import psycopg2.sql
@@ -57,6 +58,28 @@ migration_source_dest = {}
 ################################################################
 # Helper functions
 ################################################################
+
+def restore_database_from_dump(dump_file, temp_db_name="ftt_temp"):
+    try:
+        # Create the temporary database
+        subprocess.run(["createdb", temp_db_name, "-U", "postgres", "-h", "localhost"], check=True)
+
+        # Restore the dump into the temporary database
+        subprocess.run([
+            "psql", "-U", "postgres", "-h", "localhost", "-d", temp_db_name, "-f", dump_file
+        ], check=True)
+
+        return f"host=localhost dbname={temp_db_name} user=postgres password=postgres"
+
+    except Exception as e:
+        print(f"Error restoring database from dump: {e}")
+        raise
+
+def delete_temp_database(temp_db_name="ftt_temp"):
+    try:
+        subprocess.run(["dropdb", temp_db_name, "-U", "postgres", "-h", "localhost"], check=True)
+    except Exception as e:
+        print(f"Error deleting temporary database: {e}")
 
 def get_min_id (cursor, table_name):
     query = psycopg2.sql.SQL(
@@ -446,6 +469,12 @@ def main(args):
     source_db_conn_str = sys.argv[1]
     dest_db_conn_str = sys.argv[2]
 
+    # Determine if the source argument is a dump file
+    if os.path.isfile(source_db_conn_str):
+        print(">>> Detected dump file. Creating and restoring temporary database...")
+        dump_file = source_db_conn_str
+        source_db_conn_str = restore_database_from_dump(dump_file)
+
     # Connect to the databases
     print(">>> Connecting to databases...")
     source_conn = psycopg2.connect(source_db_conn_str)
@@ -464,15 +493,23 @@ def main(args):
         do_merge = (ask_confirm == "Y")
     if do_merge:
         ask_confirm = input("Ready to merge %s into %s. Type Y to continue, or N to cancel: " % (
-            re.search("(?<=host=).*?(?=\s)", source_db_conn_str).group(0) + ":" + re.search("(?<=dbname=).*?(?=\s)", source_db_conn_str).group(0), 
-            re.search("(?<=host=).*?(?=\s)", dest_db_conn_str).group(0) + ":" + re.search("(?<=dbname=).*?(?=\s)", dest_db_conn_str).group(0)
+            re.search(r"(?<=host=).*?(?=\s)", source_db_conn_str).group(0) + ":" + re.search(r"(?<=dbname=).*?(?=\s)", source_db_conn_str).group(0), 
+            re.search(r"(?<=host=).*?(?=\s)", dest_db_conn_str).group(0) + ":" + re.search(r"(?<=dbname=).*?(?=\s)", dest_db_conn_str).group(0)
         ))    
         do_merge = (ask_confirm == "Y")
         if do_merge:
             merge_dbs (source_conn, dest_conn)
 
+    # Close connections
+    source_cursor.close()
     source_conn.close()
+    dest_cursor.close()
     dest_conn.close()
+
+    # If a temporary database was created, delete it
+    if os.path.isfile(sys.argv[1]):
+        print(">>> Deleting temporary database...")
+        delete_temp_database()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -1427,7 +1427,6 @@ class DownloadData(Resource):
         result = subprocess.run([
             "pg_dump",
             f"--dbname=postgresql://postgres:postgres@{DBInterface.host}:{DBInterface.port}/ftt",
-            "--create",
             "-f", output_file
         ], check=True)
         return result.returncode
