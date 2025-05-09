@@ -19,7 +19,15 @@ export class ServerInterface {
       },
     });
     if (response.status >= 200 && response.status < 300) {
-      return response.json();
+      // Determine the response type based on Content-Type header
+      const contentType = response.headers.get("Content-Type");
+      if (contentType.includes("application/json")) {
+        // Handle JSON responses
+        return response.json();
+      } else {
+        // Handle file (blob) responses
+        return response.blob();
+      }
     } else {
       const response_data = await response.json();
       console.log(response_data.message);

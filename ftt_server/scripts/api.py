@@ -9,11 +9,12 @@ __maintainer__ = "Carlos Tampier Cotoras"
 __email__ = "carlos.tampier.cotoras@fkie.fraunhofer.de"
 
 import os
+import subprocess
 import argparse, sys
 import time
 from datetime import datetime
 from psycopg2 import connect, sql, IntegrityError
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_restful import Resource, Api
 from flask_cors import CORS, cross_origin
 from lxml import etree
@@ -1418,6 +1419,39 @@ class GenerateReport(Resource):
             raise ApiError(msg, status_code=400)
         return print_and_return(info_msg("Created %s report." % data["report_name"]))
 
+class DownloadData(Resource):
+
+    @staticmethod
+    def dump_db(output_file):
+        # Use pg_dump to export the database contents to an SQL file
+        result = subprocess.run([
+            "pg_dump",
+            f"--dbname=postgresql://postgres:postgres@{DBInterface.host}:{DBInterface.port}/ftt",
+            "--create",
+            "-f", output_file
+        ], check=True)
+        return result.returncode
+
+    def get(self):
+        # This method calls a database dump and returns the sql file.
+        # Define the output file path
+        output_file = os.path.abspath("database_dump.sql")
+        # Call database dump.
+        return_code = DownloadData.dump_db(output_file)
+        if return_code:
+            msg = error_msg("ExternalError","Database dump failed. Error Code: %s." % return_code)
+            raise ApiError(msg, status_code=400)
+        try:
+            # Serve the file for download
+            return send_file(output_file, as_attachment=True)
+        except Exception as e:
+            msg = error_msg("ExternalError","File send failed. Error: %s." % str(e))
+            raise ApiError(msg, status_code=400)
+        finally:
+            # Clean up the file if needed
+            if os.path.exists(output_file):
+                os.remove(output_file)
+
 api.add_resource(ItoReason, '/ito_reason', endpoint='ito_reason')
 
 api.add_resource(Personnel, '/personnel', endpoint='personnel')
@@ -1453,6 +1487,8 @@ api.add_resource(MapImage, '/map_image', endpoint='map_image')
 api.add_resource(LocalPose, '/local_pose', endpoint='local_pose')
 
 api.add_resource(GenerateReport, '/generate_report', endpoint='generate_report')
+
+api.add_resource(DownloadData, '/download_data', endpoint='download_data')
 
 @app.errorhandler(ApiError)
 def handle_api_error(error):
