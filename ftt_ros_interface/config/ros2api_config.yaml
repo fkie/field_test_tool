@@ -16,4 +16,4 @@ ftt_ros:
       map: map
       map_jpeg: map_jpeg
       image: image
-      image_compressed: image_compressed
+    image_transport: raw
