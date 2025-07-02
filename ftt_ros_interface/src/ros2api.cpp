@@ -42,6 +42,8 @@ Ros2api::Ros2api() : Node("ros2api")
   declare_parameter<std::string>("topics.map", "map");
   declare_parameter<std::string>("topics.image", "image");
 
+  declare_parameter<std::string>("image_transport", "raw");
+
   // Service servers
   set_logging_service = create_service<std_srvs::srv::SetBool>(
     std::string(get_name()) + "/set_status",
@@ -608,6 +610,7 @@ void Ros2api::updateMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 
 void Ros2api::sendImageBuffer()
 {
+  RCLCPP_INFO_STREAM(get_logger(), "Sending " << image_buffer.size() << " images");
   for (auto & img : image_buffer) {
     sendImage(img);
   }
