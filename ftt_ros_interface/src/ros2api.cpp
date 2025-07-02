@@ -619,7 +619,7 @@ void Ros2api::sendImageBuffer()
 std::string Ros2api::encodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   // Convert Image to cv::Mat
-  cv::Mat image = cv_bridge::toCvShare(msg)->image;
+  cv::Mat image(msg->height, msg->width, CV_8UC3, const_cast<uchar*>(msg->data.data()));
   // Transform to jpeg
   std::vector<uchar> buf;
   cv::imencode(".jpg", image, buf);
