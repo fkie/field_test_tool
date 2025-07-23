@@ -72,6 +72,7 @@ private:
   double last_lng;
   geometry_msgs::msg::PoseStamped::SharedPtr last_pose_stamped;
   nav_msgs::msg::OccupancyGrid::SharedPtr last_map;
+  nav_msgs::msg::OccupancyGrid::SharedPtr merged_map;
   bool map_sent;
   rclcpp::Time last_image_time;
 
@@ -80,6 +81,7 @@ private:
 
   //ROS params
   bool use_tf;
+  bool merge_maps;
   std::string map_frame;
   std::string robot_frame;
   std::string server_address;
