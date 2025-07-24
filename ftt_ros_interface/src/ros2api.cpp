@@ -407,72 +407,6 @@ void Ros2api::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   // Copy the last received map
   last_map = msg;
-  if (merge_maps) {
-    // On first message, initialize merged map as msg
-    if (!merged_map) {
-      RCLCPP_INFO_STREAM(get_logger(), "Got first map.");
-      merged_map = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
-      return;
-    }
-
-    // Compute new bounds for merged map
-    float res = merged_map->info.resolution;
-
-    float x0 = std::min(merged_map->info.origin.position.x, msg->info.origin.position.x);
-    float y0 = std::min(merged_map->info.origin.position.y, msg->info.origin.position.y);
-
-    float x1_m = merged_map->info.origin.position.x + merged_map->info.width * res;
-    float y1_m = merged_map->info.origin.position.y + merged_map->info.height * res;
-    float x1_n = msg->info.origin.position.x + msg->info.width * res;
-    float y1_n = msg->info.origin.position.y + msg->info.height * res;
-
-    float x1 = std::max(x1_m, x1_n);
-    float y1 = std::max(y1_m, y1_n);
-
-    int new_width = static_cast<int>(std::round((x1 - x0) / res));
-    int new_height = static_cast<int>(std::round((y1 - y0) / res));
-
-    // Create new merged map, initialize all with unknown (-1)
-    std::vector<int8_t> new_data(new_width * new_height, -1);
-
-    // Lambda to copy data from grid to new_data
-    auto merge_into = [&](const nav_msgs::msg::OccupancyGrid::SharedPtr & grid) {
-      int ox = static_cast<int>(std::round((grid->info.origin.position.x - x0) / res));
-      int oy = static_cast<int>(std::round((grid->info.origin.position.y - y0) / res));
-
-      for (unsigned int y = 0; y < grid->info.height; ++y) {
-        for (unsigned int x = 0; x < grid->info.width; ++x) {
-          int gx = ox + x;
-          int gy = oy + y;
-          if (gx < 0 || gx >= new_width || gy < 0 || gy >= new_height) continue;
-
-          int idx_new = gy * new_width + gx;
-          int idx_grid = y * grid->info.width + x;
-          int8_t val = grid->data[idx_grid];
-
-          // Merge logic: 100 (obstacle) > 0..99 (not obstacle) > -1 (unknown)
-          if (val == 100) {
-            new_data[idx_new] = 100;
-          } else if (val >= 0 && val < 100) {
-            if (new_data[idx_new] != 100) new_data[idx_new] = 0;
-          }
-        }
-      }
-    };
-
-    // Merge existing merged_map
-    merge_into(merged_map);
-
-    // Merge new msg
-    merge_into(msg);
-
-    // Update merged_map
-    merged_map->info.origin.position.x = x0;
-    merged_map->info.origin.position.y = y0;
-    merged_map->info.width = new_width;
-    merged_map->info.height = new_height;
-    merged_map->data = new_data;
-  }
 }
 
 void Ros2api::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -500,6 +434,7 @@ void Ros2api::sendMapTimerCb()
   if (last_map) {
     if (map_sent) {
       if (merge_maps) {
+        mergeMaps();
         updateMap(merged_map);
       } else {
         updateMap(last_map);
@@ -586,6 +521,73 @@ void Ros2api::sendLastLocalPose()
       }
     }
   }
+}
+
+void Ros2api::mergeMaps()
+{
+  // On first message, initialize merged map as msg
+  if (!merged_map) {
+    merged_map = std::make_shared<nav_msgs::msg::OccupancyGrid>(*last_map);
+    return;
+  }
+
+  // Compute new bounds for merged map
+  float res = merged_map->info.resolution;
+
+  float x0 = std::min(merged_map->info.origin.position.x, last_map->info.origin.position.x);
+  float y0 = std::min(merged_map->info.origin.position.y, last_map->info.origin.position.y);
+
+  float x1_m = merged_map->info.origin.position.x + merged_map->info.width * res;
+  float y1_m = merged_map->info.origin.position.y + merged_map->info.height * res;
+  float x1_n = last_map->info.origin.position.x + last_map->info.width * res;
+  float y1_n = last_map->info.origin.position.y + last_map->info.height * res;
+
+  float x1 = std::max(x1_m, x1_n);
+  float y1 = std::max(y1_m, y1_n);
+
+  int new_width = static_cast<int>(std::round((x1 - x0) / res));
+  int new_height = static_cast<int>(std::round((y1 - y0) / res));
+
+  // Create new merged map, initialize all with unknown (-1)
+  std::vector<int8_t> new_data(new_width * new_height, -1);
+
+  // Lambda to copy data from grid to new_data
+  auto merge_into = [&](const nav_msgs::msg::OccupancyGrid::SharedPtr & grid) {
+    int ox = static_cast<int>(std::round((grid->info.origin.position.x - x0) / res));
+    int oy = static_cast<int>(std::round((grid->info.origin.position.y - y0) / res));
+
+    for (unsigned int y = 0; y < grid->info.height; ++y) {
+      for (unsigned int x = 0; x < grid->info.width; ++x) {
+        int gx = ox + x;
+        int gy = oy + y;
+        if (gx < 0 || gx >= new_width || gy < 0 || gy >= new_height) continue;
+
+        int idx_new = gy * new_width + gx;
+        int idx_grid = y * grid->info.width + x;
+        int8_t val = grid->data[idx_grid];
+
+        // Merge logic: keep obstacles, overwrite rest except if unkown
+        if (val == 100) {
+          new_data[idx_new] = 100;
+        } else if (val >= 0 && val < 100) {
+          if (new_data[idx_new] != 100) new_data[idx_new] = val;
+        }
+      }
+    }
+  };
+
+  // Merge existing merged_map
+  merge_into(merged_map);
+
+  // Merge new msg
+  merge_into(last_map);
+
+  // Update merged_map
+  merged_map->info.origin.position.x = x0;
+  merged_map->info.origin.position.y = y0;
+  merged_map->info.width = new_width;
+  merged_map->info.height = new_height;
+  merged_map->data = new_data;
 }
 
 std::string Ros2api::encodeMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)

@@ -50,6 +50,7 @@ protected:
   void sendMapTimerCb();
   void sendLastGpsPose();
   void sendLastLocalPose();
+  void mergeMaps();
   std::string encodeMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   void sendNewMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   void updateMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
