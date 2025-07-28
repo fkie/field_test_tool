@@ -211,6 +211,8 @@ export class SegmentDetail {
               17
             );
             this.mapInterface.removeLocalMap();
+            //Clear stored lnglat coordinates
+            this.mapInterface.lnglatCoords = [];
           }
         }
       }
@@ -228,31 +230,6 @@ export class SegmentDetail {
         //Reset display if map is empty.
         if (localMapLayers.length == 0) {
           this.localMapInterface.resetViewer();
-        }
-        // Update local map:
-        const shiftSelectValue = document.getElementById("shift-id").value;
-        if (shiftSelectValue) {
-          const mapImage = await this.localMapInterface.getAndDrawMap(
-            shiftSelectValue
-          );
-          //Also draw the local map over the GPS map (if active and gps poses available).
-          if (this.gpsMapBox.checked && mapImage) {
-            //Filter master segments that have both local and gps position.
-            let fSegs = this.segmentList.filter(
-              (entry) =>
-                entry.lat &&
-                entry.lng &&
-                entry.local_x &&
-                entry.local_y &&
-                entry.parentId === null
-            );
-            if (fSegs.length >= 2) {
-              fSegs.reverse();
-              await this.mapInterface.addLocalMap(mapImage, fSegs);
-            }
-          }
-        } else {
-          alert("No shift selected!");
         }
       }
       //Record if maps were empty.
@@ -376,6 +353,31 @@ export class SegmentDetail {
             }
           }
         }
+      }
+      // Update local map (if any)
+      const shiftSelectValue = document.getElementById("shift-id").value;
+      if (shiftSelectValue) {
+        const mapImage = await this.localMapInterface.getAndDrawMap(
+          shiftSelectValue
+        );
+        //Also draw the local map over the GPS map (if active and gps poses available).
+        if (this.gpsMapBox.checked && mapImage) {
+          //Filter master segments
+          let fSegs = this.segmentList.filter(
+            (entry) =>
+              // entry.lat &&
+              // entry.lng &&
+              // entry.local_x &&
+              // entry.local_y &&
+              entry.parentId === null
+          );
+          if (fSegs.length >= 1) {
+            // fSegs.reverse();
+            await this.mapInterface.addLocalMap(mapImage, fSegs);
+          }
+        }
+      } else {
+        alert("No shift selected!");
       }
     } catch (error) {
       alert(error.message);
@@ -680,8 +682,8 @@ export class SegmentDetail {
       for (let idx = localMapLayers.length - 1; idx >= 0; idx--) {
         this.localMapInterface.removePoses(localMapLayers[idx].segmentId);
         //Remove local map from GPS map.
-        this.mapInterface.removeLocalMap();
-        this.mapInterface.removeLayerControl();
+        // this.mapInterface.removeLocalMap();
+        // this.mapInterface.removeLayerControl();
       }
     }
   }
