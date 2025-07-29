@@ -23,8 +23,15 @@
   align-self: center;
 }
 
+.content-row {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
 .main-content {
   float: left;
+  flex: 0 0 34rem;
 }
 
 .main-content > section {
@@ -122,15 +129,17 @@
 
 #map-viewer {
   display: none;
+  flex: 1 1 0;
+  min-width: 32rem;
   overflow: hidden;
-  max-width: 50rem;
+  max-width: 100%;
   margin: 1rem;
 }
 
 .map {
   display: none;
   position: relative;
-  height: 35rem;
+  height: calc((100vh - 12rem) / 2);
   margin: 1rem;
   /* overflow: hidden; */
 }
@@ -145,10 +154,23 @@ textarea.error {
 }
 
 @media screen and (max-width: 70rem) {
+  .content-row {
+    display: block;
+  }
   #map-viewer {
     width: 32rem;
   }
   .map {
-    height: 20rem;
+    height: 20rem !important;
+  }
+}
+
+@media screen and (max-width: 40rem) {
+  .nav-left .header-icon {
+    font-size: 1.5rem;
+    margin: 0.5rem;
+  }
+  #config-icon {
+    margin-left: 0.5rem;
   }
 }

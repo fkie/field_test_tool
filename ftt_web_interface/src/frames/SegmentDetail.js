@@ -48,7 +48,11 @@ export class SegmentDetail {
     this.gpsMapBox = document.getElementById("gps-map-box");
     this.localMapBox = document.getElementById("local-map-box");
     //Initialize variables.
-    this.mapInterface = new LeafletMap(serverInterface, "gps-map", "map-viewer");
+    this.mapInterface = new LeafletMap(
+      serverInterface,
+      "gps-map",
+      "map-viewer"
+    );
     this.localMapInterface = new LocalMap(serverInterface);
     this.segmentInterface = new SegmentInterface(serverInterface);
     this.itoReasonInterface = new ItoReasonInterface(serverInterface);
@@ -651,6 +655,7 @@ export class SegmentDetail {
   }
 
   toggleGpsMapHandler(event) {
+    this.updateMapHeight();
     if (event.target.checked) {
       this.mapInterface.mapElement.style.display = "block";
       this.mapInterface.leafletMap.invalidateSize(true);
@@ -671,6 +676,7 @@ export class SegmentDetail {
   }
 
   toggleLocalMapHandler(event) {
+    this.updateMapHeight();
     if (event.target.checked) {
       this.localMapInterface.mapElement.style.display = "block";
       this.updateSegments();
@@ -686,5 +692,17 @@ export class SegmentDetail {
         // this.mapInterface.removeLayerControl();
       }
     }
+  }
+
+  updateMapHeight() {
+    const mapElements = document.querySelectorAll(".map");
+    const halfSize = this.gpsMapBox.checked && this.localMapBox.checked;
+    const mapHeight = halfSize
+      ? "calc((100vh - 12rem) / 2)"
+      : "calc(100vh - 12rem)";
+    mapElements.forEach((map) => {
+      map.style.height = mapHeight;
+    });
+    this.mapInterface.leafletMap.invalidateSize(true);
   }
 }

@@ -70,199 +70,202 @@
         <i id="user-icon" class="material-icons header-icon">account_circle</i>
       </div>
     </header>
-    <div class="main-content">
-      <section id="trail-selection">
-        <div class="selectors">
-          <form>
-            <div>
-              <label for="test-event-id">Test Event</label>
-              <div id="test-event-status-dot" class="status-dot"></div>
-            </div>
-            <select id="test-event-id" name="test-event_id"></select>
-            <button type="button" id="new-test-event-btn" class="styled-button">
-              New
+    <div class="content-row">
+
+      <div class="main-content">
+        <section id="trail-selection">
+          <div class="selectors">
+            <form>
+              <div>
+                <label for="test-event-id">Test Event</label>
+                <div id="test-event-status-dot" class="status-dot"></div>
+              </div>
+              <select id="test-event-id" name="test-event_id"></select>
+              <button type="button" id="new-test-event-btn" class="styled-button">
+                New
+              </button>
+              <button type="button" id="end-test-event-btn" class="styled-button">
+                End
+              </button>
+              <button type="button" id="open-test-event-btn" class="styled-button" style="display: none; justify-content: center;">
+                Open
+              </button>
+              <button type="button" id="edit-test-event-btn" class="styled-button">
+                Edit
+              </button>
+              <button type="button" id="delete-test-event-btn" class="styled-button red-button">
+                Del.
+              </button>
+            </form>
+            <form>
+              <div>
+                <label for="shift-id">Shift</label>
+                <div id="shift-status-dot" class="status-dot"></div>
+              </div>
+              <select id="shift-id" name="shift_id"></select>
+              <button type="button" id="new-shift-btn" class="styled-button">
+                New
+              </button>
+              <button type="button" id="end-shift-btn" class="styled-button">
+                End
+              </button>
+              <button type="button" id="edit-shift-btn" class="styled-button">
+                Edit
+              </button>
+              <button type="button" id="delete-shift-btn" class="styled-button red-button">
+                Del.
+              </button>
+            </form>
+            <form>
+              <div>
+                <label for="leg-id">Leg</label>
+                <div id="leg-status-dot" class="status-dot"></div>
+              </div>
+              <select id="leg-id" name="leg_id"></select>
+              <button type="button" id="new-leg-btn" class="styled-button">
+                New
+              </button>
+              <button type="button" id="end-leg-btn" class="styled-button">
+                End
+              </button>
+              <button type="button" id="edit-leg-btn" class="styled-button">
+                Edit
+              </button>
+              <button type="button" id="delete-leg-btn" class="styled-button red-button">
+                Del.
+              </button>
+            </form>
+          </div>
+          <div class="actioners">
+            <button
+              type="button"
+              id="start-logging-btn"
+              class="styled-button log-big-btn"
+              title="Only availabe when a connection to the FTT ROS node is active and all logs are open."
+              disabled
+            >
+              Start Logging
             </button>
-            <button type="button" id="end-test-event-btn" class="styled-button">
-              End
+          </div>
+        </section>
+        <section id="segment-detail">
+          <form id="reasons-form">
+            <button type="button" id="unexpected-btn" class="styled-button">
+              Unexpected
             </button>
-            <button type="button" id="open-test-event-btn" class="styled-button" style="display: none; justify-content: center;">
-              Open
+            <button type="button" id="planner-btn" class="styled-button">
+              Planner
             </button>
-            <button type="button" id="edit-test-event-btn" class="styled-button">
-              Edit
+            <button type="button" id="safety-btn" class="styled-button">
+              Safety
             </button>
-            <button type="button" id="delete-test-event-btn" class="styled-button red-button">
-              Del.
+            <button type="button" id="transit-btn" class="styled-button">
+              Manual transit
             </button>
           </form>
-          <form>
+          <div class="space-between-stripe">
             <div>
-              <label for="shift-id">Shift</label>
-              <div id="shift-status-dot" class="status-dot"></div>
+              <label class="switch">
+                <input type="checkbox" id="show-ito-only" />
+                <span class="slider round"></span>
+              </label>
+              <label>Show ITO only</label>
             </div>
-            <select id="shift-id" name="shift_id"></select>
-            <button type="button" id="new-shift-btn" class="styled-button">
-              New
-            </button>
-            <button type="button" id="end-shift-btn" class="styled-button">
-              End
-            </button>
-            <button type="button" id="edit-shift-btn" class="styled-button">
-              Edit
-            </button>
-            <button type="button" id="delete-shift-btn" class="styled-button red-button">
-              Del.
-            </button>
-          </form>
-          <form>
             <div>
-              <label for="leg-id">Leg</label>
-              <div id="leg-status-dot" class="status-dot"></div>
+              <label class="switch">
+                <input type="checkbox" id="select-for-compare" />
+                <span class="slider round"></span>
+              </label>
+              <label>Select for compare</label>
             </div>
-            <select id="leg-id" name="leg_id"></select>
-            <button type="button" id="new-leg-btn" class="styled-button">
-              New
+            <div>
+              <label class="switch" title="Only availabe when logging.">
+                <input type="checkbox" id="auto-refresh" disabled/>
+                <span class="slider round"></span>
+              </label>
+              <label>Auto Refresh</label>
+              <i id="auto-refresh-config-icon" class="material-icons small-icon">settings</i>
+            </div>
+          </div>
+          <table id="segment-table" class="styled-table">
+            <thead id="segment-table-head">
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Reason</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody id="segment-table-body"></tbody>
+          </table>
+          <div class="space-between-stripe">
+            <div>
+              <button type="button" id="new-segment-btn" class="styled-button">
+                New
+              </button>
+              <button type="button" id="end-segment-btn" class="styled-button">
+                End
+              </button>
+              <button type="button" id="edit-segment-btn" class="styled-button">
+                Edit
+              </button>
+            </div>
+            <button type="button" id="compare-btn" class="styled-button" disabled>
+              Compare
             </button>
-            <button type="button" id="end-leg-btn" class="styled-button">
-              End
+            <button type="button" id="refresh-btn" class="styled-button">
+              Refresh
             </button>
-            <button type="button" id="edit-leg-btn" class="styled-button">
-              Edit
-            </button>
-            <button type="button" id="delete-leg-btn" class="styled-button red-button">
-              Del.
-            </button>
-          </form>
-        </div>
-        <div class="actioners">
-          <button
-            type="button"
-            id="start-logging-btn"
-            class="styled-button log-big-btn"
-            title="Only availabe when a connection to the FTT ROS node is active and all logs are open."
-            disabled
-          >
-            Start Logging
-          </button>
-        </div>
-      </section>
-      <section id="segment-detail">
-        <form id="reasons-form">
-          <button type="button" id="unexpected-btn" class="styled-button">
-            Unexpected
-          </button>
-          <button type="button" id="planner-btn" class="styled-button">
-            Planner
-          </button>
-          <button type="button" id="safety-btn" class="styled-button">
-            Safety
-          </button>
-          <button type="button" id="transit-btn" class="styled-button">
-            Manual transit
-          </button>
-        </form>
-        <div class="space-between-stripe">
+          </div>
+        </section>
+      </div>
+      <section id="map-viewer">
+        <div class="space-evenly-stripe">
           <div>
             <label class="switch">
-              <input type="checkbox" id="show-ito-only" />
+              <input type="checkbox" id="gps-map-box" />
               <span class="slider round"></span>
             </label>
-            <label>Show ITO only</label>
+            <label>GPS Map</label>
+            <i id="gps-map-config-icon" class="material-icons small-icon">settings</i>
           </div>
           <div>
             <label class="switch">
-              <input type="checkbox" id="select-for-compare" />
+              <input type="checkbox" id="local-map-box" />
               <span class="slider round"></span>
             </label>
-            <label>Select for compare</label>
-          </div>
-          <div>
-            <label class="switch" title="Only availabe when logging.">
-              <input type="checkbox" id="auto-refresh" disabled/>
-              <span class="slider round"></span>
-            </label>
-            <label>Auto Refresh</label>
-            <i id="auto-refresh-config-icon" class="material-icons small-icon">settings</i>
+            <label>Local Map</label>
           </div>
         </div>
-        <table id="segment-table" class="styled-table">
-          <thead id="segment-table-head">
-            <tr>
-              <th>ID</th>
-              <th>Type</th>
-              <th>Reason</th>
-              <th>State</th>
-            </tr>
-          </thead>
-          <tbody id="segment-table-body"></tbody>
-        </table>
-        <div class="space-between-stripe">
-          <div>
-            <button type="button" id="new-segment-btn" class="styled-button">
-              New
-            </button>
-            <button type="button" id="end-segment-btn" class="styled-button">
-              End
-            </button>
-            <button type="button" id="edit-segment-btn" class="styled-button">
-              Edit
-            </button>
+        <div id="gps-map" class="map"></div>
+        <div id="local-map" class="map leaflet-touch" tabindex="0">
+          <!-- HTML code borrowed from leaflet zoom controls -->
+          <div class="leaflet-control-container">
+            <div class="leaflet-top leaflet-left">
+              <div class="leaflet-control-zoom leaflet-bar leaflet-control">
+                <a
+                  id="local-map-zoom-in-btn"
+                  class="leaflet-control-zoom-in"
+                  href="#"
+                  title="Zoom in"
+                  role="button"
+                  aria-label="Zoom in"
+                  >+</a
+                ><a
+                  id="local-map-zoom-out-btn"
+                  class="leaflet-control-zoom-out"
+                  href="#"
+                  title="Zoom out"
+                  role="button"
+                  aria-label="Zoom out"
+                  >−</a
+                >
+              </div>
+            </div>
           </div>
-          <button type="button" id="compare-btn" class="styled-button" disabled>
-            Compare
-          </button>
-          <button type="button" id="refresh-btn" class="styled-button">
-            Refresh
-          </button>
         </div>
       </section>
     </div>
-    <section id="map-viewer">
-      <div class="space-evenly-stripe">
-        <div>
-          <label class="switch">
-            <input type="checkbox" id="gps-map-box" />
-            <span class="slider round"></span>
-          </label>
-          <label>GPS Map</label>
-          <i id="gps-map-config-icon" class="material-icons small-icon">settings</i>
-        </div>
-        <div>
-          <label class="switch">
-            <input type="checkbox" id="local-map-box" />
-            <span class="slider round"></span>
-          </label>
-          <label>Local Map</label>
-        </div>
-      </div>
-      <div id="gps-map" class="map"></div>
-      <div id="local-map" class="map leaflet-touch" tabindex="0">
-        <!-- HTML code borrowed from leaflet zoom controls -->
-        <div class="leaflet-control-container">
-          <div class="leaflet-top leaflet-left">
-            <div class="leaflet-control-zoom leaflet-bar leaflet-control">
-              <a
-                id="local-map-zoom-in-btn"
-                class="leaflet-control-zoom-in"
-                href="#"
-                title="Zoom in"
-                role="button"
-                aria-label="Zoom in"
-                >+</a
-              ><a
-                id="local-map-zoom-out-btn"
-                class="leaflet-control-zoom-out"
-                href="#"
-                title="Zoom out"
-                role="button"
-                aria-label="Zoom out"
-                >−</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <template id="modal-template">
       <div class="backdrop"></div>

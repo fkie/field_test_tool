@@ -109,29 +109,100 @@ export class LeafletMap {
     if (pairs.length === 0) return null;
     const n = pairs.length;
     // Compute mean
-    let meanUtm = {x:0, y:0}, meanLocal = {x:0, y:0};
-    for (const {utm, local} of pairs) {
+    let meanUtm = { x: 0, y: 0 },
+      meanLocal = { x: 0, y: 0 };
+    for (const { utm, local } of pairs) {
       meanUtm.x += utm.x;
       meanUtm.y += utm.y;
       meanLocal.x += local.x;
       meanLocal.y += local.y;
     }
-    meanUtm.x /= n; meanUtm.y /= n;
-    meanLocal.x /= n; meanLocal.y /= n;
+    meanUtm.x /= n;
+    meanUtm.y /= n;
+    meanLocal.x /= n;
+    meanLocal.y /= n;
     // Optimal rotation
-    let sx = 0, sy = 0;
-    for (const {utm, local} of pairs) {
-      const ux = utm.x - meanUtm.x, uy = utm.y - meanUtm.y;
-      const lx = local.x - meanLocal.x, ly = local.y - meanLocal.y;
+    let sx = 0,
+      sy = 0;
+    for (const { utm, local } of pairs) {
+      const ux = utm.x - meanUtm.x,
+        uy = utm.y - meanUtm.y;
+      const lx = local.x - meanLocal.x,
+        ly = local.y - meanLocal.y;
       sx += lx * uy - ly * ux;
       sy += lx * ux + ly * uy;
     }
     const dtheta = Math.atan2(sx, sy);
     // Use optimal rotation to compute the translation
-    const cos = Math.cos(dtheta), sin = Math.sin(dtheta);
+    const cos = Math.cos(dtheta),
+      sin = Math.sin(dtheta);
     const tx = meanUtm.x - (cos * meanLocal.x - sin * meanLocal.y);
     const ty = meanUtm.y - (sin * meanLocal.x + cos * meanLocal.y);
     return { dx: tx, dy: ty, dtheta };
+  }
+
+  // Apply transform to a point
+  applyTransform(pt, transform) {
+    const { dx, dy, dtheta } = transform;
+    const c = Math.cos(dtheta);
+    const s = Math.sin(dtheta);
+    return {
+      x: c * pt.x - s * pt.y + dx,
+      y: s * pt.x + c * pt.y + dy,
+    };
+  }
+
+  // Convert a point (x,y) to (lat, lng)
+  toLatLng(pt, latMid, lngMid, mPerLat, mPerLng) {
+    return {
+      lat: latMid + pt.y / mPerLat,
+      lng: lngMid + pt.x / mPerLng,
+    };
+  }
+
+  // Utility: Compute squared distance
+  pointDist(a, b) {
+    return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+  }
+
+  // RANSAC robust estimation
+  robustTransform(pairs, threshold = 2.0) {
+    if (pairs.length < 2) {
+      throw new Error("At least two pairs required");
+    }
+    let bestInliers = [];
+    let bestTransform = null;
+
+    for (let t = 0; t < pairs.length; t++) {
+      // Randomly pick pairs
+      const idx = [];
+      while (idx.length < Math.min(pairs.length / 10, 2)) {
+        const r = Math.floor(Math.random() * pairs.length);
+        if (!idx.includes(r)) idx.push(r);
+      }
+      const selectedPairs = idx.map((i) => pairs[i]);
+      const tf = this.computeLeastSquaresTransform(selectedPairs);
+
+      // Count inliers
+      const inliers = [];
+      for (let i = 0; i < pairs.length; i++) {
+        const pred = this.applyTransform(pairs[i].local, tf);
+        if (this.pointDist(pred, pairs[i].utm) < threshold) {
+          inliers.push(i);
+        }
+      }
+      if (inliers.length > bestInliers.length) {
+        bestInliers = inliers;
+        bestTransform = tf;
+      }
+    }
+
+    // Re-estimate transform using all inliers
+    if (bestInliers.length >= 2) {
+      const inlierPairs = bestInliers.map((i) => pairs[i]);
+      bestTransform = this.computeLeastSquaresTransform(inlierPairs);
+    }
+    return bestTransform;
   }
 
   async addLocalMap(mapImage, fSegs) {
@@ -162,7 +233,7 @@ export class LeafletMap {
     for (const segment of fSegs) {
       const poses = await this.localPoseInterface.get(segment.id);
       for (const pose of poses) {
-        localPoses.push({x: pose.x, y: pose.y, timestamp: pose.origSecs})
+        localPoses.push({ x: pose.x, y: pose.y, timestamp: pose.origSecs });
       }
     }
     //Check there is enough local coordinates
@@ -171,11 +242,14 @@ export class LeafletMap {
     }
     //Get the mean lng and lat coordinates for the currently used poses
     // const latMid = ((fSegs[1].lat + fSegs[0].lat) / 2) * (Math.PI / 180);
-    const sum = this.lnglatCoords.reduce((acc, obj) => {
-      acc.lat += obj.lat;
-      acc.lng += obj.lng;
-      return acc;
-    }, {lat: 0, lng: 0});
+    const sum = this.lnglatCoords.reduce(
+      (acc, obj) => {
+        acc.lat += obj.lat;
+        acc.lng += obj.lng;
+        return acc;
+      },
+      { lat: 0, lng: 0 }
+    );
     const latMid = sum.lat / this.lnglatCoords.length;
     const lngMid = sum.lng / this.lnglatCoords.length;
     //Estimate differences of lat and lng degrees in meters.
@@ -190,10 +264,10 @@ export class LeafletMap {
       93.5 * Math.cos(3 * latMid * (Math.PI / 180)) +
       0.118 * Math.cos(5 * latMid * (Math.PI / 180));
     //Calculate cartesian coordinates from lnglat
-    const utmPoses = this.lnglatCoords.map(coords => ({
+    const utmPoses = this.lnglatCoords.map((coords) => ({
       x: (coords.lng - lngMid) * mPerLng,
       y: (coords.lat - latMid) * mPerLat,
-      timestamp: coords.timestamp
+      timestamp: coords.timestamp,
     }));
     //Match utm-like and local pose coordinates
     const matchedCoordPairs = this.matchPosePairs(utmPoses, localPoses);
@@ -202,7 +276,7 @@ export class LeafletMap {
       return;
     }
     //Calculate the best transform between the pairs
-    const transform = this.computeLeastSquaresTransform(matchedCoordPairs);
+    const tf = this.robustTransform(matchedCoordPairs);
     // //Estimate image rotation with respect to cardinal orientation.
     // const rotation =
     //   Math.atan2(
@@ -227,32 +301,30 @@ export class LeafletMap {
       y: mapImage.originY + mapImage.height * mapImage.resolution,
     };
     //Calculate the transformed image corners
-    const cosTh = Math.cos(transform.dtheta);
-    const sinTh = Math.sin(transform.dtheta);
-    const bottomLeftRotD = {
-      x: (bottomLeft.x) * cosTh - (bottomLeft.y) * sinTh + transform.dx,
-      y: (bottomLeft.x) * sinTh + (bottomLeft.y) * cosTh + transform.dy,
-    };
-    const topLeftRotD = {
-      x: (topLeft.x) * cosTh - (topLeft.y) * sinTh + transform.dx,
-      y: (topLeft.x) * sinTh + (topLeft.y) * cosTh + transform.dy,
-    };
-    const topRightRotD = {
-      x: (topRight.x) * cosTh - (topRight.y) * sinTh + transform.dx,
-      y: (topRight.x) * sinTh + (topRight.y) * cosTh + transform.dy,
-    };
+    const bottomLeftRotD = this.applyTransform(bottomLeft, tf);
+    const topLeftRotD = this.applyTransform(topLeft, tf);
+    const topRightRotD = this.applyTransform(topRight, tf);
     //Calculate the transformed image corners in lat-lng.
-    const bottomLeftLatLng = L.latLng(
-      latMid + bottomLeftRotD.y / mPerLat,
-      lngMid + bottomLeftRotD.x / mPerLng
+    const bottomLeftLatLng = this.toLatLng(
+      bottomLeftRotD,
+      latMid,
+      lngMid,
+      mPerLat,
+      mPerLng
     );
-    const topLeftLatLng = L.latLng(
-      latMid + topLeftRotD.y / mPerLat,
-      lngMid + topLeftRotD.x / mPerLng
+    const topLeftLatLng = this.toLatLng(
+      topLeftRotD,
+      latMid,
+      lngMid,
+      mPerLat,
+      mPerLng
     );
-    const topRightLatLng = L.latLng(
-      latMid + topRightRotD.y / mPerLat,
-      lngMid + topRightRotD.x / mPerLng
+    const topRightLatLng = this.toLatLng(
+      topRightRotD,
+      latMid,
+      lngMid,
+      mPerLat,
+      mPerLng
     );
     //If a different local map was already added, remember if was displayed and then delete it.
     let displayMap = false;
@@ -273,13 +345,20 @@ export class LeafletMap {
     );
     //Create a polyline of the local poses
     this.localPosesPolyline = L.polyline(
-      localPoses.map(pose => [
-        latMid + (pose.x * sinTh + pose.y * cosTh + transform.dy) / mPerLat,
-        lngMid + (pose.x * cosTh - pose.y * sinTh + transform.dx) / mPerLng
-      ]), {
-      color: 'orange',
-      opacity: 0.4
-    });
+      localPoses.map((pose) =>
+        this.toLatLng(
+          this.applyTransform(pose, tf),
+          latMid,
+          lngMid,
+          mPerLat,
+          mPerLng
+        )
+      ),
+      {
+        color: "orange",
+        opacity: 0.4,
+      }
+    );
     //If a previous map was displayed, add the overlay to the map.
     if (displayMap) {
       this.localMapOverlay.addTo(this.leafletMap);
@@ -287,13 +366,19 @@ export class LeafletMap {
     }
 
     //Combine local map and local poses into a LayerGroup
-    this.localMapOverlayGroup = L.layerGroup([this.localMapOverlay, this.localPosesPolyline]);
+    this.localMapOverlayGroup = L.layerGroup([
+      this.localMapOverlay,
+      this.localPosesPolyline,
+    ]);
     //Create the layer control if there is none.
     if (!this.layerControl) {
       this.layerControl = L.control.layers().addTo(this.leafletMap);
     }
     //Add the overlay to the layer control
-    this.layerControl.addOverlay(this.localMapOverlayGroup, "Local map and poses (orange)");
+    this.layerControl.addOverlay(
+      this.localMapOverlayGroup,
+      "Local map and poses (orange)"
+    );
     //Save the last mapImage
     this.mapImage = mapImage;
   }
@@ -334,7 +419,12 @@ export class LeafletMap {
     }
   }
 
-  async getAndDrawMapPoses(segmentId, markerColorAuto, markerColorIto, markerAlpha) {
+  async getAndDrawMapPoses(
+    segmentId,
+    markerColorAuto,
+    markerColorIto,
+    markerAlpha
+  ) {
     let geoJsonData = null;
     try {
       //Get geoJSON data from server.
@@ -360,7 +450,11 @@ export class LeafletMap {
         const points = L.geoJSON(geoJsonData, {
           pointToLayer: (feature, latlng) => {
             //Save the lnglat coordinates
-            this.lnglatCoords.push({lat: latlng.lat, lng: latlng.lng, timestamp: feature.properties.timestamp});
+            this.lnglatCoords.push({
+              lat: latlng.lat,
+              lng: latlng.lng,
+              timestamp: feature.properties.timestamp,
+            });
             //Generate the markers for the map
             if (feature.properties.type == "AUTO") {
               markerOptions.color = markerColorAuto || "green";

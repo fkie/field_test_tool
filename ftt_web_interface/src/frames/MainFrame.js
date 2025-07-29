@@ -98,7 +98,6 @@ export class MainFrame {
       if (entry.lng && entry.lat && !this.segmentDetail.gpsMapBox.checked) {
         this.segmentDetail.gpsMapBox.checked = true;
         this.segmentDetail.mapInterface.mapElement.style.display = "block";
-        this.segmentDetail.mapInterface.leafletMap.invalidateSize(true);
         break;
       }
     }
@@ -114,6 +113,8 @@ export class MainFrame {
         break;
       }
     }
+    //Update map sizes
+    this.segmentDetail.updateMapHeight();
     //Update segments table.
     this.segmentDetail.updateSegments(segmentList);
     //Check if this shift id is selected for compare and update slider accodingly.
