@@ -28,6 +28,7 @@ Ros2api::Ros2api() : Node("ros2api")
 
   // Declare parameters
   declare_parameter<bool>("params.use_tf", true);
+  declare_parameter<bool>("params.merge_maps", false);
   declare_parameter<std::string>("params.map_frame", "map");
   declare_parameter<std::string>("params.robot_frame", "base_link");
   declare_parameter<std::string>("params.server_address", "localhost:5000");
@@ -67,6 +68,7 @@ void Ros2api::resetVariables()
   last_lng = 0;
   last_pose_stamped.reset();
   last_map.reset();
+  merged_map.reset();
   map_sent = false;
 }
 
@@ -106,6 +108,7 @@ void Ros2api::getParams()
 {
   // Read parameters
   use_tf = get_parameter("params.use_tf").as_bool();
+  merge_maps = get_parameter("params.merge_maps").as_bool();
   map_frame = get_parameter("params.map_frame").as_string();
   robot_frame = get_parameter("params.robot_frame").as_string();
   server_address = get_parameter("params.server_address").as_string();
@@ -323,7 +326,8 @@ void Ros2api::autonomousModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
     if (use_tf) {
       geometry_msgs::msg::TransformStamped transform_stamped{};
       try {
-        transform_stamped = tf_buffer->lookupTransform(map_frame, robot_frame, tf2::TimePointZero);
+        transform_stamped = tf_buffer->lookupTransform(
+          map_frame, robot_frame, tf2::TimePointZero, tf2::Duration(10000000));
         local_x = transform_stamped.transform.translation.x;
         local_y = transform_stamped.transform.translation.y;
         valid_local_pose = true;
@@ -347,7 +351,7 @@ void Ros2api::autonomousModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
       return;
     } else if (!valid_local_pose) {
       RCLCPP_WARN_STREAM(get_logger(), "Posting new segment without local position data.");
-    } else if (!valid_gps_pose){
+    } else if (!valid_gps_pose) {
       RCLCPP_WARN_STREAM(get_logger(), "Posting new segment without gps position data.");
     }
     // Build the body of the HTTP request
@@ -401,7 +405,7 @@ void Ros2api::poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 
 void Ros2api::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  // Copy the message
+  // Copy the last received map
   last_map = msg;
 }
 
@@ -429,7 +433,12 @@ void Ros2api::sendMapTimerCb()
 {
   if (last_map) {
     if (map_sent) {
-      updateMap(last_map);
+      if (merge_maps) {
+        mergeMaps();
+        updateMap(merged_map);
+      } else {
+        updateMap(last_map);
+      }
     } else {
       sendNewMap(last_map);
     }
@@ -480,7 +489,7 @@ void Ros2api::sendLastLocalPose()
       }
       local_x = transform_stamped.transform.translation.x;
       local_y = transform_stamped.transform.translation.y;
-      pose_ts = time_now;
+      pose_ts = rclcpp::Time(transform_stamped.header.stamp);
       valid_local_pose = true;
     } else if (
       last_pose_stamped &&
@@ -514,6 +523,73 @@ void Ros2api::sendLastLocalPose()
   }
 }
 
+void Ros2api::mergeMaps()
+{
+  // On first message, initialize merged map as msg
+  if (!merged_map) {
+    merged_map = std::make_shared<nav_msgs::msg::OccupancyGrid>(*last_map);
+    return;
+  }
+
+  // Compute new bounds for merged map
+  float res = merged_map->info.resolution;
+
+  float x0 = std::min(merged_map->info.origin.position.x, last_map->info.origin.position.x);
+  float y0 = std::min(merged_map->info.origin.position.y, last_map->info.origin.position.y);
+
+  float x1_m = merged_map->info.origin.position.x + merged_map->info.width * res;
+  float y1_m = merged_map->info.origin.position.y + merged_map->info.height * res;
+  float x1_n = last_map->info.origin.position.x + last_map->info.width * res;
+  float y1_n = last_map->info.origin.position.y + last_map->info.height * res;
+
+  float x1 = std::max(x1_m, x1_n);
+  float y1 = std::max(y1_m, y1_n);
+
+  int new_width = static_cast<int>(std::round((x1 - x0) / res));
+  int new_height = static_cast<int>(std::round((y1 - y0) / res));
+
+  // Create new merged map, initialize all with unknown (-1)
+  std::vector<int8_t> new_data(new_width * new_height, -1);
+
+  // Lambda to copy data from grid to new_data
+  auto merge_into = [&](const nav_msgs::msg::OccupancyGrid::SharedPtr & grid) {
+    int ox = static_cast<int>(std::round((grid->info.origin.position.x - x0) / res));
+    int oy = static_cast<int>(std::round((grid->info.origin.position.y - y0) / res));
+
+    for (unsigned int y = 0; y < grid->info.height; ++y) {
+      for (unsigned int x = 0; x < grid->info.width; ++x) {
+        int gx = ox + x;
+        int gy = oy + y;
+        if (gx < 0 || gx >= new_width || gy < 0 || gy >= new_height) continue;
+
+        int idx_new = gy * new_width + gx;
+        int idx_grid = y * grid->info.width + x;
+        int8_t val = grid->data[idx_grid];
+
+        // Merge logic: keep obstacles, overwrite rest except if unkown
+        if (val == 100) {
+          new_data[idx_new] = 100;
+        } else if (val >= 0 && val < 100) {
+          if (new_data[idx_new] != 100) new_data[idx_new] = val;
+        }
+      }
+    }
+  };
+
+  // Merge existing merged_map
+  merge_into(merged_map);
+
+  // Merge new msg
+  merge_into(last_map);
+
+  // Update merged_map
+  merged_map->info.origin.position.x = x0;
+  merged_map->info.origin.position.y = y0;
+  merged_map->info.width = new_width;
+  merged_map->info.height = new_height;
+  merged_map->data = new_data;
+}
+
 std::string Ros2api::encodeMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   // Convert Occupancy Grid to cv::Mat
@@ -523,9 +599,11 @@ std::string Ros2api::encodeMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg
        ++it, ++idx) {
     // Default value (Unkown)
     int value = 127;
-    // Rescale 0-100 to 0-255
-    if (*it >= 0) {
-      value = 255 - static_cast<int>(*it) * 255 / 100;
+    // Set obstacles to 0 and the rest to 255
+    if (*it == 100) {
+      value = 0;
+    } else if (*it >= 0) {
+      value = 255;
     }
     image.at<uchar>(idx / image.cols, idx % image.cols) = static_cast<uchar>(value);
   }
@@ -619,7 +697,7 @@ void Ros2api::sendImageBuffer()
 std::string Ros2api::encodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   // Convert Image to cv::Mat
-  cv::Mat image(msg->height, msg->width, CV_8UC3, const_cast<uchar*>(msg->data.data()));
+  cv::Mat image(msg->height, msg->width, CV_8UC3, const_cast<uchar *>(msg->data.data()));
   // Transform to jpeg
   std::vector<uchar> buf;
   cv::imencode(".jpg", image, buf);

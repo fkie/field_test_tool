@@ -899,7 +899,8 @@ class Pose(Resource):
                         'properties', json_build_object( \
                             'id', pose.id, \
                             'segmentId', pose.segment_id, \
-                            'type', segment_type.short_description \
+                            'type', segment_type.short_description, \
+                            'timestamp', pose.orig_secs \
                         ) \
                     ) \
                 ) \
