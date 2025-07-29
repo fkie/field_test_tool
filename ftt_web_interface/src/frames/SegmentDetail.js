@@ -295,13 +295,13 @@ export class SegmentDetail {
               if (entry.lng && entry.lat && !this.gpsMapBox.checked) {
                 this.gpsMapBox.checked = true;
                 this.mapInterface.mapElement.style.display = "block";
-                this.mapInterface.leafletMap.invalidateSize(true);
               }
               //If any segment has local poses, activate the local map
               if (entry.local_x && entry.local_y && !this.localMapBox.checked) {
                 this.localMapBox.checked = true;
                 this.localMapInterface.mapElement.style.display = "block";
               }
+              this.updateMapHeight();
             }
           }
         }

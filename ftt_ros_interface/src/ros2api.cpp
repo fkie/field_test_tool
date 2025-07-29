@@ -489,7 +489,7 @@ void Ros2api::sendLastLocalPose()
       }
       local_x = transform_stamped.transform.translation.x;
       local_y = transform_stamped.transform.translation.y;
-      pose_ts = time_now;
+      pose_ts = rclcpp::Time(transform_stamped.header.stamp);
       valid_local_pose = true;
     } else if (
       last_pose_stamped &&
@@ -599,9 +599,11 @@ std::string Ros2api::encodeMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg
        ++it, ++idx) {
     // Default value (Unkown)
     int value = 127;
-    // Rescale 0-100 to 0-255
-    if (*it >= 0) {
-      value = 255 - static_cast<int>(*it) * 255 / 100;
+    // Set obstacles to 0 and the rest to 255
+    if (*it == 100) {
+      value = 0;
+    } else if (*it >= 0) {
+      value = 255;
     }
     image.at<uchar>(idx / image.cols, idx % image.cols) = static_cast<uchar>(value);
   }
