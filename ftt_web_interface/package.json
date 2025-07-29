@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "easeljs": "^1.0.2",
-    "eventemitter2": "^6.4.0",
+    "eventemitter3": "^5.0.1",
     "leaflet": "^1.7.1",
     "material-icons": "^1.10.2"
   }

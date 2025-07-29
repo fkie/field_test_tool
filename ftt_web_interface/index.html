@@ -44,7 +44,13 @@
           '<script src="node_modules/eventemitter2/lib/eventemitter2.js" defer>\x3C/script>'
         );
     </script> -->
-    <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js"></script>
+    <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js" defer></script>
+    <script>
+      window.EventEmitter3 ||
+        document.write(
+          '<script src="node_modules/eventemitter3/dist/eventemitter3.umd.min.js" defer>\x3C/script>'
+        );
+    </script>
     <!-- <script src="src/lib/roslib.js" defer></script> -->
     <script src="src/lib/RosLib.umd.cjs" defer></script>
     <!-- <script src="src/lib/RoslibVector3.js" defer></script> -->
