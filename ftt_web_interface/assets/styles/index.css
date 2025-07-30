@@ -139,7 +139,7 @@
 .map {
   display: none;
   position: relative;
-  height: calc((100vh - 12rem) / 2);
+  height: 34rem;
   margin: 1rem;
   /* overflow: hidden; */
 }
