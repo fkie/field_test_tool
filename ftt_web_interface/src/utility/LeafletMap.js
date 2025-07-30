@@ -32,7 +32,6 @@ export class LeafletMap {
     this.changeTileLayer();
     this.localMapOverlay = null;
     this.localPosesPolyline = null;
-    this.localMapOverlayGroup = null;
     this.layerControl = null;
     this.mapImage = null;
     this.lnglatCoords = [];
@@ -326,12 +325,10 @@ export class LeafletMap {
       mPerLat,
       mPerLng
     );
-    //If a different local map was already added, remember if was displayed and then delete it.
-    let displayMap = false;
-    if (this.localMapOverlay) {
-      displayMap = this.leafletMap.hasLayer(this.localMapOverlay);
-      this.removeLocalMap();
-    }
+    //If a local map and poses were already added, remember they were displayed and delete them.
+    const displayMap = !!this.localMapOverlay && this.leafletMap.hasLayer(this.localMapOverlay);
+    const displayPoses = !!this.localPosesPolyline && this.leafletMap.hasLayer(this.localPosesPolyline);
+    this.removeLocalMap();
     //Create the overlay for the rotated image.
     this.localMapOverlay = L.imageOverlay.rotated(
       image,
@@ -359,25 +356,27 @@ export class LeafletMap {
         opacity: 0.4,
       }
     );
-    //If a previous map was displayed, add the overlay to the map.
+    //If a map was previously displayed, add the new one.
     if (displayMap) {
       this.localMapOverlay.addTo(this.leafletMap);
+    }
+    //If local poses were previously displayed, add the new ones.
+    if (displayPoses) {
       this.localPosesPolyline.addTo(this.leafletMap);
     }
-
-    //Combine local map and local poses into a LayerGroup
-    this.localMapOverlayGroup = L.layerGroup([
-      this.localMapOverlay,
-      this.localPosesPolyline,
-    ]);
     //Create the layer control if there is none.
     if (!this.layerControl) {
       this.layerControl = L.control.layers().addTo(this.leafletMap);
     }
-    //Add the overlay to the layer control
+    //Add the overlays to the layer control
     this.layerControl.addOverlay(
-      this.localMapOverlayGroup,
-      "Local map and poses (orange)"
+      this.localMapOverlay,
+      "Local map"
+    );
+    //Add the overlays to the layer control
+    this.layerControl.addOverlay(
+      this.localPosesPolyline,
+      "Local poses (orange)"
     );
     //Save the last mapImage
     this.mapImage = mapImage;
@@ -386,13 +385,15 @@ export class LeafletMap {
   removeLocalMap() {
     if (this.localMapOverlay) {
       this.leafletMap.removeLayer(this.localMapOverlay);
-      this.localPosesPolyline.remove();
-      this.layerControl.removeLayer(this.localMapOverlayGroup);
+      this.layerControl.removeLayer(this.localMapOverlay);
       this.localMapOverlay = null;
-      this.localMapOverlayGroup = null;
-      this.localPosesPolyline = null;
-      this.mapImage = null;
     }
+    if (this.localPosesPolyline) {
+      this.localPosesPolyline.remove();
+      this.layerControl.removeLayer(this.localPosesPolyline);
+      this.localPosesPolyline = null;
+    }
+    this.mapImage = null;
   }
 
   removeLayerControl() {
