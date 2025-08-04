@@ -108,8 +108,7 @@ export class ShiftCompare {
       for (let j = i + 1; j < trajectories.length; j++) {
         distancesDtw[i][j] = distDtw(
           trajectories[i],
-          trajectories[j],
-          trajectories[0][0]
+          trajectories[j]
         );
         distancesDtw[j][i] = distancesDtw[i][j];
       }

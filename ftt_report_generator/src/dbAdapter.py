@@ -152,6 +152,17 @@ class FttAdapter(PgAdapter):
 
         self.dictcursor.execute(sel_stmt, (seg_id,))
         return self.dictcursor.fetchone()
+    
+    def get_segment_lng_lat_coords(self, seg_id):
+        # Get segment (lng, lat) coordinates from database
+        sel_stmt = "SELECT ST_X(pose.position), ST_Y(pose.position) \
+                    FROM pose \
+                    INNER JOIN segment ON pose.segment_id = segment.id \
+                    WHERE segment_id = %s \
+                    ORDER BY pose.id"
+        
+        self.dictcursor.execute(sel_stmt, (seg_id,))
+        return self.dictcursor.fetchall()
 
     def get_segment_points(self, seg_id, local=False):
         # Get segment points from database
@@ -282,8 +293,17 @@ class FttAdapter(PgAdapter):
             WHERE shift_id = %s"
         self.dictcursor.execute(sel_stmt, (shift_id,))
         return self.dictcursor.fetchone()
+    
+    def get_shift_ids(self, test_event_id):
+        # Get all master segment ids for the shift
+        sel_stmt = "SELECT shift.id \
+                    FROM shift \
+                    WHERE test_event_id = %s \
+                    ORDER BY shift.id"
+        self.dictcursor.execute(sel_stmt, (test_event_id,))
+        return [x[0] for x in self.dictcursor.fetchall()]
 
-    def get_shifts_by_test_event_id(self, test_event_id, local):
+    def get_shifts(self, test_event_id, local):
         select_stmt = psycopg2.sql.SQL(
             "SELECT shift.id as id, \
                 to_timestamp(min(segment.starttime_secs)) as shift_start_datetime_raw,\

@@ -12,11 +12,21 @@ import sys
 import base64
 import requests
 from pyproj import Transformer
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+import parse
 
 EQUATOR_PERIMETER = 40075016.68557849
 TILE_FIX_SIZE = 1024
+
+LINE_COLORS = [
+    (0, 0, 128),      # Navy
+    (220, 20, 60),    # Crimson
+    (0, 128, 0),      # Green
+    (238, 130, 238),  # Violet
+    (255, 165, 0),    # Orange
+    (255, 215, 0)     # Gold
+]
 
 ###############################################################
 
@@ -99,7 +109,7 @@ class MapGenerator:
                     print(("Tile not found: %s/%s/%s" % (zoom, xtile, ytile)))
         return map_images
 
-    def draw_segment_points(self, seg_id, map_images, xmin, ymin, zoom):
+    def draw_segment_points(self, seg_id, map_images, xmin, ymin, zoom, color = None):
         # Define object for drawing over the map image.
         draw = ImageDraw.Draw(map_images)
         # Get this and next segment's starting point and this segment's color.
@@ -108,7 +118,8 @@ class MapGenerator:
         start_northing = data[1]
         end_easting = data[2]
         end_northing = data[3]
-        color = tuple([int(i) for i in data[4].split(',')])
+        if not color:
+            color = tuple([int(i) for i in data[4].split(',')])
         # Get segment points.
         points = self.db_adapter.get_segment_points(seg_id, False)
         # Return if the segment has no data points.
@@ -129,14 +140,56 @@ class MapGenerator:
         # Transform coordinates to image reference system.
         scale = MapGenerator.tile_px_scale(TILE_FIX_SIZE, zoom)
         seg_xy = [(scale * (point[0] - o_easting), scale * (o_northing - point[1])) for point in seg_xy]
+        # Calculate the size of the position markers
+        seg_xy_scale = map_images.width / 1890 # 300dpi, 16cm width = 1890px
         # Draw polyline on image.
         if len(seg_xy) > 1:
-            draw.line(seg_xy, color, 3)
-        # Draw a 9px wide point on each position.
+            draw.line(seg_xy, color, int(1 + 2 * seg_xy_scale))
+        # Draw a point on each position.
+        p_scale = int(3 * seg_xy_scale)
         for p in seg_xy:
-            draw.ellipse([p[0]-4, p[1]-4, p[0]+4, p[1]+4], color, color)
+            draw.ellipse(
+                [
+                    p[0] - p_scale,
+                    p[1] - p_scale,
+                    p[0] + p_scale,
+                    p[1] + p_scale
+                ],
+                color,
+                color
+            )
 
-    def get_map(self, shift_id, seg_id, bb):
+    def draw_shifts_legend(self, map_images, shift_ids):
+        # Define object for drawing over the map image.
+        draw = ImageDraw.Draw(map_images)
+        # Define a scale factor based on the image width
+        scale = map_images.width / 1890 # 300dpi, 16cm width = 1890px
+        # Set names for the legend
+        names = [("Shift " + str(shift_id)) for shift_id in shift_ids]
+        # Set font
+        font_size = 30 * scale
+        font = ImageFont.truetype("arial.ttf", size=font_size)
+        # Legend params
+        padding = 15 * scale
+        line_height = 34 * scale  # Spacing between legend lines
+        ellipse_diameter = 15 * scale
+
+        for i, name in enumerate(names):
+            y = padding + i * line_height
+            # Draw color-ellipse
+            ellipse_bbox = [
+                padding, 
+                y, 
+                padding + ellipse_diameter, 
+                y + ellipse_diameter
+            ]
+            draw.ellipse(ellipse_bbox, fill=LINE_COLORS[i % len(LINE_COLORS)])
+            # Draw shift name
+            text_x = padding + ellipse_diameter + 6
+            text_y = y - ellipse_diameter / 2 # slight offset
+            draw.text((text_x, text_y), name, fill="black", font=font)
+
+    def get_map(self, test_event_id, shift_id, seg_id, bb):
         # Get the bounding box coordinates.
         lon = bb[0::2]
         lat = bb[1::2]
@@ -172,12 +225,23 @@ class MapGenerator:
         if seg_id:
             # Draw segment points on image.
             self.draw_segment_points(seg_id, map_images, xmin, ymin, zoom)
-        else:
+        elif shift_id:
             # Get all master segment ids for the shift
             segment_ids = self.db_adapter.get_master_segment_ids(shift_id)
             # Draw points on image for all the segments.
             for segment_id in segment_ids:
                 self.draw_segment_points(segment_id, map_images, xmin, ymin, zoom)
+        elif test_event_id:
+            # Get shift ids for the test event
+            shift_ids = self.db_adapter.get_shift_ids(test_event_id)
+            color_idx = 0
+            for sh_id in shift_ids:
+                # Get all master segment ids for the shift
+                segment_ids = self.db_adapter.get_master_segment_ids(sh_id)
+                # Draw points on image for all the segments.
+                for segment_id in segment_ids:
+                    self.draw_segment_points(segment_id, map_images, xmin, ymin, zoom, LINE_COLORS[color_idx])
+                color_idx = (color_idx + 1) % len(LINE_COLORS)
         # Parametrize cropping to proportionally cut borders of the merged map image up to a minimum size of TILE_FIX_SIZE x TILE_FIX_SIZE px.
         h_crop_factor = max(0, min((map_images.width / TILE_FIX_SIZE - 1) / (xmin_excess + xmax_excess), 1))
         v_crop_factor = max(0, min((map_images.height / TILE_FIX_SIZE - 1) / (ymin_excess + ymax_excess), 1))
@@ -188,11 +252,16 @@ class MapGenerator:
             int(map_images.width - h_crop_factor * xmax_excess * TILE_FIX_SIZE), 
             int(map_images.height - v_crop_factor * ymax_excess * TILE_FIX_SIZE)
         ))
+        # Set legend if the map is for the whole test event
+        if not seg_id and not shift_id and test_event_id:
+            self.draw_shifts_legend(map_images, shift_ids)
         # Define file name.
         if seg_id:
             file_dir = "%s/segment_%s.jpeg" % (self.image_dir, seg_id)
-        else:
+        elif shift_id:
             file_dir = "%s/shift_%s.jpeg" % (self.image_dir, shift_id)
+        elif test_event_id:
+            file_dir = "%s/test_event_%s.jpeg" % (self.image_dir, test_event_id)
         # Save image to file.
         f_image = open(file_dir, 'w')
         map_images.save(f_image, "JPEG", dpi=(300, 300))
@@ -291,3 +360,22 @@ class MapGenerator:
         map_image.save(f_image, "JPEG", dpi=(300, 300))
         f_image.close()
         return
+    
+    def get_comparison_map(self, test_event_id, shifts):
+        # Obtain the bounding box of all shifts
+        shift_bbs = []
+        for shift in shifts:
+            bb_str = shift["shift_bb"]
+            if not (bb_str is None):
+                shift_bbs.append(list(map(float, parse.parse("BOX({} {},{} {})", bb_str))))
+        # Get the joint bounding box
+        lon_mins = [bb[0] for bb in shift_bbs]
+        lat_mins = [bb[1] for bb in shift_bbs]
+        lon_maxs = [bb[2] for bb in shift_bbs]
+        lat_maxs = [bb[3] for bb in shift_bbs]
+
+        joint_bb = [min(lon_mins), min(lat_mins), max(lon_maxs), max(lat_maxs)]
+        self.get_map(test_event_id, None, None, joint_bb)
+        return
+
+

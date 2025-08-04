@@ -19,6 +19,7 @@ from subprocess import call
 from dbAdapter import FttAdapter
 from mapGenerator import MapGenerator
 from plotsGenerator import PlotsGenerator
+from trajectoryDistance import minimumDistance, distDtw, distErp#, cartesianFromLngLat
 
 builddir = "../build"
 imagedir = "images"
@@ -164,7 +165,7 @@ class FttReportGenerator:
                 if local:
                     self.map_generator.get_local_map(shift_id, row['segment_id'], seg_bb)
                 else:
-                    self.map_generator.get_map(shift_id, row['segment_id'], seg_bb)
+                    self.map_generator.get_map(None, shift_id, row['segment_id'], seg_bb)
             # Attach map image to tex file.
             image_path_file = "%s/%s/segment_%s.jpeg" % (builddir, imagedir, row['segment_id'])
             if os.path.isfile(image_path_file):
@@ -418,8 +419,109 @@ class FttReportGenerator:
             latex_file.write('\\end{center}\n')
             latex_file.write('\\end{figure}\n')
 
+    def matrix_to_latex(self, matrix, method_name, names):
+        N = len(matrix)
+        # Header: method name in (0,0), then names as columns
+        header = [f"\\textbf{{{method_name}}}"] + [f"\\textbf{{{n}}}" for n in names]
+        latex = "\\begin{tabular}{l" + "c" * N + "}\n"
+        latex += " & ".join(header) + " \\\\\n\\hline\n"
+        for i in range(N):
+            row = [f"\\textbf{{{names[i]}}}"] + [f"{matrix[i][j]:.2f}" for j in range(N)]
+            latex += " & ".join(row) + " \\\\\n"
+        latex += "\\end{tabular}"
+        return latex
+
+    def arrange_tables(self, tables, num_cols, max_width=0.9):
+        """
+        Arrange tables into rows so total width per row does not exceed max_width.
+        tables: list of LaTeX table strings
+        tables_num_cols: list of column counts for each table
+        Returns a list of rows, each row is a list of (table, width) tuples.
+        """
+        rows = []
+        current_row = []
+        current_width = 0
+        for table in tables:
+            width = num_cols * 0.09
+            if current_width + width > max_width:
+                if current_row:
+                    rows.append(current_row)
+                current_row = [(table, width)]
+                current_width = width
+            else:
+                current_row.append((table, width))
+                current_width += width
+        if current_row:
+            rows.append(current_row)
+        return rows
+
+    def latex_tables_dynamic_minipages(self, tables, num_cols):
+        """
+        Arrange LaTeX tables in minipages, dynamically wrapping to new rows as needed.
+        """
+        rows = self.arrange_tables(tables, num_cols)
+        latex_code = ""
+        for row in rows:
+            latex_code += "\\vspace{0.5cm}\n"
+            row_code = "\n\\hspace{0.05\\textwidth}\n".join(
+                [f"\\begin{{minipage}}{{{width:.2f}\\textwidth}}\n{tbl}\n\\end{{minipage}}" for tbl, width in row]
+            )
+            latex_code += row_code + "\n\n"
+        return latex_code
+
+    def generate_latex_trajectory_comparison_tables(self, latexf, shifts):
+        # Get the trajectories of lng, lat coordinates
+        trajectories = []
+        for shift in shifts:
+            shift_id = shift["id"]
+            segment_ids = self.db_adapter.get_master_segment_ids(shift_id)
+            trajectory = []
+            for segment_id in segment_ids:
+                trajectory += self.db_adapter.get_segment_lng_lat_coords(segment_id)
+            trajectories.append(trajectory)
+        # Set shift names
+        names = [("Shift " + str(shift["id"])) for shift in shifts]
+        # Get the distance matrices
+        N = len(trajectories)
+        distancesMin = [[0 for _ in range(N)] for _ in range(N)]
+        distancesDtw = [[0 for _ in range(N)] for _ in range(N)]
+        distancesErp = [[0 for _ in range(N)] for _ in range(N)]
+        # Compute minimum (tracking) distances (not necessarily symmetric)
+        for i in range(N):
+            for j in range(N):
+                if i == j:
+                    continue
+                distancesMin[i][j] = minimumDistance(trajectories[i], trajectories[j])
+        # Compute DTW distances (symmetric)
+        for i in range(N - 1):
+            for j in range(i + 1, N):
+                # Note: distDtw does not require the third argument (use only two)
+                distancesDtw[i][j] = distDtw(trajectories[i], trajectories[j])
+                distancesDtw[j][i] = distancesDtw[i][j]
+        # Compute ERP distances (symmetric), assuming g = trajectories[0][0]
+        g = trajectories[0][0]
+        for i in range(N - 1):
+            for j in range(i + 1, N):
+                distancesErp[i][j] = distErp(trajectories[i], trajectories[j], g)
+                distancesErp[j][i] = distancesErp[i][j]
+        # Start LaTeX table
+        latex_min = self.matrix_to_latex(distancesMin, "MinDist", names)
+        latex_dtw = self.matrix_to_latex(distancesDtw, "DTW", names)
+        latex_erp = self.matrix_to_latex(distancesErp, "ERP", names)
+
+        tables = [latex_min, latex_dtw, latex_erp]
+
+        latex_tables = self.latex_tables_dynamic_minipages(tables, len(shifts) + 1)
+
+        # To display them in a single row in LaTeX:
+        latexf.write(latex_tables)
+
+
     # Generate the global plots for the test event and write them to the latex file.
     def generate_latex_global_statistics(self, latexf, shifts, report_info, stop_count_keys):
+        # Create the a comparison map for the test event
+        if not report_info["local"]:
+            self.map_generator.get_comparison_map(int(report_info["test_event_id"]), shifts)
         # Create the plots.
         global_plots = PlotsGenerator(
             self.db_adapter,
@@ -441,6 +543,22 @@ class FttReportGenerator:
         print(" - Generating the Latex section for global statistics")
         # Chapter title.
         latexf.write('\\section{Global statistics}\n\n')
+        # Section for the trajectory comparison
+        if not report_info["local"]:
+            latexf.write('\\subsection{Shifts comparison}\n\n')
+            image_path_file = "{}/{}/test_event_{}.jpeg".format(builddir, imagedir, report_info["test_event_id"])
+            latex_image_path_file = "{}/test_event_{}.jpeg".format(imagedir, report_info["test_event_id"])
+            if os.path.isfile(image_path_file):
+                latexf.write('The following map shows the driven trajectories for each shift.\n\n')
+                latexf.write('\\vspace{0.5cm}\n')
+                latexf.write('\\begin{center}\n\n')
+                latexf.write('\\includegraphics[width=\maxwidth{16cm},height=15cm,keepaspectratio]{%s}\n\n' % latex_image_path_file)
+                latexf.write('\\end{center}\n\n')
+            else:
+                latexf.write('(No shift comparison file available.)')
+        latexf.write('A set of distance measures between the shift trajectories are shown in the following tables.\n\n') 
+        self.generate_latex_trajectory_comparison_tables(latexf, shifts)
+        latexf.write('\\newpage\n\n')
         # Section for the first two figures.
         latexf.write('\\subsection{Traveled distance logs}\n\n')
         latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} show the complete and autonomous traveled distance. Each bar corresponds to a shift.' % (dist_seq_figure, total_dist_figure))
@@ -509,7 +627,7 @@ class FttReportGenerator:
         # Generate the Latex file header
         self.generate_latex_header(latex_f, report_info)
         # Get the Shift entries out of the DB
-        shifts = self.db_adapter.get_shifts_by_test_event_id(report_info["test_event_id"], report_info["local"])
+        shifts = self.db_adapter.get_shifts(report_info["test_event_id"], report_info["local"])
         # Generate the global statistics section
         self.generate_latex_global_statistics(latex_f, shifts, report_info, stop_count_keys) # list(map(lambda x: x['id'], shifts))
 
@@ -534,7 +652,7 @@ class FttReportGenerator:
                     self.map_generator.get_local_map(shift_id, None, bb)
                 else:
                     # Get map from GPS data.
-                    self.map_generator.get_map(shift_id, None, bb)
+                    self.map_generator.get_map(None, shift_id, None, bb)
             # Generate the Latex Shift header
             self.generate_latex_shift_header(latex_f, shift)
             # Generate the Shift statistics for a Latex file
