@@ -505,7 +505,7 @@ class FttReportGenerator:
                 distancesErp[i][j] = distErp(trajectories[i], trajectories[j], g)
                 distancesErp[j][i] = distancesErp[i][j]
         # Start LaTeX table
-        latex_min = self.matrix_to_latex(distancesMin, "MinDist", names)
+        latex_min = self.matrix_to_latex(distancesMin, "Min", names)
         latex_dtw = self.matrix_to_latex(distancesDtw, "DTW", names)
         latex_erp = self.matrix_to_latex(distancesErp, "ERP", names)
 
@@ -556,9 +556,11 @@ class FttReportGenerator:
                 latexf.write('\\end{center}\n\n')
             else:
                 latexf.write('(No shift comparison file available.)')
-        latexf.write('A set of distance measures between the shift trajectories are shown in the following tables.\n\n') 
-        self.generate_latex_trajectory_comparison_tables(latexf, shifts)
-        latexf.write('\\newpage\n\n')
+            latexf.write('Selected distance measures between the trajectories are shown in the following tables: \\textbf{Min} (Minimum Distance),\
+                         \\textbf{DTW} (Dynamic Time Warping), and \\textbf{ERP} (Edit distance with Real Penalty). Here, \\textbf{Minimum Distance}\
+                        is an asymmetric measure, defined as the sum of shortest point-to-line distances from each point of one trajectory to the other.\n\n')
+            self.generate_latex_trajectory_comparison_tables(latexf, shifts)
+            latexf.write('\\newpage\n\n')
         # Section for the first two figures.
         latexf.write('\\subsection{Traveled distance logs}\n\n')
         latexf.write('Figure \\ref{fig:%s} and Figure \\ref{fig:%s} show the complete and autonomous traveled distance. Each bar corresponds to a shift.' % (dist_seq_figure, total_dist_figure))
