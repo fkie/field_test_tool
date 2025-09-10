@@ -84,6 +84,15 @@ export const distPointToSegmentFromLngLat = (p, a, b) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
+export const trajectoryLength = (t) => {
+  //Calculate the length in meters of a trajectory with lng,lat coordinates.
+  let length = 0;
+  for (let i = 0; i < t.length - 1; i++) {
+    length += distL2FromLngLat(t[i + 1], t[i]);
+  }
+  return length;
+};
+
 /**
  * Returns the edit distance with real penalty (ERP) between two GNSS trajectories
  *
@@ -168,7 +177,7 @@ export const distDtw = (t0, t1) => {
  *
  */
 export const minimumDistance = (source, target) => {
-  let totalError = 0;
+  let totalError = source.length > 0 ? 0 : Infinity;
   source.forEach((p) => {
     let minDistance = Infinity;
     for (let i = 0; i < target.length - 1; i++) {
