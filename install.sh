@@ -15,14 +15,50 @@ sudo apt update
 sudo apt install -y build-essential python3-pyproj python3-jinja2 python3-parse python3-lxml python3-ruamel.yaml python3-matplotlib python3-numpy python3-tk python3-opencv libopencv-dev libyaml-cpp-dev libcurl4-openssl-dev python3-requests python3-pil python3-psycopg2 python3-flask python3-flask-restful python3-flask-cors texlive texlive-lang-german texlive-latex-extra texlive-fonts-extra texlive-xetex postgresql postgresql-client postgis
 echo -e "${GREEN}Dependencies installed successfully.${NC}"
 
-# Step 2: Deduce ROS2 workspace using COLCON_PREFIX_PATH
+# Step 2: Locate ROS2 workspace
+# Priority: --workspace argument > COLCON_PREFIX_PATH > deduce from script location
 echo -e "${YELLOW}Locating ROS2 workspace...${NC}"
-if [ -z "$COLCON_PREFIX_PATH" ]; then
-  echo -e "${RED}Error: COLCON_PREFIX_PATH is not set! Please initialize your ROS2 workspace before executing this script.${NC}"
+
+ROS2_WORKSPACE=""
+
+# 1. Check for explicit --workspace argument
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --workspace=*)
+      ROS2_WORKSPACE="${1#*=}"
+      shift ;;
+    --workspace)
+      ROS2_WORKSPACE="$2"
+      shift 2 ;;
+    *)
+      shift ;;
+  esac
+done
+
+# 2. Fall back to COLCON_PREFIX_PATH
+if [ -z "$ROS2_WORKSPACE" ] && [ -n "$COLCON_PREFIX_PATH" ]; then
+  ROS2_WORKSPACE=$(dirname "$COLCON_PREFIX_PATH")
+fi
+
+# 3. Deduce from script location by walking up to find the 'src' ancestor
+if [ -z "$ROS2_WORKSPACE" ]; then
+  CURRENT="$SCRIPT_DIR"
+  while [ "$CURRENT" != "/" ]; do
+    if [ "$(basename "$CURRENT")" = "src" ]; then
+      ROS2_WORKSPACE="$(dirname "$CURRENT")"
+      break
+    fi
+    CURRENT="$(dirname "$CURRENT")"
+  done
+fi
+
+if [ -z "$ROS2_WORKSPACE" ]; then
+  echo -e "${RED}Error: Could not determine ROS2 workspace. Please either:${NC}"
+  echo -e "${YELLOW}  1. Source your ROS2 workspace first (sets COLCON_PREFIX_PATH)${NC}"
+  echo -e "${YELLOW}  2. Pass it explicitly: $0 --workspace /path/to/ros2_ws${NC}"
   exit 1
 fi
 
-ROS2_WORKSPACE=$(dirname "$COLCON_PREFIX_PATH")
 echo -e "${GREEN}ROS2 workspace located at: $ROS2_WORKSPACE${NC}"
 
 # Locate field_test_tool anywhere under src/
