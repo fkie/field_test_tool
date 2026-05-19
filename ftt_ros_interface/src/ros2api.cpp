@@ -393,9 +393,11 @@ void Ros2api::autonomousModeCallback(const std_msgs::msg::Bool::SharedPtr msg)
 
 void Ros2api::navSatFixCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
 {
-  last_ts = rclcpp::Time(msg->header.stamp).seconds();
-  last_lat = msg->latitude;
-  last_lng = msg->longitude;
+  if (msg->status.status != sensor_msgs::msg::NavSatStatus::STATUS_NO_FIX) {
+    last_ts = rclcpp::Time(msg->header.stamp).seconds();
+    last_lat = msg->latitude;
+    last_lng = msg->longitude;
+  }
 }
 
 void Ros2api::poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
