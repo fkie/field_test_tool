@@ -25,9 +25,18 @@ fi
 ROS2_WORKSPACE=$(dirname "$COLCON_PREFIX_PATH")
 echo -e "${GREEN}ROS2 workspace located at: $ROS2_WORKSPACE${NC}"
 
+# Locate field_test_tool anywhere under src/
+echo -e "${YELLOW}Locating field_test_tool package in workspace...${NC}"
+FTT_PATH=$(find "$ROS2_WORKSPACE/src" -type d -name "field_test_tool" | head -n 1)
+if [ -z "$FTT_PATH" ]; then
+  echo -e "${RED}Error: field_test_tool package not found under $ROS2_WORKSPACE/src!${NC}"
+  exit 1
+fi
+echo -e "${GREEN}field_test_tool found at: $FTT_PATH${NC}"
+
 cd "$ROS2_WORKSPACE"
 echo -e "${YELLOW}Installing FTT ROS dependencies...${NC}"
-rosdep install --from-paths src/field_test_tool/ -y --ignore-src
+rosdep install --from-paths "$FTT_PATH" -y --ignore-src
 echo -e "${YELLOW}Building FTT ROS package...${NC}"
 colcon build --symlink-install --packages-select ftt_ros_interface
 echo -e "${GREEN}FTT ROS package built successfully.${NC}"
