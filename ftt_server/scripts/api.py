@@ -18,6 +18,7 @@ from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_restful import Resource, Api
 from flask_cors import CORS, cross_origin
 from lxml import etree
+import signal
 
 app = Flask(__name__, static_url_path="", static_folder="../../ftt_web_interface")
 CORS(app, support_credentials=True)
@@ -55,6 +56,19 @@ def warn_msg(msg):
 
 def error_msg(error_type, msg):
     return "[ERROR] (%s): %s" % (error_type, msg)
+
+def graceful_shutdown(signum, frame):
+    print("Shutdown signal received. Closing open log entries...")
+    try:
+        ApiCommon.close_open_logs("segment")
+        ApiCommon.close_open_logs("leg")
+        ApiCommon.close_open_logs("shift")
+        ApiCommon.close_open_logs("test_event")
+    except Exception as e:
+        print(f"Error during shutdown cleanup: {e}")
+    finally:
+        DBInterface.close()
+        sys.exit(0)
 
 class DBInterface:
     # Static class to wrap psycopg2 functions.
@@ -1519,6 +1533,9 @@ if __name__ == '__main__':
 
     # Initialize the database interface.
     DBInterface.init(args.database_ip, args.database_port)
+    # Register graceful shutdown
+    signal.signal(signal.SIGTERM, graceful_shutdown)
+    signal.signal(signal.SIGINT, graceful_shutdown)
     # Run the web server.
     server_ip = args.server_ip or '0.0.0.0'
     server_port = args.server_port or 5000

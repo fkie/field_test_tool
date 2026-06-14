@@ -57,7 +57,14 @@ Ros2api::Ros2api() : Node("ros2api")
     std::bind(&Ros2api::saveParams, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-Ros2api::~Ros2api() { RCLCPP_INFO_STREAM(get_logger(), "Closing Ros2api."); }
+Ros2api::~Ros2api()
+{
+  RCLCPP_INFO_STREAM(get_logger(), "Closing Ros2api.");
+  if (start_logging) {
+    RCLCPP_INFO_STREAM(get_logger(), "Closing open segment on shutdown...");
+    closeCurrentSegment();  // best-effort, Flask may already be gone
+  }
+}
 
 void Ros2api::resetVariables()
 {
