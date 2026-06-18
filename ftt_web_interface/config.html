@@ -5,15 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.5" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>FTT config</title>
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-    />
+    <link rel="icon" type="image/svg+xml" href="assets/images/ftt-icon.svg">
     <link rel="stylesheet" href="assets/styles/generic.css" />
     <link rel="stylesheet" href="assets/styles/modal.css" />
     <link rel="stylesheet" href="assets/styles/config.css" />
-    <!-- <script src="src/lib/roslib.js" defer></script> -->
-    <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js"></script>
+    <script>
+      (function () {
+        function addMaterialIconsCdnFallback() {
+          // If the font is already available (from the local material-icons package), do nothing
+          if (document.fonts && document.fonts.check('24px "Material Icons"')) {
+            return;
+          }
+
+          // Otherwise load from Google Fonts as fallback
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+          document.head.appendChild(link);
+        }
+
+        if (document.fonts && document.fonts.ready) {
+          // Wait until fonts are done loading, then check
+          document.fonts.ready.then(addMaterialIconsCdnFallback);
+        } else {
+          // Older browsers: just check after window load
+          window.addEventListener('load', addMaterialIconsCdnFallback);
+        }
+      })();
+    </script>
+    <script
+      src="node_modules/eventemitter3/dist/eventemitter3.umd.min.js"
+      onerror="loadEventEmitterFromCdn()"
+    ></script>
+    <script>
+      function loadEventEmitterFromCdn() {
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js';
+        document.head.appendChild(s);
+      }
+    </script>
     <script src="src/lib/RosLib.umd.cjs" defer></script>
     <script src="assets/scripts/config.js" defer type="module"></script>
   </head>

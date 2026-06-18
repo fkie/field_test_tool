@@ -5,51 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.6" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>FTT webapp</title>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-      crossorigin=""
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-    />
+    <link rel="icon" type="image/svg+xml" href="assets/images/ftt-icon.svg">
     <link rel="stylesheet" href="assets/styles/generic.css" />
     <link rel="stylesheet" href="assets/styles/index.css" />
     <link rel="stylesheet" href="assets/styles/modal.css" />
+    <script>
+      (function () {
+        function addMaterialIconsCdnFallback() {
+          // If the font is already available (from the local material-icons package), do nothing
+          if (document.fonts && document.fonts.check('24px "Material Icons"')) {
+            return;
+          }
+
+          // Otherwise load from Google Fonts as fallback
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+          document.head.appendChild(link);
+        }
+
+        if (document.fonts && document.fonts.ready) {
+          // Wait until fonts are done loading, then check
+          document.fonts.ready.then(addMaterialIconsCdnFallback);
+        } else {
+          // Older browsers: just check after window load
+          window.addEventListener('load', addMaterialIconsCdnFallback);
+        }
+      })();
+    </script>
+    <!-- Leaflet: load local first, fallback to CDN only if local fails -->
+    <link
+      rel="stylesheet"
+      href="node_modules/leaflet/dist/leaflet.css"
+    />
     <script
-      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-      crossorigin=""
+      src="node_modules/leaflet/dist/leaflet.js"
       defer
+      onerror="loadLeafletFromCdn()"
     ></script>
     <script>
-      window.L ||
-        document.write(
-          '<script src="node_modules/leaflet/dist/leaflet.js" defer>\x3C/script>'
-        );
+      function loadLeafletFromCdn() {
+        // Only used when local node_modules is missing
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+        css.integrity = 'sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==';
+        css.crossOrigin = '';
+        document.head.appendChild(css);
+
+        var js = document.createElement('script');
+        js.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+        js.integrity = 'sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==';
+        js.crossOrigin = '';
+        js.defer = true;
+        document.head.appendChild(js);
+      }
     </script>
-    <script src="https://code.createjs.com/1.0.0/easeljs.min.js" defer></script>
+    <script
+      src="node_modules/easeljs/lib/easeljs.min.js"
+      defer
+      onerror="loadEaselFromCdn()"
+    ></script>
     <script>
-      window.createjs ||
-        document.write(
-          '<script src="node_modules/easeljs/lib/easeljs.min.js" defer>\x3C/script>'
-        );
+      function loadEaselFromCdn() {
+        var s = document.createElement('script');
+        s.src = 'https://code.createjs.com/1.0.0/easeljs.min.js';
+        s.defer = true;
+        document.head.appendChild(s);
+      }
     </script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6/lib/eventemitter2.min.js" defer></script> -->
-    <!-- <script>
-      window.EventEmitter2 ||
-        document.write(
-          '<script src="node_modules/eventemitter2/lib/eventemitter2.js" defer>\x3C/script>'
-        );
-    </script> -->
-    <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js" defer></script>
+    <script
+      src="node_modules/eventemitter3/dist/eventemitter3.umd.min.js"
+      defer
+      onerror="loadEventEmitterFromCdn()"
+    ></script>
     <script>
-      window.EventEmitter3 ||
-        document.write(
-          '<script src="node_modules/eventemitter3/dist/eventemitter3.umd.min.js" defer>\x3C/script>'
-        );
+      function loadEventEmitterFromCdn() {
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js';
+        s.defer = true;
+        document.head.appendChild(s);
+      }
     </script>
     <!-- <script src="src/lib/roslib.js" defer></script> -->
     <script src="src/lib/RosLib.umd.cjs" defer></script>
