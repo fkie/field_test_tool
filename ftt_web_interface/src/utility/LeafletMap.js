@@ -35,6 +35,7 @@ export class LeafletMap {
     this.layerControl = null;
     this.mapImage = null;
     this.lnglatCoords = [];
+    this.playbackPolyline = null;
     //Reach to DOM elements.
     this.mapElementContainer = document.getElementById(mapContainerName);
     this.mapElement = document.getElementById(mapElementName);
@@ -509,8 +510,12 @@ export class LeafletMap {
   }
 
   addActiveMarker(lat, lng) {
-    //Add location marker to map.
-    this.activeMarker = L.marker([lat, lng]).addTo(this.leafletMap);
+    // Add or move location marker on map.
+    if (this.activeMarker) {
+      this.activeMarker.setLatLng([lat, lng]);
+    } else {
+      this.activeMarker = L.marker([lat, lng]).addTo(this.leafletMap);
+    }
     if (this.leafletMap.getZoom()) {
       this.leafletMap.panTo([lat, lng]);
     } else {
@@ -527,5 +532,54 @@ export class LeafletMap {
       this.activePoses = selectedPoses.mapPosesPtr;
       this.activePoses.setStyle({ color: "blue" });
     }
+  }
+
+  clearPlaybackTrack() {
+    if (this.playbackPolyline) {
+      this.leafletMap.removeLayer(this.playbackPolyline);
+      this.playbackPolyline = null;
+    }
+  }
+
+  initPlaybackTrack(lat, lng) {
+    // start with first point
+    this.clearPlaybackTrack();
+    this.playbackPolyline = L.polyline([[lat, lng]], {
+      color: "blue",
+      weight: 3,
+      opacity: 0.9,
+    }).addTo(this.leafletMap);
+  }
+
+  addPlaybackPoint(lat, lng) {
+    if (!this.playbackPolyline) {
+      this.initPlaybackTrack(lat, lng);
+      return;
+    }
+    const latlngs = this.playbackPolyline.getLatLngs();
+    latlngs.push([lat, lng]);
+    this.playbackPolyline.setLatLngs(latlngs);
+  }
+
+  // Temporarily hide all static pose layers (used during playback)
+  hideAllPoses() {
+    this.mapPointsLayers.forEach(layer => {
+      if (this.leafletMap.hasLayer(layer.mapPosesPtr)) {
+        layer._wasVisible = true;
+        this.leafletMap.removeLayer(layer.mapPosesPtr);
+      } else {
+        layer._wasVisible = false;
+      }
+    });
+  }
+
+  // Restore static pose layers after playback
+  showAllPoses() {
+    this.mapPointsLayers.forEach(layer => {
+      if (layer._wasVisible) {
+        layer.mapPosesPtr.addTo(this.leafletMap);
+        delete layer._wasVisible;
+      }
+    });
   }
 }

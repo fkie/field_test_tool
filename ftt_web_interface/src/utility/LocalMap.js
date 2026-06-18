@@ -24,6 +24,7 @@ export class LocalMap {
     this.activeMarker = null;
     this.activePoses = null;
     this.mapBitmap = null;
+    this.playbackShape = null;
     //Create the main viewer.
     this.viewer = new ROS2D.Viewer({
       divID: "local-map",
@@ -282,10 +283,13 @@ export class LocalMap {
   }
 
   addActiveMarker(x, y) {
-    //Add location marker to map.
-    this.activeMarker = new createjs.Shape();
+    // Add or move location marker to map.
+    if (!this.activeMarker) {
+      this.activeMarker = new createjs.Shape();
+      this.viewer.scene.addChild(this.activeMarker);
+    }
+    this.activeMarker.graphics.clear();
     this.activeMarker.graphics.beginFill("blue").drawCircle(x, -y, 0.5);
-    this.viewer.scene.addChild(this.activeMarker);
   }
 
   addActivePoses(segmentId) {
@@ -296,6 +300,56 @@ export class LocalMap {
     if (selectedPoses) {
       this.activePoses = selectedPoses.mapPosesPtr;
       this.activePoses.command.style = "blue";
+    }
+  }
+
+  clearPlaybackTrack() {
+    if (this.playbackShape) {
+      this.viewer.scene.removeChild(this.playbackShape);
+      this.playbackShape = null;
+    }
+  }
+
+  initPlaybackTrack(x, y) {
+    this.clearPlaybackTrack();
+    this.playbackShape = new createjs.Shape();
+    this.playbackShape.graphics.setStrokeStyle(0.3);
+    this.playbackShape.graphics.beginStroke("blue");
+    this.playbackShape.graphics.moveTo(x, -y);
+    this.viewer.scene.addChild(this.playbackShape);
+  }
+
+  addPlaybackPoint(x, y) {
+    if (!this.playbackShape) {
+      this.initPlaybackTrack(x, y);
+      return;
+    }
+    this.playbackShape.graphics.lineTo(x, -y);
+  }
+
+  hideAllPoses() {
+    this.mapPointsLayers.forEach(layer => {
+      const shape = layer.mapPosesPtr.shape;
+      if (this.viewer.scene.contains(shape)) {
+        layer._wasVisible = true;
+        this.viewer.scene.removeChild(shape);
+      } else {
+        layer._wasVisible = false;
+      }
+    });
+  }
+
+  showAllPoses() {
+    this.mapPointsLayers.forEach(layer => {
+      const shape = layer.mapPosesPtr.shape;
+      if (layer._wasVisible) {
+        this.viewer.scene.addChild(shape);
+        delete layer._wasVisible;
+      }
+    });
+    // Keep marker on top
+    if (this.activeMarker) {
+      this.viewer.scene.addChild(this.activeMarker);
     }
   }
 }

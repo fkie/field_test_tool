@@ -251,6 +251,16 @@
               <button type="button" id="edit-segment-btn" class="styled-button">
                 Edit
               </button>
+              <button type="button" id="play-btn" class="styled-button">
+                Play
+              </button>
+              <i
+                id="play-config-icon"
+                class="material-icons small-icon"
+                title="Playback speed"
+              >
+                settings
+              </i>
             </div>
             <button type="button" id="compare-btn" class="styled-button" disabled>
               Compare
@@ -669,6 +679,37 @@
             <div class="form-col-50">
               <label for="map-max-zoom">Max Zoom</label>
               <input type="number" id="map-max-zoom" name="map-max-zoom"/>
+            </div>
+          </div>
+          <hr />
+          <div class="btn-bar">
+            <button type="submit" class="styled-button" disabled>
+              Update Data
+            </button>
+            <button type="submit" class="styled-button">
+              Reset Defaults
+            </button>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="playback-config-template">
+      <header class="modal__title">
+        <h2>Playback Configuration</h2>
+      </header>
+      <section>
+        <form>
+          <div class="form-row">
+            <div class="form-col-100">
+              <label for="playback-speed">Playback speed factor</label>
+              <input
+                type="number"
+                id="playback-speed"
+                name="playback-speed"
+                step="0.1"
+                min="0.1"
+              />
             </div>
           </div>
           <hr />

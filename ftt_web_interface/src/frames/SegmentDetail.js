@@ -15,6 +15,7 @@ import { ImageInterface } from "../database_interface/Image.js";
 import { SegmentEdit } from "../overlays/SegmentEdit.js";
 import { MapConfig } from "../overlays/MapConfig.js";
 import { AutoRefreshConfig } from "../overlays/AutoRefreshConfig.js";
+import { PlaybackConfig } from "../overlays/PlaybackConfig.js";
 
 //Global variables for fixed and common database parameter values.
 const SEGMENT_TYPE_ITO = 1;
@@ -43,6 +44,8 @@ export class SegmentDetail {
     this.segmentNewBtn = document.getElementById("new-segment-btn");
     this.segmentEndBtn = document.getElementById("end-segment-btn");
     this.segmentEditBtn = document.getElementById("edit-segment-btn");
+    this.playBtn = document.getElementById("play-btn");
+    this.playConfigIcon = document.getElementById("play-config-icon");
     this.refreshBtn = document.getElementById("refresh-btn");
     this.gpsMapConfig = document.getElementById("gps-map-config-icon");
     this.gpsMapBox = document.getElementById("gps-map-box");
@@ -59,6 +62,8 @@ export class SegmentDetail {
     this.noteInterface = new NoteInterface(serverInterface);
     this.imageInterface = new ImageInterface(serverInterface);
     this.segmentList = [];
+    this.playbackSpeed = 10; // 10× real time by default
+    this.playbackTimerId = null;
     this.itoReasonList = null;
     this.autoRefreshIntervalId = null;
     this.selectedRow = null;
@@ -67,6 +72,12 @@ export class SegmentDetail {
     this.showAutoSegments = true;
     this.autoRefreshTimer = 2000;
     //Check stored configuration.
+    const playbackData = JSON.parse(
+      localStorage.getItem("fttPlaybackData")
+    );
+    if (playbackData && typeof playbackData.speed === "number") {
+      this.playbackSpeed = playbackData.speed;
+    }
     let autoRefreshData = JSON.parse(
       localStorage.getItem("fttAutoRefreshData")
     );
@@ -119,6 +130,14 @@ export class SegmentDetail {
     this.segmentEditBtn.addEventListener(
       "click",
       this.editSegmentHandler.bind(this)
+    );
+    this.playBtn.addEventListener(
+      "click",
+      this.playHandler.bind(this)
+    );
+    this.playConfigIcon.addEventListener(
+      "click",
+      this.playbackConfigHandler.bind(this)
     );
     this.refreshBtn.addEventListener("click", () => {
       this.updateSegments();
@@ -447,6 +466,19 @@ export class SegmentDetail {
   }
 
   segmentTableClickHandler(event) {
+    // Stop and clean up any ongoing playback
+    if (this.playbackTimerId) {
+      clearInterval(this.playbackTimerId);
+      this.playbackTimerId = null;
+
+      // Remove playback trajectories
+      this.mapInterface.clearPlaybackTrack();
+      this.localMapInterface.clearPlaybackTrack();
+
+      // Restore the original static trajectories
+      this.mapInterface.showAllPoses();
+      this.localMapInterface.showAllPoses();
+    }
     //Find the closest row to the click event.
     const closestRow = event.target.closest("tr");
     if (this.selectedRow) {
@@ -638,6 +670,175 @@ export class SegmentDetail {
     } catch (error) {
       alert(error.messaje);
     }
+  }
+
+  async playHandler() {
+    // require a selected leg
+    if (!this.legSelectHook.value) {
+      alert("No leg selected.");
+      return;
+    }
+    if (!this.segmentList || this.segmentList.length === 0) {
+      alert("No segments loaded for this leg.");
+      return;
+    }
+
+    const legId = parseInt(this.legSelectHook.value, 10);
+    const masterSegs = this.segmentList.filter(
+      (s) => s.legId === legId && !s.parentId
+    );
+    if (masterSegs.length === 0) {
+      alert("No master segments for this leg.");
+      return;
+    }
+
+    // reload speed
+    const playbackData = JSON.parse(localStorage.getItem("fttPlaybackData"));
+    this.playbackSpeed =
+      playbackData && typeof playbackData.speed === "number"
+        ? playbackData.speed
+        : 10;
+
+    const gpsTrack = [];
+    const localTrack = [];
+
+    // --- Build GPS trajectory (from /pose GeoJSON) ---
+    if (this.gpsMapBox.checked) {
+      for (const seg of masterSegs) {
+        try {
+          const geoJson = await this.mapInterface.poseInterface.get(seg.id);
+          if (!geoJson || !geoJson.features) continue;
+          for (const feature of geoJson.features) {
+            const ts = feature.properties.timestamp; // orig_secs
+            const [lng, lat] = feature.geometry.coordinates;
+            gpsTrack.push({ t: ts, lat, lng });
+          }
+        } catch (err) {
+          console.log(err.message);
+        }
+      }
+      gpsTrack.sort((a, b) => a.t - b.t);
+    }
+
+    // --- Build local trajectory (from /local_pose) ---
+    if (this.localMapBox.checked) {
+      for (const seg of masterSegs) {
+        try {
+          const poses =
+            await this.localMapInterface.localPoseInterface.get(seg.id);
+          for (const p of poses) {
+            localTrack.push({ t: p.origSecs, x: p.x, y: p.y });
+          }
+        } catch (err) {
+          console.log(err.message);
+        }
+      }
+      localTrack.sort((a, b) => a.t - b.t);
+    }
+
+    if (gpsTrack.length === 0 && localTrack.length === 0) {
+      alert("No pose data (gps or local) available for this leg.");
+      return;
+    }
+
+    const startTime = Math.min(
+      gpsTrack.length ? gpsTrack[0].t : Infinity,
+      localTrack.length ? localTrack[0].t : Infinity
+    );
+    const endTime = Math.max(
+      gpsTrack.length ? gpsTrack[gpsTrack.length - 1].t : -Infinity,
+      localTrack.length ? localTrack[localTrack.length - 1].t : -Infinity
+    );
+
+    if (!isFinite(startTime) || !isFinite(endTime) || startTime >= endTime) {
+      alert("Invalid pose timestamps for playback.");
+      return;
+    }
+
+    // stop previous playback
+    if (this.playbackTimerId) {
+      clearInterval(this.playbackTimerId);
+      this.playbackTimerId = null;
+    }
+
+    // Hide static trajectories and clear any old playback
+    if (gpsTrack.length && this.gpsMapBox.checked) {
+      this.mapInterface.hideAllPoses();
+      this.mapInterface.clearPlaybackTrack();
+    }
+    if (localTrack.length && this.localMapBox.checked) {
+      this.localMapInterface.hideAllPoses();
+      this.localMapInterface.clearPlaybackTrack();
+    }
+
+    // Initialise playback tracks
+    if (gpsTrack.length && this.gpsMapBox.checked) {
+      this.mapInterface.initPlaybackTrack(gpsTrack[0].lat, gpsTrack[0].lng);
+    }
+    if (localTrack.length && this.localMapBox.checked) {
+      this.localMapInterface.initPlaybackTrack(localTrack[0].x, localTrack[0].y);
+    }
+
+    let gpsIdx = 0, localIdx = 0;
+    let simTime = startTime;
+    const dtMs  = 50;
+    const dtSim = (dtMs / 1000) * this.playbackSpeed;
+
+    this.playbackTimerId = setInterval(() => {
+      simTime += dtSim;
+      if (simTime >= endTime) {
+        clearInterval(this.playbackTimerId);
+        this.playbackTimerId = null;
+
+        // Restore full trajectories and remove playback tracks
+        this.mapInterface.showAllPoses();
+        this.mapInterface.clearPlaybackTrack();
+        this.localMapInterface.showAllPoses();
+        this.localMapInterface.clearPlaybackTrack();
+        return;
+      }
+
+      // GPS
+      if (gpsTrack.length && this.gpsMapBox.checked) {
+        while (gpsIdx < gpsTrack.length - 1 &&
+              gpsTrack[gpsIdx + 1].t <= simTime) {
+          gpsIdx++;
+          const p = gpsTrack[gpsIdx];
+          this.mapInterface.addPlaybackPoint(p.lat, p.lng);
+        }
+        const p = gpsTrack[gpsIdx];
+        this.mapInterface.addActiveMarker(p.lat, p.lng);
+      }
+
+      // Local
+      if (localTrack.length && this.localMapBox.checked) {
+        while (localIdx < localTrack.length - 1 &&
+              localTrack[localIdx + 1].t <= simTime) {
+          localIdx++;
+          const p = localTrack[localIdx];
+          this.localMapInterface.addPlaybackPoint(p.x, p.y);
+        }
+        const p = localTrack[localIdx];
+        this.localMapInterface.addActiveMarker(p.x, p.y);
+      }
+    }, dtMs);
+  }
+
+  playbackConfigHandler() {
+    const playbackConfig = new PlaybackConfig();
+    const playbackModal = new Modal(
+      playbackConfig,
+      "Your browser doesn't support this feature! - Please change to a more modern one.",
+      () => {
+        const playbackData = JSON.parse(
+          localStorage.getItem("fttPlaybackData")
+        );
+        if (playbackData && typeof playbackData.speed === "number") {
+          this.playbackSpeed = playbackData.speed;
+        }
+      }
+    );
+    playbackModal.show();
   }
 
   gpsMapConfigHandler() {
